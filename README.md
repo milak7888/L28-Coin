@@ -79,3 +79,49 @@ Apache 2.0 - Fully open source
 ---
 
 **Start mining today. 89.91% still available. 100% fair launch.** 🚀💎
+
+## 🌉 Universal Bridge
+
+L28 acts as a universal bridge connecting ALL blockchains:
+
+### Supported Chains
+- Ethereum (ETH)
+- Bitcoin (BTC)  
+- Polygon (MATIC)
+- Avalanche (AVAX)
+- Solana (SOL)
+- Arbitrum
+- Base
+- Optimism
+
+### Bridge Features
+✅ **Instant Finality** - <1 second transfers  
+✅ **Low Fees** - 0.1% bridge fee  
+✅ **Universal** - Connect any chain to any chain  
+✅ **Secure** - Multi-sig validation + PoW  
+✅ **AI-Optimized** - LEAP28 autonomous routing  
+
+### Usage
+```python
+from leap28.bridge import L28UniversalBridge
+
+bridge = L28UniversalBridge()
+
+# Bridge ETH from Ethereum to Polygon
+tx = bridge.bridge_transfer(
+    source_chain=ChainType.ETHEREUM,
+    dest_chain=ChainType.POLYGON,
+    amount=1.5,
+    asset="ETH",
+    source_address="0xYourEthAddress",
+    dest_address="0xYourPolygonAddress"
+)
+```
+
+### Bridge Market
+L28 is positioned to capture share of the $10B+ annual bridge market by:
+- Connecting ALL chains (not just 2)
+- Instant finality (blockless = fast)
+- Low fees (0.1% vs 0.3-1% competitors)
+- AI optimization (LEAP28 finds best routes)
+
