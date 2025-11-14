@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+ENV/
+
+# Sensitive data
+.env
+.env.*
+*.key
+secrets/
+**/wallets/*
+!**/wallets/.gitkeep
+
+# Ledger data (keep structure, not actual data)
+chain/data/*.jsonl
+chain/data/shards/*.jsonl
+chain/data/networks/*.jsonl
+!chain/data/.gitkeep
+
+# Logs
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+dist/
+build/
+*.egg-info/
