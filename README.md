@@ -72,7 +72,6 @@ Apache 2.0 - Fully open source
 
 ## Links
 
-- **Website:** https://leap28.netlify.app
 - **Main Project:** https://github.com/milak7888/Leap28 (Private - AI System)
 - **API:** https://leap28-production.up.railway.app
 
