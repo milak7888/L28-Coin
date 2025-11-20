@@ -11,7 +11,7 @@ L28 Coin is a fully operational blockless cryptocurrency using DAG architecture.
 - **Available:** 25,175,416 L28 (89.91%)
 - **Max Supply:** 28,000,000 L28
 - **Architecture:** Blockless DAG (5 shards)
-- **Consensus:** SHA-256 Proof of Work (Difficulty 12)
+- **Consensus:** SHA-256 Proof of Work (Difficulty: 18)
 
 ## Documentation
 
@@ -47,7 +47,7 @@ import asyncio
 from leap28.mining import L28Miner
 
 async def mine():
-    miner = L28Miner('your_address', difficulty=12)
+    miner = L28Miner('your_address', difficulty = 18)
     entry = await miner.mine_block([], '0'*64)
     print(f"Mined! Reward: 28 L28")
 

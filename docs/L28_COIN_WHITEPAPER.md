@@ -49,7 +49,7 @@ Entry F ──┘    Shard 4
 
 Even though L28 is blockless, mining still exists:
 
-**Step 1:** Solve SHA-256 PoW puzzle (difficulty 12)  
+**Step 1:** Solve SHA-256 PoW puzzle (Difficulty: 18)  
 **Step 2:** Create entry with valid nonce  
 **Step 3:** Network validates entry  
 **Step 4:** Entry added to appropriate shard  
@@ -113,7 +113,7 @@ MAX:       28,000,000 L28
 - **Current Reward:** 28 L28 per entry
 - **Halving:** Periodic reduction (like Bitcoin)
 - **Total Entries:** 100,874 mined so far
-- **All mined:** Via SHA-256 PoW at difficulty 12
+- **All mined:** Via SHA-256 PoW at Difficulty: 18
 
 ### Deflationary Mechanism
 - Transaction fees burned (0.1% per tx)
@@ -159,7 +159,7 @@ import asyncio
 from leap28.mining import L28Miner
 
 async def mine():
-    miner = L28Miner('your_address', difficulty=12)
+    miner = L28Miner('your_address', difficulty = 18)
     print('⛏️  Mining L28 entries...')
     entry = await miner.mine_block([], '0'*64)  # 'block' is legacy name
     print(f'✅ Entry mined! Hash: {entry[\"hash\"]}')
@@ -172,7 +172,7 @@ asyncio.run(mine())
 ## Security
 
 - **Cryptography:** SHA-256 (mining) + ED25519 (signing)
-- **Difficulty 12:** 281 trillion attempts required
+- **Difficulty: 18:** 281 trillion attempts required
 - **Open Source:** All code public and auditable
 - **Tested:** 100% test coverage on core systems
 - **Quantum-Resistant:** Post-quantum cryptography design

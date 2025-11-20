@@ -160,7 +160,7 @@ python3 leap28/ledger/l28_safe_ledger.py \
 - Python 3.7+
 - 8GB+ RAM
 - SSD recommended (for I/O)
-- GPU optional (but highly recommended for difficulty 12)
+- GPU optional (but highly recommended for Difficulty: 18)
 
 ### Installation
 
@@ -194,7 +194,7 @@ python3 leap28/ledger/l28_safe_ledger.py \
   --ledger chain/data/l28_genesis_ledger.jsonl \
   backup
 
-# Mine with your wallet (difficulty 12 - GPU recommended)
+# Mine with your wallet (Difficulty: 18 - GPU recommended)
 PYTHONPATH=leap28/consensus/pow:$PYTHONPATH \
 python3 chain/l28_pow_worker.py \
   --worker-id my_miner \
@@ -220,7 +220,7 @@ python3 chain/l28_pow_worker.py \
 
 ### Mining Requirements
 
-**Difficulty 12 Mining:**
+**Difficulty: 18 Mining:**
 - CPU: ~6-10 days per entry (not viable)
 - GPU (RTX 3080): ~1-2 hours per entry
 - GPU (RTX 4090): ~30-60 minutes per entry
@@ -255,7 +255,7 @@ ledger.append_entry_safe(entry)
 # All entries must meet difficulty requirement
 assert entry['hash'].startswith('0' * entry['difficulty'])
 
-# Difficulty 12 = 281 trillion attempts average
+# Difficulty: 18 = 281 trillion attempts average
 ```
 
 ### 4. Hash Chain Integrity
@@ -427,7 +427,7 @@ MIT License - See LICENSE file
 
 ### CPU Mining (Not Recommended)
 - Use all cores: Start multiple workers
-- Expect 6-10 days per entry at difficulty 12
+- Expect 6-10 days per entry at Difficulty: 18
 - Better for testnet only
 
 ### GPU Mining (Recommended)

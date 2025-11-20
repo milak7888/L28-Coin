@@ -7,7 +7,7 @@
 - **L28 Available:** 25,175,500 (89.91%)
 - **Max Supply:** 28,000,000 L28
 
-All tokens mined via SHA-256 PoW at difficulty 12.
+All tokens mined via SHA-256 PoW at Difficulty: 18.
 
 ## Blockless Architecture Explained
 
@@ -67,7 +67,7 @@ Shard 4: Entries 100,000+
 5. **If yes:** Valid entry! Get 28 L28
 6. **If no:** Try next nonce (repeat ~281 trillion times)
 
-### Difficulty 12
+### Difficulty: 18
 ```
 Target: 000000000000xxxxxxxxxxxxxxxxxx...
         ^^^^^^^^^^^^
@@ -137,7 +137,7 @@ All networks share the same L28 token but process differently.
 ## Security
 
 **Mining Security:**
-- Difficulty 12 = 281 trillion attempts
+- Difficulty: 18 = 281 trillion attempts
 - SHA-256 cryptographic hashing
 - Auto-adjusting difficulty
 

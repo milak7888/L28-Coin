@@ -2,7 +2,7 @@
 
 ## Status: ✅ OPERATIONAL
 
-Mining L28 entries (not blocks!) via SHA-256 PoW at difficulty 12.
+Mining L28 entries (not blocks!) via SHA-256 PoW at Difficulty: 18.
 
 ## Current Opportunity
 
@@ -31,7 +31,7 @@ Mine Entry → Add to Shard → Parallel Processing
 **But don't worry!** Mining works the same way:
 - Solve SHA-256 puzzle ✅
 - Get 28 L28 reward ✅
-- Difficulty 12 ✅
+- Difficulty: 18 ✅
 
 ## Quick Start (5 Minutes)
 
@@ -63,8 +63,8 @@ import asyncio
 from leap28.mining import L28Miner
 
 async def mine():
-    miner = L28Miner('L28_your_address', difficulty=12)
-    print('⛏️  Mining L28 entry at difficulty 12...')
+    miner = L28Miner('L28_your_address', difficulty = 18)
+    print('⛏️  Mining L28 entry at Difficulty: 18...')
     entry = await miner.mine_block([], '0'*64)
     print(f'✅ Entry mined!')
     print(f'   Hash: {entry[\"hash\"]}')
@@ -120,7 +120,7 @@ from leap28.mining import L28Miner
 async def simple_mine():
     miner = L28Miner(
         wallet_address="L28_your_wallet",
-        difficulty=12
+        difficulty = 18
     )
     
     entry = await miner.mine_block(
@@ -176,9 +176,9 @@ EOF
 
 ## Difficulty System
 
-### Current: Difficulty 12
+### Current: Difficulty: 18
 ```
-Difficulty 12 = Hash starts with 000000000000
+Difficulty: 18 = Hash starts with 000000000000
 Probability = 1 / (16^12) = 1 / 281,474,976,710,656
 ```
 
@@ -215,7 +215,7 @@ Entry 100,875+:       28 L28 (until halving)
 
 ## Mining Time Estimates
 
-At Difficulty 12:
+At Difficulty: 18:
 
 | Your Hashrate | Time per Entry (avg) |
 |--------------|---------------------|
@@ -232,14 +232,14 @@ At Difficulty 12:
 
 For testing/development, use lower difficulty:
 ```python
-# Difficulty 4 (test) = ~65,000 attempts
-test_miner = L28Miner("address", difficulty=4)
+# Difficulty: 18 (test) = ~65,000 attempts
+test_miner = L28Miner("address", difficulty = 18)
 
-# Difficulty 8 (moderate) = ~4 billion attempts  
-moderate_miner = L28Miner("address", difficulty=8)
+# Difficulty: 18 (moderate) = ~4 billion attempts  
+moderate_miner = L28Miner("address", difficulty = 18)
 
-# Difficulty 12 (production) = ~281 trillion attempts
-prod_miner = L28Miner("address", difficulty=12)
+# Difficulty: 18 (production) = ~281 trillion attempts
+prod_miner = L28Miner("address", difficulty = 18)
 ```
 
 ## Security Best Practices
@@ -253,7 +253,7 @@ prod_miner = L28Miner("address", difficulty=12)
 ## Troubleshooting
 
 ### Mining is slow
-**Normal!** Difficulty 12 requires ~281 trillion attempts.
+**Normal!** Difficulty: 18 requires ~281 trillion attempts.
 - Average time varies wildly (random)
 - Could be 1 second or 1 hour
 - Patience is key!
@@ -261,7 +261,7 @@ prod_miner = L28Miner("address", difficulty=12)
 ### Want to test faster?
 Lower difficulty for testing:
 ```python
-miner = L28Miner("address", difficulty=4)  # Much faster!
+miner = L28Miner("address", difficulty = 18)  # Much faster!
 ```
 
 ### Module not found
@@ -281,7 +281,7 @@ A: Yes! Same SHA-256 PoW, same rewards, same difficulty.
 A: Yes! Any CPU can mine. M3 Ultra works great.
 
 **Q: How long to mine an entry?**  
-A: Random! Could be seconds or hours at difficulty 12.
+A: Random! Could be seconds or hours at Difficulty: 18.
 
 **Q: Is it profitable?**  
 A: Early miners benefit most. Only 10% mined, 90% opportunity!
