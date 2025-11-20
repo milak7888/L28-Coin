@@ -26,7 +26,7 @@ class NetworkMiner:
                 'timestamp': time.time(),
                 'miner': self.worker_id,
                 'nonce': nonce,
-                'reward': 28
+                'reward': self.network_config.reward
             }
             
             entry_str = json.dumps(entry, sort_keys=True)
@@ -41,18 +41,21 @@ class NetworkMiner:
                 return entry
             
             nonce += 1
-            if nonce % 1000000 == 0:
+            if nonce % 10000000 == 0:
                 elapsed = time.time() - start_time
                 hr = nonce / elapsed if elapsed > 0 else 0
-                print(f"⛏️  {nonce:,} hashes | {hr:,.0f} H/s", end='\r')
+                print(f"Mining... {nonce:,} hashes | {hr:,.0f} H/s | {elapsed:.0f}s", end='\r')
 
-print(f"⛏️  Mining L28 on MAIN network (Difficulty 12)")
-miner = NetworkMiner(NetworkType.MAIN, "test_miner")
-height = 1
-prev_hash = '0' * 64
-
-while True:
-    entry = miner.mine_entry(prev_hash, height)
-    print(f"\n✅ Block {height} | {entry['time']:.1f}s | {entry['hashrate']:,.0f} H/s | 28 L28")
-    prev_hash = entry['hash']
-    height += 1
+if __name__ == "__main__":
+    config = NETWORKS[NetworkType.MAIN]
+    print(f"L28 Miner - Difficulty {config.difficulty} (SECURE)")
+    
+    miner = NetworkMiner(NetworkType.MAIN, "test_miner")
+    height = 1
+    prev_hash = '0' * 64
+    
+    while True:
+        entry = miner.mine_entry(prev_hash, height)
+        print(f"\nEntry {height} | {entry['time']:.1f}s | {entry['hashrate']:,.0f} H/s | {entry['reward']} L28")
+        prev_hash = entry['hash']
+        height += 1
