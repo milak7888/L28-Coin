@@ -17,7 +17,7 @@ L28 Coin is a fully operational blockless cryptocurrency using a DAG (Directed A
 - **Entries Mined:** 72,097 (not blocks - this is blockless!)
 - **Reward/Entry:** 28 L28
 - **Difficulty:** 12 (auto-adjusting)
-- **Architecture:** Blockless DAG with 5 shards
+- **Architecture:** Blockless DAG with 3 shards
 
 ## What Does "Blockless" Mean?
 
@@ -42,7 +42,7 @@ Entry F ──┘    Shard 4
 - ❌ No sequential blocks
 - ✅ Parallel entry processing
 - ✅ Instant finality (<1 second)
-- ✅ 5-shard distributed ledger
+- ✅ 3-shard distributed ledger
 - ✅ Still uses Proof of Work mining
 
 ## How Mining Works (Without Blocks!)
@@ -122,7 +122,7 @@ MAX:       28,000,000 L28
 
 ## Why Mine L28?
 
-✅ **Only 10% mined** - 90% opportunity remaining  
+✅ **Only 7% mined** - 93% opportunity remaining  
 ✅ **Blockless = faster** - instant finality, no waiting  
 ✅ **Fair launch** - no pre-mine, no ICO, no insider advantage  
 ✅ **Low supply** - 28M max (vs Bitcoin's 21M)  
@@ -193,7 +193,7 @@ asyncio.run(mine())
 **License:** Apache 2.0  
 **Repository:** https://github.com/milak7888/Leap28  
 **Website:** https://leap28.netlify.app  
-**API:** https://leap28-production.up.railway.app
+**API:** http://157.245.233.184:5000
 
 All code is public, auditable, and free to use.
 
