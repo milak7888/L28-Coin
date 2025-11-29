@@ -33,8 +33,8 @@ Entry A ──┐
 Entry B ──┼──→ Shard 0
 Entry C ──┤    Shard 1
 Entry D ──┤    Shard 2  } Parallel Processing
-Entry E ──┤    Shard 3
-Entry F ──┘    Shard 4
+Entry E ──┤           
+Entry F ──┘           
 (Parallel, instant finality)
 ```
 
@@ -68,7 +68,7 @@ Each "entry" is like a block, but:
 
 ### Mining System ✅
 - **Algorithm:** SHA-256 Proof of Work
-- **Difficulty:** 12 (12 leading zeros required)
+- **Difficulty:** 12 (18 leading zeros required)
 - **Hash Target:** `000000000000...`
 - **Attempts:** ~281 trillion average
 - **Target Time:** ~60 seconds per entry
