@@ -2,9 +2,9 @@
 
 ## Current Supply Status
 
-- **Entries Mined:** 100,874
-- **L28 Mined:** 2,824,500 (10.09%)
-- **L28 Available:** 25,175,500 (89.91%)
+- **Entries Mined:** 72,097
+- **L28 Mined:** 2,018,688 (7.21%)
+- **L28 Available:** 25,981,312 (92.79%)
 - **Max Supply:** 28,000,000 L28
 
 All tokens mined via SHA-256 PoW at Difficulty: 18.
@@ -123,7 +123,7 @@ All networks share the same L28 token but process differently.
 ## Performance Metrics
 
 **Current:**
-- Entries: 100,874
+- Entries: 72,097
 - Average entry time: ~60 seconds
 - Finality: Instant (<1 second)
 - TPS: 10,000+ potential
@@ -149,8 +149,8 @@ All networks share the same L28 token but process differently.
 
 ## Fair Distribution
 ```
-Mined:      2,824,500 L28 (10.09%)
-Available: 25,175,500 L28 (89.91%)
+Mined:      2,018,688 L28 (7.21%)
+Available: 25,981,312 L28 (92.79%)
 
 100% mined via PoW
 0% pre-mine

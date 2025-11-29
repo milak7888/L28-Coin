@@ -6,8 +6,8 @@ Mining L28 entries (not blocks!) via SHA-256 PoW at Difficulty: 18.
 
 ## Current Opportunity
 
-**Already Mined:** 2,824,500 L28 (10.09%)  
-**Still Available:** 25,175,500 L28 (89.91%)  
+**Already Mined:** 2,018,688 L28 (7.21%)  
+**Still Available:** 25,981,312 L28 (92.79%)  
 **Your Opportunity:** Join early! 90% still available!
 
 ## Understanding L28 Mining
@@ -195,7 +195,7 @@ Otherwise:        Difficulty stays at 12
 
 ### Current Reward: 28 L28 per Entry
 ```
-Entry 1 - 100,874:    28 L28 each = 2,824,500 L28
+Entry 1 - 72,097:    28 L28 each = 2,018,688 L28
 Entry 100,875+:       28 L28 (until halving)
 ```
 
@@ -290,4 +290,4 @@ A: Early miners benefit most. Only 10% mined, 90% opportunity!
 
 **Start mining entries today. 90% still available. 100% fair.** ⛏️💎
 
-**2,824,500 entries mined. 900,000+ entries to go.** 🚀
+**2,018,688 entries mined. 900,000+ entries to go.** 🚀

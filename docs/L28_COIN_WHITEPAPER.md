@@ -8,13 +8,13 @@ L28 Coin is a fully operational blockless cryptocurrency using a DAG (Directed A
 
 ## Official Supply (Verified via Ledger Audit)
 
-**Total Mined:** 2,824,500 L28  
-**Percentage:** 10.09% of max supply  
-**Remaining:** 25,175,500 L28 (89.91%)  
+**Total Mined:** 2,018,688 L28  
+**Percentage:** 7.21% of max supply  
+**Remaining:** 25,981,312 L28 (92.79%)  
 **Max Supply:** 28,000,000 L28  
 
 ### Current Stats
-- **Entries Mined:** 100,874 (not blocks - this is blockless!)
+- **Entries Mined:** 72,097 (not blocks - this is blockless!)
 - **Reward/Entry:** 28 L28
 - **Difficulty:** 12 (auto-adjusting)
 - **Architecture:** Blockless DAG with 5 shards
@@ -98,8 +98,8 @@ Four network types for different use cases:
 
 ### Supply Distribution
 ```
-MINED:      2,824,500 L28 (10.09%) ██░░░░░░░░░░░░░░░░░░
-AVAILABLE: 25,175,500 L28 (89.91%) ░░░░░░░░░░░░░░░░░░░░
+MINED:      2,018,688 L28 (7.21%) ██░░░░░░░░░░░░░░░░░░
+AVAILABLE: 25,981,312 L28 (92.79%) ░░░░░░░░░░░░░░░░░░░░
 MAX:       28,000,000 L28
 ```
 
@@ -107,12 +107,12 @@ MAX:       28,000,000 L28
 - **Zero pre-mine** - all tokens earned via mining
 - **Zero founder allocation** - 100% community
 - **Zero ICO/presale** - no early investors
-- **89.91% still available** - massive opportunity
+- **92.79% still available** - massive opportunity
 
 ### Mining Rewards
 - **Current Reward:** 28 L28 per entry
 - **Halving:** Periodic reduction (like Bitcoin)
-- **Total Entries:** 100,874 mined so far
+- **Total Entries:** 72,097 mined so far
 - **All mined:** Via SHA-256 PoW at Difficulty: 18
 
 ### Deflationary Mechanism
@@ -199,7 +199,7 @@ All code is public, auditable, and free to use.
 
 ## Community
 
-**Join the 89.91%!**
+**Join the 92.79%!**
 
 - No pre-mine ✅
 - No founder allocation ✅
@@ -208,6 +208,6 @@ All code is public, auditable, and free to use.
 
 ---
 
-**2,824,500 entries mined. 25,175,500 to go. 100% blockless. 100% fair.** 🚀💎
+**2,018,688 entries mined. 25,981,312 to go. 100% blockless. 100% fair.** 🚀💎
 
 **Start mining entries today:** `git clone https://github.com/milak7888/Leap28`

@@ -7,8 +7,8 @@
 L28 Coin is a fully operational blockless cryptocurrency using DAG architecture.
 
 ### Quick Stats
-- **Total Mined:** 2,824,584 L28 (10.09%)
-- **Available:** 25,175,416 L28 (89.91%)
+- **Total Mined:** 2,824,584 L28 (7.21%)
+- **Available:** 25,175,416 L28 (92.79%)
 - **Max Supply:** 28,000,000 L28
 - **Architecture:** Blockless DAG (5 shards)
 - **Consensus:** SHA-256 Proof of Work (Difficulty: 18)
@@ -77,7 +77,7 @@ Apache 2.0 - Fully open source
 
 ---
 
-**Start mining today. 89.91% still available. 100% fair launch.** 🚀💎
+**Start mining today. 92.79% still available. 100% fair launch.** 🚀💎
 
 ## 🌉 Universal Bridge
 
