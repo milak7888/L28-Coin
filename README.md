@@ -1,14 +1,21 @@
-# L28 Coin - Blockless Cryptocurrency
+# L28 COIN
 
-## Status: Production Ready
+**Blockless cryptocurrency. Fair launch. Anonymous founder.**
 
-### Official Stats
-- **Total Mined:** 2,824,584 L28 (10.09%)
+## Why L28?
+
+| Feature | L28 | Others |
+|---------|-----|--------|
+| Pre-mine | 0% | 10-50% |
+| Available | 89.91% | Often <50% |
+| Founder known | No | Usually |
+| Open source | 100% | Varies |
+
+## Stats
+- **Mined:** 2,824,584 L28 (10.09%)
 - **Available:** 25,175,416 L28 (89.91%)
-- **Max Supply:** 28,000,000 L28
-- **Entries:** 100,878
 - **Difficulty:** 18
-- **Treasury:** 500,000 L28 (permanently locked)
+- **Algorithm:** SHA-256 PoW
 
 ## Quick Start
 ```bash
@@ -17,46 +24,27 @@ cd L28-Coin
 pip install -r requirements.txt
 ```
 
-### Create Wallet
+## Create Wallet
 ```python
 from leap28.wallet.l28_wallet import L28Wallet
-
 wallet = L28Wallet()
 info = wallet.create_wallet("my_wallet")
-print(f"Address: {info['address']}")
+print(info["address"])
 ```
 
-### Mine L28
+## Mine
 ```python
-import asyncio
 from leap28.miner import L28Miner
-
-async def mine():
-    miner = L28Miner(wallet_address="your_L28_address")
-    block = await miner.mine_block(transactions=[], previous_hash="0"*64)
-    print(f"Mined block: {block['hash']}")
-
-asyncio.run(mine())
+miner = L28Miner("your_L28_address")
+# Mining starts automatically
 ```
 
-## Documentation
-- [Whitepaper](docs/L28_COIN_WHITEPAPER.md)
-- [Mining Guide](docs/MINING_GUIDE.md)
-- [Architecture](docs/CHAIN_ARCHITECTURE.md)
-- [Security](docs/SECURITY.md)
+## Philosophy
 
-## Features
-- Blockless DAG architecture
-- SHA-256 PoW (Difficulty 18)
-- Instant finality
-- Fair launch - 89.91% available
+L28 has no marketing team, no influencers, no promises.
 
-## Treasury
-500,000 L28 permanently locked for LEAP28 autonomous operations.
-Address: L28882a7cccb94847c09a1d2e661d158a87028f17c3
-
-## License
-Apache 2.0
+Just code. Fork it. Mine it. Build on it.
 
 ---
-**89.91% still available. Fair launch. Start mining.**
+
+*"If you have to explain it, it's not good enough."*
