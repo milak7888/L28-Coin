@@ -63,7 +63,7 @@ import asyncio
 from leap28.mining import L28Miner
 
 async def mine():
-    miner = L28Miner('L28_your_address', difficulty = 18)
+    miner = L28Miner('your_L28_address')
     print('⛏️  Mining L28 entry at Difficulty: 18...')
     entry = await miner.mine_block([], '0'*64)
     print(f'✅ Entry mined!')
@@ -207,7 +207,7 @@ Entry 100,875+:       28 L28 (until halving)
 ## Why Mine Now?
 
 ✅ **Only 10% mined** - 90% opportunity  
-✅ **Fair difficulty** - Same for everyone (12)  
+✅ **Fair difficulty** - Same for everyone (18)  
 ✅ **No pre-mine** - Pure PoW distribution  
 ✅ **Early miner advantage** - Get in early  
 ✅ **Real rewards** - 28 L28 per entry  
@@ -233,13 +233,13 @@ At Difficulty: 18:
 For testing/development, use lower difficulty:
 ```python
 # Difficulty: 18 (test) = ~65,000 attempts
-test_miner = L28Miner("address", difficulty = 18)
+test_miner = L28Miner("your_L28_address")
 
 # Difficulty: 18 (moderate) = ~4 billion attempts  
-moderate_miner = L28Miner("address", difficulty = 18)
+moderate_miner = L28Miner("your_L28_address")
 
 # Difficulty: 18 (production) = ~281 trillion attempts
-prod_miner = L28Miner("address", difficulty = 18)
+prod_miner = L28Miner("your_L28_address")
 ```
 
 ## Security Best Practices
@@ -261,7 +261,7 @@ prod_miner = L28Miner("address", difficulty = 18)
 ### Want to test faster?
 Lower difficulty for testing:
 ```python
-miner = L28Miner("address", difficulty = 18)  # Much faster!
+miner = L28Miner("your_L28_address")  # Much faster!
 ```
 
 ### Module not found

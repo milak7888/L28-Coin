@@ -93,7 +93,7 @@ Each entry is one line of JSON:
 ```json
 {
   "entry_height": 100874,
-  "current_supply": 2824500,
+  "current_supply": 2824584,
   "reward": 28.0,
   "hash": "000000000000a8f2...",
   "nonce": 441926,

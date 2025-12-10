@@ -159,7 +159,7 @@ import asyncio
 from leap28.mining import L28Miner
 
 async def mine():
-    miner = L28Miner('your_address', difficulty = 18)
+    miner = L28Miner('your_L28_address')
     print('⛏️  Mining L28 entries...')
     entry = await miner.mine_block([], '0'*64)  # 'block' is legacy name
     print(f'✅ Entry mined! Hash: {entry[\"hash\"]}')
