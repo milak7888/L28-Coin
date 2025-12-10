@@ -1,36 +1,21 @@
 # L28 Coin - Blockless Cryptocurrency
 
-**Official L28 Coin Repository**
+## Status: Production Ready
 
-## Status: ✅ Production Ready
-
-L28 Coin is a fully operational blockless cryptocurrency using DAG architecture.
-
-### Quick Stats
-- **Total Mined:** 2,824,584 L28 (7.21%)
-- **Available:** 25,175,416 L28 (92.79%)
+### Official Stats
+- **Total Mined:** 2,824,584 L28 (10.09%)
+- **Available:** 25,175,416 L28 (89.91%)
 - **Max Supply:** 28,000,000 L28
-- **Architecture:** Blockless DAG (5 shards)
-- **Consensus:** SHA-256 Proof of Work (Difficulty: 18)
+- **Entries:** 100,878
+- **Difficulty:** 18
+- **Treasury:** 500,000 L28 (permanently locked)
 
-## Documentation
-
-- 📄 [Whitepaper](docs/L28_COIN_WHITEPAPER.md) - Complete technical overview
-- 🏗️ [Chain Architecture](docs/CHAIN_ARCHITECTURE.md) - Blockless design
-- ⛏️ [Mining Guide](docs/MINING_GUIDE.md) - How to mine L28
-- 🎯 [Features](docs/FEATURES.md) - Capabilities overview
-- 🔒 [Security](docs/SECURITY.md) - Security model
-
-## Installation
+## Quick Start
 ```bash
 git clone https://github.com/milak7888/L28-Coin.git
 cd L28-Coin
-python3 -m venv .venv
-source .venv/bin/activate
 pip install -r requirements.txt
 ```
-
-## Quick Start
 
 ### Create Wallet
 ```python
@@ -41,86 +26,37 @@ info = wallet.create_wallet("my_wallet")
 print(f"Address: {info['address']}")
 ```
 
-### Start Mining
+### Mine L28
 ```python
 import asyncio
-from leap28.mining import L28Miner
+from leap28.miner import L28Miner
 
 async def mine():
-    miner = L28Miner('your_address', difficulty = 18)
-    entry = await miner.mine_block([], '0'*64)
-    print(f"Mined! Reward: 28 L28")
+    miner = L28Miner(wallet_address="your_L28_address")
+    block = await miner.mine_block(transactions=[], previous_hash="0"*64)
+    print(f"Mined block: {block['hash']}")
 
 asyncio.run(mine())
 ```
 
-## Key Features
+## Documentation
+- [Whitepaper](docs/L28_COIN_WHITEPAPER.md)
+- [Mining Guide](docs/MINING_GUIDE.md)
+- [Architecture](docs/CHAIN_ARCHITECTURE.md)
+- [Security](docs/SECURITY.md)
 
-✅ **Blockless Architecture** - DAG-based, no sequential blocks  
-✅ **Instant Finality** - Transactions confirmed in <1 second  
-✅ **Fair Launch** - Zero pre-mine, 90% still available  
-✅ **Multi-Network** - MAIN/SPEED/PRIVACY/ENTERPRISE  
-✅ **Quantum-Ready** - Post-quantum cryptography design  
+## Features
+- Blockless DAG architecture
+- SHA-256 PoW (Difficulty 18)
+- Instant finality
+- Fair launch - 89.91% available
 
-## Powered By LEAP28
-
-L28 Coin is the native currency of the LEAP28 autonomous AI system.
+## Treasury
+500,000 L28 permanently locked for LEAP28 autonomous operations.
+Address: L28882a7cccb94847c09a1d2e661d158a87028f17c3
 
 ## License
-
-Apache 2.0 - Fully open source
-
-## Links
-
-- **Main Project:** https://github.com/milak7888/Leap28 (Private - AI System)
-- **API:** https://leap28.com/api
+Apache 2.0
 
 ---
-
-**Start mining today. 92.79% still available. 100% fair launch.** 🚀💎
-
-## 🌉 Universal Bridge
-
-L28 acts as a universal bridge connecting ALL blockchains:
-
-### Supported Chains
-- Ethereum (ETH)
-- Bitcoin (BTC)  
-- Polygon (MATIC)
-- Avalanche (AVAX)
-- Solana (SOL)
-- Arbitrum
-- Base
-- Optimism
-
-### Bridge Features
-✅ **Instant Finality** - <1 second transfers  
-✅ **Low Fees** - 0.1% bridge fee  
-✅ **Universal** - Connect any chain to any chain  
-✅ **Secure** - Multi-sig validation + PoW  
-✅ **AI-Optimized** - LEAP28 autonomous routing  
-
-### Usage
-```python
-from leap28.bridge import L28UniversalBridge
-
-bridge = L28UniversalBridge()
-
-# Bridge ETH from Ethereum to Polygon
-tx = bridge.bridge_transfer(
-    source_chain=ChainType.ETHEREUM,
-    dest_chain=ChainType.POLYGON,
-    amount=1.5,
-    asset="ETH",
-    source_address="0xYourEthAddress",
-    dest_address="0xYourPolygonAddress"
-)
-```
-
-### Bridge Market
-L28 is positioned to capture share of the $10B+ annual bridge market by:
-- Connecting ALL chains (not just 2)
-- Instant finality (blockless = fast)
-- Low fees (0.1% vs 0.3-1% competitors)
-- AI optimization (LEAP28 finds best routes)
-
+**89.91% still available. Fair launch. Start mining.**
