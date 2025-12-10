@@ -1,5 +1,8 @@
-"""L28 COIN - Blockless Cryptocurrency with Hybrid Consensus"""
-from .l28_coin import L28Coin
-from .transaction_builder import TransactionBuilder
+"""L28 COIN - Blockless Cryptocurrency"""
 
-__all__ = ['L28Coin', 'TransactionBuilder']
+__version__ = "1.0.0"
+
+# Import modules directly:
+#   from leap28.wallet.l28_wallet import L28Wallet
+#   from leap28.miner import L28Miner
+#   from leap28.ledger import L28Ledger

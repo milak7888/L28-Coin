@@ -6,7 +6,7 @@ import asyncio
 import logging
 import hashlib
 from typing import Optional, Dict
-from ..wallet.l28_wallet import L28Wallet
+from .wallet.l28_wallet import L28Wallet
 from ..network.multi_network import MultiNetworkManager
 from ..network.network_types import NetworkType
 from ..ledger.transaction import Transaction
