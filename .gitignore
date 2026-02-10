@@ -41,3 +41,10 @@ Thumbs.db
 dist/
 build/
 *.egg-info/
+
+# local/editor artifacts
+__pycache__/
+*.pyc
+
+# patch/backups (never commit)
+*.bak_*
