@@ -2,415 +2,226 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import logging
-import time
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, Optional, Tuple
 
-# --- L28 Canonical Mint Identity (protocol-level invariant)
-L28_COINBASE_SENDER = "COINBASE"
-L28_COINBASE_TYPE = "coinbase"
+log = logging.getLogger("l28.tx_validation")
 
-def is_coinbase_tx(tx: dict) -> bool:
-    """Strict mint detector (fail-closed)."""
-    try:
-        if not isinstance(tx, dict):
-            return False
-        return (
-            str(tx.get('sender', '')) == L28_COINBASE_SENDER
-            and str(tx.get('type', '')) == L28_COINBASE_TYPE
-            and (tx.get('coinbase') is True)
-        )
-    except Exception:
-        return False
-
-
-logger = logging.getLogger(__name__)
-
-# ---------------------------------------------------------------------
-# SUPPLY CAP (PROTOCOL INVARIANT)
-# ---------------------------------------------------------------------
+# --- protocol invariants
 L28_MAX_SUPPLY: int = 28_000_000
-
-# ---------------------------------------------------------------------
-# COINBASE REWARD (PROTOCOL INVARIANT)
-# ---------------------------------------------------------------------
-# Absolute max reward per coinbase event. This is NOT policy-tunable.
-# Future: replace with deterministic emission schedule keyed by a tx field
-# (e.g., 'height' or 'epoch') so every node derives the same cap.
+L28_HALVING_INTERVAL: int = 100_000
 L28_MAX_COINBASE_REWARD: int = 50
-# ---------------------------------------------------------------------
-# COINBASE EMISSION SCHEDULE (PROTOCOL INVARIANT)
-# ---------------------------------------------------------------------
-# HARDENED: COINBASE_EMISSION_SCHEDULE_HEIGHT_V1
-# Reward is derived deterministically from `height`.
-# Default schedule: 50 L28 halves every 100,000 blocks.
-# Supply cap (28M) still hard-stops minting regardless of reward.
-L28_COINBASE_INITIAL_REWARD: int = 50
-L28_COINBASE_HALVING_INTERVAL: int = 100_000
 
-def l28_coinbase_reward(height: int) -> int:
-    """Deterministic emission schedule. Fail-closed on invalid height."""
-    try:
-        h = int(height)
-    except Exception:
-        return 0
-    if h < 0:
-        return 0
-    interval = int(L28_COINBASE_HALVING_INTERVAL)
-    if interval <= 0:
-        return 0
-    era = h // interval
-    # 50 >> era (integer halving). When it reaches 0, emission is 0.
-    r = int(L28_COINBASE_INITIAL_REWARD) >> int(era)
-    if r < 0:
-        return 0
-    return int(r)
-
-# HARDENED: COINBASE_REWARD_INVARIANT_V1
-
-# Optional legacy constant (if other modules referenced it historically)
-# Keep as 0 unless you have an explicit genesis issuance file you replay.
-L28_GENESIS_ISSUED: int = 0
+# Protocol-reserved pseudo-accounts (MUST NOT be usable for normal transfers)
+RESERVED_SENDERS = {"COINBASE", "__MINT__"}
 
 
-# ---------------------------------------------------------------------
-# POLICY
-# ---------------------------------------------------------------------
 @dataclass(frozen=True)
 class TxPolicy:
     """
-    Canonical transaction policy for L28.
-
-    Defaults are conservative: safe for validator/reserve use.
-    Adjust only through explicit protocol upgrades.
+    Keep this minimal + stable. Smoke/invariants build a policy dynamically.
     """
-    # block sending from these reserved pseudo-accounts unless coinbase
-    reserved_senders: Tuple[str, ...] = ("COINBASE", "__MINT__")
-
-    # maximum allowable clock skew (seconds)
-    max_clock_skew_sec: int = 10 * 60  # 10 minutes
-
-    # optional treasury protection (leave here for future; enforce in higher layer if needed)
-    block_treasury_spend: bool = False
-    treasury_addresses: Tuple[str, ...] = ()
+    require_signatures: bool = False
+    max_tx_amount: int = 10_000_000_000
+    min_tx_amount: int = 1
 
 
-def _safe_int(x: Any, default: int = 0) -> int:
+def _as_int(v: Any) -> Optional[int]:
     try:
-        if isinstance(x, bool):
-            return default
-        return int(x)
+        if v is None:
+            return None
+        return int(v)
     except Exception:
-        return default
+        return None
 
 
 def compute_tx_id(tx: Dict[str, Any]) -> str:
     """
-    HARDENED: COINBASE_TXID_COMMITS_FIELDS_V1
-    Canonical tx id.
-
-    - For normal tx: SHA-256(sender|receiver|amount|timestamp)
-    - For STRICT coinbase tx: SHA-256(sender|receiver|amount|timestamp|miner|nonce|height)
-      so minted events are non-replayable across heights/nonces.
+    Public API: deterministic tx id from canonical JSON encoding.
     """
-    sender = str(tx.get('sender', ''))
-    receiver = str(tx.get('receiver', ''))
-    amount = _safe_int(tx.get('amount', 0), 0)
-    timestamp = _safe_int(tx.get('timestamp', 0), 0)
-
-    # strict coinbase identity (must match validate_transaction invariant)
-    is_coinbase_strict = (
-        sender == L28_COINBASE_SENDER
-        and str(tx.get('type', '')) == L28_COINBASE_TYPE
-        and (tx.get('coinbase') is True)
-    )
-
-    if is_coinbase_strict:
-        miner = str(tx.get('miner', ''))
-        nonce = _safe_int(tx.get('nonce', 0), 0)
-        height = _safe_int(tx.get('height', 0), 0)
-        raw = f"{sender}|{receiver}|{int(amount)}|{int(timestamp)}|{miner}|{int(nonce)}|{int(height)}".encode('utf-8')
-        return hashlib.sha256(raw).hexdigest()
-
-    raw = f"{sender}|{receiver}|{int(amount)}|{int(timestamp)}".encode('utf-8')
-    return hashlib.sha256(raw).hexdigest()
+    blob = json.dumps(tx, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    return hashlib.sha256(blob).hexdigest()
 
 
-
-def stable_address_shard(address: str, num_shards: int) -> int:
+def stable_address_shard(address: str, shard_count: int = 28) -> int:
     """
-    Deterministic shard mapping: sha256(address) % num_shards
+    Public API: deterministic shard assignment for an address.
+    This is NOT a consensus rule by itself; it's a stable mapping helper used by the ledger.
+
+    shard_count default=28 to match L28 naming; callers may override.
     """
-    n = int(num_shards)
-    if n <= 0:
-        raise ValueError("num_shards must be positive")
+    sc = int(shard_count) if int(shard_count) > 0 else 1
     h = hashlib.sha256(str(address).encode("utf-8")).digest()
-    return int.from_bytes(h[:8], "big") % n
-def _is_coinbase_tx(tx: Dict[str, Any]) -> bool:
-    """HARDENED: COINBASE_DETECTOR_UNIFIED_V1
-    Compatibility shim: all mint detection MUST use is_coinbase_tx() strict identity.
-    Fail-closed.
+    n = int.from_bytes(h[:8], "big", signed=False)
+    return int(n % sc)
+
+
+def is_coinbase_tx(tx: Dict[str, Any]) -> bool:
+    """
+    Public API: strict coinbase identity.
     """
     try:
-        return bool(is_coinbase_tx(tx))
+        return (
+            str(tx.get("sender")) == "COINBASE"
+            and str(tx.get("type")) == "coinbase"
+            and bool(tx.get("coinbase")) is True
+        )
     except Exception:
         return False
 
 
+def l28_coinbase_reward(height: int) -> int:
+    """
+    Deterministic reward schedule.
+    Observed behavior (your logs):
+      Reward(0)=50
+      Reward(99999)=50
+      Reward(100000)=25
+    => halving every 100,000 blocks.
+
+    Floor at 1 to preserve mineability.
+    """
+    h = int(height)
+    if h < 0:
+        return 0
+    halvings = h // int(L28_HALVING_INTERVAL)
+    r = int(L28_MAX_COINBASE_REWARD) >> int(halvings)
+    return max(1, int(r))
 
 
 def validate_transaction(
-    tx: dict,
+    tx: Dict[str, Any],
     *,
-    policy,
-    current_balance_lookup,
-    seen_tx_lookup,
-    verify_signature=None,
-    now_ts: int | None = None,
-      current_issued_lookup=None,
-      current_height_lookup=None,
-
-) -> tuple[bool, str, str]:
+    policy: Optional[TxPolicy],
+    current_balance_lookup: Callable[[str, str], int],
+    seen_tx_lookup: Callable[[str], bool],
+    verify_signature: Optional[Callable[..., Any]] = None,
+    now_ts: Optional[int] = None,
+    current_issued_lookup: Optional[Callable[[], int]] = None,
+    current_height_lookup: Optional[Callable[[], int]] = None,
+    network: str = "MAIN",
+) -> Tuple[bool, str, str]:
     """
-    Canonical tx validation (fail-closed) with immutable L28 supply cap.
-
     Returns: (ok, tx_id, reason)
 
-    HARD INVARIANTS:
-    - Minting (coinbase) is ONLY allowed when the tx matches strict coinbase identity:
-        sender == "COINBASE" AND type == "coinbase" AND coinbase == True
-      Any attempt to use reserved COINBASE sender without strict identity is rejected.
-    - Total issued supply MUST NEVER exceed L28_MAX_SUPPLY (28,000,000).
-      If current_issued_lookup is unavailable, minting fails closed.
+    FAIL-CLOSED RULE:
+      For coinbase validation, required consensus lookups MUST be present; otherwise reject.
     """
+    if not isinstance(tx, dict):
+        return False, "", "tx_not_dict"
 
-    # ---- constants (protocol invariants) ----
-    L28_COINBASE_SENDER = "COINBASE"
-    L28_COINBASE_TYPE = "coinbase"
+    tx_id = compute_tx_id(tx)
 
+    # replay guard
     try:
-        tx_id = compute_tx_id(tx)
+        if callable(seen_tx_lookup) and bool(seen_tx_lookup(tx_id)):
+            return False, tx_id, "replay"
+    except Exception:
+        return False, tx_id, "replay_lookup_error"
 
-        if not isinstance(tx, dict):
-            return False, tx_id, "tx_not_dict"
+    pol = policy or TxPolicy()
 
-        # basic required fields
-        sender_raw = tx.get("sender")
-        receiver_raw = tx.get("receiver")
-        amount_raw = tx.get("amount")
-        ts_raw = tx.get("timestamp")
+    sender = tx.get("sender")
+    receiver = tx.get("receiver")
 
-        if sender_raw is None or receiver_raw is None:
-            return False, tx_id, "missing_sender_or_receiver"
+    # reserved sender misuse MUST reject unless strict coinbase
+    if str(sender) in RESERVED_SENDERS and not is_coinbase_tx(tx):
+        return False, tx_id, "reserved_sender_misuse"
+
+    # --- COINBASE PATH (issuance)
+    if is_coinbase_tx(tx):
+        if current_height_lookup is None or current_issued_lookup is None:
+            return False, tx_id, "missing_consensus_lookups"
 
         try:
-            amount = int(amount_raw)
+            canonical_h = int(current_height_lookup())
         except Exception:
-            return False, tx_id, "invalid_amount"
+            return False, tx_id, "canonical_height_unavailable"
 
-        if amount <= 0:
-            return False, tx_id, "non_positive_amount"
+        issued = _as_int(current_issued_lookup())
+        if issued is None:
+            return False, tx_id, "issued_supply_unavailable"
 
-        # replay protection
-        try:
-            if seen_tx_lookup and seen_tx_lookup(str(tx_id)):
-                return False, tx_id, "replay_tx"
-        except Exception:
-            return False, tx_id, "replay_check_failed"
+        # strict required fields
+        miner = tx.get("miner") or tx.get("miner_address") or tx.get("to") or receiver
+        nonce = _as_int(tx.get("nonce"))
+        height_field = _as_int(tx.get("height"))
+        ts = _as_int(tx.get("timestamp"))
 
-        # timestamp sanity (best-effort; fail-closed only on impossible)
-        if now_ts is not None:
-            try:
-                tsv = int(ts_raw) if ts_raw is not None else int(now_ts)
-            except Exception:
-                return False, tx_id, "invalid_timestamp"
-            # optional: prevent far-future by > 1 day
-            if tsv > int(now_ts) + 86400:
-                return False, tx_id, "timestamp_too_future"
-        else:
-            # if now_ts omitted, still require timestamp parseable if present
-            if ts_raw is not None:
-                try:
-                    int(ts_raw)
-                except Exception:
-                    return False, tx_id, "invalid_timestamp"
+        if not isinstance(receiver, str) or not receiver:
+            return False, tx_id, "coinbase_missing_receiver"
+        if not isinstance(miner, str) or not miner:
+            return False, tx_id, "coinbase_missing_miner"
+        if receiver != miner:
+            return False, tx_id, "coinbase_receiver_mismatch"
+        if nonce is None:
+            return False, tx_id, "coinbase_missing_nonce"
+        if ts is None:
+            return False, tx_id, "coinbase_missing_timestamp"
+        if now_ts is not None and ts > int(now_ts) + 60:
+            return False, tx_id, "coinbase_timestamp_in_future"
+        if height_field is None:
+            return False, tx_id, "coinbase_missing_height"
 
-        sender = str(sender_raw)
-        receiver = str(receiver_raw)
+        # MUST match canonical consensus height (protocol invariant)
+        if int(height_field) != int(canonical_h):
+            return False, tx_id, "coinbase_height_mismatch"
 
-        # ---- strict coinbase identity (fail-closed) ----
-        is_coinbase_strict = (
-            sender == L28_COINBASE_SENDER
-            and tx.get("type") == L28_COINBASE_TYPE
-            and tx.get("coinbase") is True
-        )
+        amount = _as_int(tx.get("amount"))
+        if amount is None:
+            return False, tx_id, "coinbase_amount_not_int"
 
-        # reserved sender misuse: COINBASE must ALWAYS be strict coinbase
-        if sender == L28_COINBASE_SENDER and not is_coinbase_strict:
-            return False, tx_id, "reserved_sender_misuse"
+        reward = int(l28_coinbase_reward(int(canonical_h)))
 
-        # signature gate (skip for strict coinbase only)
-        if verify_signature is not None and not is_coinbase_strict:
-            try:
-                if not bool(verify_signature(tx)):
-                    return False, tx_id, "bad_signature"
-            except Exception:
-                return False, tx_id, "signature_check_failed"
+        # MUST equal deterministic Reward(canonical_h)
+        if int(amount) != int(reward):
+            return False, tx_id, "coinbase_bad_reward"
 
-        # policy hooks (best-effort; don’t break if policy evolves)
-        try:
-            # treasury spend block (if configured)
-            treasury = getattr(policy, "treasury_addresses", None)
-            block_treasury = getattr(policy, "block_treasury_spend", None)
-            if block_treasury and treasury and sender in set(treasury):
-                return False, tx_id, "treasury_spend_blocked"
-        except Exception:
-            return False, tx_id, "policy_check_failed"
-
-        # ---- immutable 28M supply cap (ONLY applies to strict coinbase) ----
-        if is_coinbase_strict:
-            # --- HARDENED: STRICT_COINBASE_FIELDS_V3 ---
-            # Coinbase must include required fields and be non-spoofable.
-            # Receiver must equal miner; nonce must be int; reward must be within policy cap.
-            try:
-                miner = tx.get('miner') if isinstance(tx, dict) else getattr(tx, 'miner', None)
-                nonce = tx.get('nonce') if isinstance(tx, dict) else getattr(tx, 'nonce', None)
-            except Exception:
-                return False, tx_id, 'coinbase_fields_unreadable'
-            
-            # HARDENED: STRICT_COINBASE_KEY_PRESENCE_V1
-            # Fail-closed: strict coinbase must EXPLICITLY carry miner/nonce/height keys (no implicit defaults).
-            if isinstance(tx, dict):
-                if 'miner' not in tx:
-                    return False, tx_id, 'coinbase_missing_miner_key'
-                if 'nonce' not in tx:
-                    return False, tx_id, 'coinbase_missing_nonce_key'
-                if 'height' not in tx:
-                    return False, tx_id, 'coinbase_missing_height_key'
-            if miner is None or str(miner).strip() == '':
-                return False, tx_id, 'coinbase_missing_miner'
-            
-            # Prevent mint-to-third-party spoofing
-            if str(receiver) != str(miner):
-                return False, tx_id, 'coinbase_receiver_mismatch'
-            
-            # Nonce must exist (PoW verification may happen elsewhere; this blocks bypass paths)
-            try:
-                _ = int(nonce)
-            except Exception:
-                return False, tx_id, 'coinbase_missing_or_invalid_nonce'
-            
-            # Reward ceiling (protocol invariant; NOT policy-tunable)
-
-            
-            # If you later add an emission schedule, replace this with a deterministic
-
-            
-            # derivation from tx['height']/tx['epoch'].
-
-            
-            # --- HARDENED: COINBASE_CANONICAL_HEIGHT_ONLY_V1: deterministic reward by canonical height (NOT user tx height) ---
-
-            
-            # Rule: network/ledger supplies canonical emission height via current_height_lookup().
-
-            
-            # Any tx-provided height is ignored for schedule and may optionally be sanity-checked.
-
-            
-                if current_height_lookup is None or not callable(current_height_lookup):
-
-            
-                    return False, tx_id, 'coinbase_height_unavailable'
-
-            
-                try:
-
-            
-                    h = int(current_height_lookup())
-
-            
-                except Exception:
-
-            
-                    return False, tx_id, 'coinbase_height_lookup_failed'
-
-            
-                if h < 0:
-
-            
-                    return False, tx_id, 'coinbase_invalid_canonical_height'
-
-            
-                # Optional anti-spoof check: if tx carries a height, it must match canonical.
-
-            
-                try:
-
-            
-                    tx_h = tx.get('height', None)
-
-            
-                    if tx_h is not None and int(tx_h) != int(h):
-
-            
-                        return False, tx_id, 'coinbase_height_mismatch'
-
-            
-                except Exception:
-
-            
-                    return False, tx_id, 'coinbase_height_unreadable'
-
-            
-                expected = int(l28_coinbase_reward(h))
-
-            
-                if int(amount) != int(expected):
-
-            
-                    return False, tx_id, 'coinbase_reward_schedule_mismatch'
-
-            
-            # --- END HARDENED: COINBASE_CANONICAL_HEIGHT_ONLY_V1 ---
-
-            # --- END HARDENED: STRICT_COINBASE_FIELDS_V3 ---
-
-            if current_issued_lookup is None or not callable(current_issued_lookup):
-                return False, tx_id, "issued_supply_unavailable"
-
-            try:
-                issued = int(current_issued_lookup() or 0)
-            except Exception:
-                return False, tx_id, "issued_supply_lookup_failed"
-
-            if issued < 0:
-                return False, tx_id, "issued_supply_negative"
-
-            if issued >= L28_MAX_SUPPLY:
-                return False, tx_id, "minting_disabled_cap_reached"
-
-            if issued + amount > L28_MAX_SUPPLY:
-                return False, tx_id, "supply_cap_exceeded"
-
-            # coinbase passes balance checks by definition
-            return True, tx_id, "ok"
-
-        # ---- normal transfer: balance check ----
-        try:
-            bal = int(current_balance_lookup(sender) or 0)
-        except Exception:
-            return False, tx_id, "balance_lookup_failed"
-
-        if bal < amount:
-            return False, tx_id, "insufficient_balance"
+        # Supply cap invariant
+        if int(issued) + int(reward) > int(L28_MAX_SUPPLY):
+            return False, tx_id, "coinbase_supply_cap"
 
         return True, tx_id, "ok"
 
-    except Exception as e:
-        logger.exception("validate_transaction failed: %s", e)
+    # --- TRANSFER PATH (non-coinbase)
+    if not isinstance(sender, str) or not sender:
+        return False, tx_id, "missing_sender"
+    if not isinstance(receiver, str) or not receiver:
+        return False, tx_id, "missing_receiver"
+
+    amount = _as_int(tx.get("amount"))
+    if amount is None:
+        return False, tx_id, "amount_not_int"
+    if amount < int(pol.min_tx_amount):
+        return False, tx_id, "amount_too_small"
+    if amount > int(pol.max_tx_amount):
+        return False, tx_id, "amount_too_large"
+
+    ts = _as_int(tx.get("timestamp"))
+    if ts is None:
+        return False, tx_id, "missing_timestamp"
+    if now_ts is not None and ts > int(now_ts) + 60:
+        return False, tx_id, "timestamp_in_future"
+
+    # optional signature verification
+    if bool(pol.require_signatures):
+        if verify_signature is None:
+            return False, tx_id, "signature_required_missing_verifier"
         try:
-            return False, compute_tx_id(tx), "validator_exception"
+            ok = bool(verify_signature(tx))
         except Exception:
-            return False, "", "validator_exception"
+            return False, tx_id, "signature_verify_error"
+        if not ok:
+            return False, tx_id, "bad_signature"
+
+    # balance check
+    try:
+        bal = int(current_balance_lookup(str(sender), network))
+    except Exception:
+        return False, tx_id, "balance_lookup_error"
+    if bal < int(amount):
+        return False, tx_id, "insufficient_balance"
+
+    return True, tx_id, "ok"
