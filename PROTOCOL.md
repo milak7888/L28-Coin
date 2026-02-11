@@ -1,5 +1,27 @@
 # L28 Protocol (v1.0.0)
 
+## Boundary (Leap28 ↔ L28)
+### Separation Principle
+L28 is a public, machine-to-machine protocol surface.
+Leap28 is a private orchestration system.
+
+L28 MUST NOT contain or depend on:
+- Leap28 SovereignBrain logic
+- Memory spine structure/maps/logs
+- Agent orchestration codepaths
+- Revenue engines / affiliate logic
+- Private scoring/ranking models
+
+### Allowed Interaction Surface
+Leap28 MAY interact with L28 ONLY by producing or consuming public protocol artifacts:
+- Transactions (including strict coinbase)
+- Blocks / canonical height (consensus state)
+- Ledger state required for validation (IssuedSupply, balances, seen tx)
+
+### Fail-Closed Rule
+If required consensus/ledger state is unavailable, validation MUST fail closed.
+This prevents private assumptions from silently becoming protocol behavior.
+
 **Status:** FROZEN (v1.0.0)  
 **Audience:** machines, implementers, validators (not investors)  
 **Scope:** protocol invariants, issuance, transaction validity rules
@@ -91,3 +113,28 @@ For non-coinbase transactions:
 
 - `mint()` style APIs MUST be disabled or routed through strict coinbase + consensus ingestion only.
 - Validation MUST be fail-closed for missing canonical height or supply state.
+---
+
+## Leap28 Boundary (External System Interface)
+
+L28 is a standalone protocol.
+
+Leap28 interacts with L28 ONLY through:
+
+- Transaction submission
+- Ledger query
+- Consensus height query
+- Reward function evaluation
+- Work validation interface (if enabled)
+
+Leap28 MUST NOT:
+
+- Modify issuance rules
+- Inject mint events
+- Override supply cap
+- Bypass validation
+- Alter consensus height
+
+All interactions MUST pass through the same public validation pipeline as any other actor.
+
+The protocol surface is sovereign.

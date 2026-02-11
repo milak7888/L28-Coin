@@ -24,6 +24,10 @@ jobs:
           python -m compileall -q .
 
       - name: Smoke - protocol invariants (coinbase, supply cap, ledger ingestion)
+
+      - name: Invariants - hard checks (cap edge, height mismatch, reserved sender)
+        run: |
+          python -m coin.invariants
         run: |
           python -m coin.smoke
 
