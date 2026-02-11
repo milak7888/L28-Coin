@@ -1,9 +1,32 @@
-# L28 Protocol
+# L28 Protocol (v1.0.0)
+
+**Status:** FROZEN (v1.0.0)  
+**Audience:** machines, implementers, validators (not investors)  
+**Scope:** protocol invariants, issuance, transaction validity rules
+
+---
+
+## Versioning & Compatibility
+
+- This document defines **L28 Protocol v1.0.0**.
+- **Protocol invariants** MUST NOT change within v1.x.
+- Any breaking change MUST be released as **v2.0.0** and MUST NOT be backported.
+- Implementations MUST be **fail-closed** when required consensus state is unavailable.
+
+---
+
+## Definitions
+
+- **Coinbase**: the only issuance mechanism.
+- **Canonical Height (`H`)**: consensus-defined height used for reward schedule (NOT user-provided).
+- **IssuedSupply**: total units created via valid coinbase events.
+
+---
 
 ## Issuance
 
 ### Principle
-L28 has no discretionary minting. New units may be created ONLY by protocol-defined coinbase events produced by the consensus pipeline.
+L28 has **no discretionary minting**. New units may be created ONLY by protocol-defined coinbase events produced by the consensus pipeline.
 
 - No admin mint
 - No governance mint
@@ -12,7 +35,7 @@ L28 has no discretionary minting. New units may be created ONLY by protocol-defi
 - All issuance MUST be verifiable from the public transaction stream and consensus state
 
 ### Issuance Transaction Type: `coinbase`
-A coinbase event is the ONLY issuance mechanism and MUST satisfy strict identity:
+A coinbase event is the ONLY issuance mechanism and MUST satisfy strict identity.
 
 A transaction is coinbase iff all are true:
 - `sender == "COINBASE"`
@@ -53,12 +76,18 @@ Let `IssuedSupply` be total units ever created via valid coinbase events.
 - Coinbase validation MUST consult `IssuedSupply` from consensus/ledger state.
 - If `IssuedSupply` lookup is unavailable, coinbase MUST fail closed (rejected).
 
-### Non-Coinbase Transfers
+---
+
+## Non-Coinbase Transfers
+
 For non-coinbase transactions:
 - sender MUST NOT be `"COINBASE"` or `"__MINT__"` (reserved identifiers)
 - signatures MAY be required by policy
 - balance checks apply normally
 
-### Implementation Notes (Non-Normative)
+---
+
+## Implementation Notes (Non-Normative)
+
 - `mint()` style APIs MUST be disabled or routed through strict coinbase + consensus ingestion only.
 - Validation MUST be fail-closed for missing canonical height or supply state.
