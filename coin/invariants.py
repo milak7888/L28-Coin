@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import inspect
 import logging
+import tempfile
 import time
 from dataclasses import fields, is_dataclass
 from typing import Any, Callable, Dict, Optional, Tuple
@@ -175,13 +176,17 @@ def _validate(
 
 def run_invariants() -> None:
     policy = _default_policy()
-    ledger = BlocklessLedger()
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        ledger = BlocklessLedger(data_dir=tmp_dir)
+        _run_invariants_with_ledger(ledger, policy)
+
+
+def _run_invariants_with_ledger(ledger: BlocklessLedger, policy: TxPolicy) -> None:
     miner = "L28_MINER_TEST_ADDR"
     ts = int(time.time())
 
     # 1) Canonical height reward enforcement:
-    # canonical H=0 => Reward=50 (per your current schedule demo)
-    # tx lies: height=100000 => Reward(tx_height)=25, should be rejected because canonical wins.
+    # canonical H=0; tx lies with a mismatched height field and must be rejected.
     canonical_h = 0
     tx_height = 100000
     tx_amount = int(l28_coinbase_reward(tx_height))

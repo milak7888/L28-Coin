@@ -22,6 +22,11 @@ Leap28 MAY interact with L28 ONLY by producing or consuming public protocol arti
 If required consensus/ledger state is unavailable, validation MUST fail closed.
 This prevents private assumptions from silently becoming protocol behavior.
 
+An empty local ledger directory, zeroed in-memory issuance counters, or a fresh
+clone MUST NOT be treated as trusted main-network genesis and MUST NOT authorize
+re-emission of historically mined supply. Canonical issuance state requires an
+explicit trusted initialization/bootstrap boundary (outside silent defaults).
+
 **Status:** FROZEN (v1.0.0)  
 **Audience:** machines, implementers, validators (not investors)  
 **Scope:** protocol invariants, issuance, transaction validity rules
@@ -88,12 +93,27 @@ Reward calculation MUST use canonical consensus height `H`:
 ### Reward Schedule (Protocol Invariant)
 Coinbase amount MUST equal `Reward(H)`:
 - `Reward(H)` is deterministic and depends only on canonical height.
-- Reward MUST be <= `L28_MAX_COINBASE_REWARD`.
+- Reward MUST be <= `L28_MAX_COINBASE_REWARD` (28).
 - Any coinbase with amount != `Reward(H)` MUST be rejected.
+- When `Reward(H)` is 0, coinbase issuance MUST be rejected.
+
+Canonical schedule (already documented economic record):
+- Halving interval: 210,000
+- Reward sequence: 28 → 14 → 7 → 3 → 1 → 0
+- Heights 0 through 209,999: 28
+- Heights 210,000 through 419,999: 14
+- Heights 420,000 through 629,999: 7
+- Heights 630,000 through 839,999: 3
+- Heights 840,000 through 1,049,999: 1
+- Heights 1,050,000 and above: 0
+
+Complete scheduled emission:
+`(28 + 14 + 7 + 3 + 1) × 210,000 = 11,130,000`
 
 ### Supply Cap (Protocol Invariant)
 Let `IssuedSupply` be total units ever created via valid coinbase events.
 
+- `IssuedSupply` MUST never exceed the emission ceiling of 11,130,000 via the reward schedule.
 - `IssuedSupply` MUST never exceed `L28_MAX_SUPPLY` (28,000,000).
 - Coinbase validation MUST consult `IssuedSupply` from consensus/ledger state.
 - If `IssuedSupply` lookup is unavailable, coinbase MUST fail closed (rejected).

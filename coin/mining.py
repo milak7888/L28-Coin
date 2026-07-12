@@ -1,6 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
 import hashlib
 import time
-from .tx_validation import compute_tx_id
+
+from .tx_validation import compute_tx_id, l28_coinbase_reward
+
 
 def mine_block(miner_address, difficulty=18, max_attempts=10000):
     target = "0" * difficulty
@@ -10,6 +13,8 @@ def mine_block(miner_address, difficulty=18, max_attempts=10000):
         if hash_result.startswith(target):
             return {"nonce": nonce, "hash": hash_result}
     return None
+
+
 def build_coinbase_tx(
     miner_address: str,
     *,
@@ -22,13 +27,14 @@ def build_coinbase_tx(
     """
     Build a STRICT coinbase tx that satisfies tx_validation invariants.
     - Includes miner + nonce + height.
-    - Amount is deterministic by emission schedule at height.
-    NOTE: ledger may overwrite height with canonical mint_height.
+    - Amount is deterministic by the canonical emission schedule at height.
+    NOTE: callers must set height to the canonical consensus/mint height;
+    the ledger does not rewrite height (identity stability / replay safety).
+    Newly created transactions do not place implementation-only _builder metadata
+    into the public transaction record.
     """
-    from .tx_validation import compute_tx_id, l28_coinbase_reward
     if timestamp is None:
-        import time as _t
-        timestamp = int(_t.time())
+        timestamp = int(time.time())
     h = int(height)
     amt = int(l28_coinbase_reward(h))
     tx = {
@@ -47,8 +53,8 @@ def build_coinbase_tx(
     if tag is not None:
         tx["tag"] = str(tag)
     tx["id"] = compute_tx_id(tx)
-    tx["_builder"] = "HARDENED: COINBASE_BUILDER_REWRITE_V1"
     return tx
+
 
 def build_mint_tx(
     to_address: str,
@@ -58,5 +64,13 @@ def build_mint_tx(
     timestamp: int | None = None,
     memo: str = "mint",
 ) -> dict:
-    """Alias of strict coinbase semantics (issuance path). HARDENED: COINBASE_REQUIRES_MINER_NONCE_V1"""
-    return build_coinbase_tx(to_address, int(amount), nonce=int(nonce), timestamp=timestamp, tag=memo)
+    """
+    Direct/discretionary mint construction is disabled.
+
+    Caller-selected issuance is forbidden. Use build_coinbase_tx with the
+    canonical height-derived reward via the consensus/ledger pipeline.
+    """
+    raise RuntimeError(
+        "build_mint_tx disabled: discretionary minting is forbidden; "
+        "use strict canonical build_coinbase_tx via the consensus pipeline"
+    )
