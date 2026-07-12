@@ -20,9 +20,13 @@ Normative language follows RFC 2119 / RFC 8174 uppercase usage.
 
 M2M identity is cryptographic machine identity.
 
-- A sender is identified by `sender_public_key` and/or an existing L28 identity reference.
+- Machine identity is the Ed25519 public key as selected by [interoperability_profile_v0.1.md](interoperability_profile_v0.1.md).
+- Key identifier format: `ed25519:<base64url-unpadded-raw-public-key>`.
+- A sender is identified by `sender_public_key` and/or an existing L28 identity reference (`sender_identity`).
+- The signed envelope binds machine identity to the claimed L28 settlement account string.
 - Possession of the corresponding private key is what authorizes signatures.
-- M2M identity MUST NOT be interpreted as proof of a human identity, legal personhood, jurisdiction, or accreditation.
+- M2M identity MUST NOT be interpreted as proof of a human identity, legal personhood, jurisdiction, ownership, or accreditation.
+- This profile does NOT create a new L28 address format.
 
 Reserved L28 senders `COINBASE` and `__MINT__` MUST NOT be used as M2M party identities.
 
@@ -42,28 +46,34 @@ A `service_receipt` proves a provider asserted completion. It does not independe
 
 ## 4. Signature verification
 
-- Every M2M message MUST carry a non-empty `signature`.
+- Every operational M2M message MUST carry a non-empty `signature`.
 - Receivers MUST verify the signature before accepting state effects.
-- If no cryptographic verifier is configured, implementations MUST fail closed and reject the message.
-- L28 Protocol v1.0.0 allows signatures to be required by policy for ledger transfers but does not name a mandatory signature algorithm. M2M therefore treats algorithm selection as an unresolved dependency outside L28 consensus. Local choices MUST be explicit and MUST NOT be presented as L28 Protocol v1.0.0 invariants.
+- The required future suite is `ed25519` (PureEd25519 / RFC 8032) per the interoperability profile.
+- If no audited cryptographic verifier is configured, implementations MUST fail closed and reject operational acceptance.
+- Operational signed-envelope validation is deferred until a later audited verifier milestone. This milestone MUST NOT implement Ed25519 or add cryptographic dependencies.
+- Suite selection is an M2M profile decision and MUST NOT be presented as an L28 Protocol v1.0.0 consensus invariant.
 
 ## 5. Domain separation
 
-Signing and verification MUST use a domain-separated context for L28 M2M v0.1 envelopes.
+Signing and verification MUST use the exact domain prefixes defined by [interoperability_profile_v0.1.md](interoperability_profile_v0.1.md):
+
+- Payload: `L28-M2M-V0.1-PAYLOAD` + `0x00`
+- Message ID: `L28-M2M-V0.1-MESSAGE` + `0x00`
+- Signature: `L28-M2M-V0.1-SIGNATURE` + `0x00`
 
 Requirements:
 
 - M2M envelope signatures MUST NOT be valid input to L28 ledger signature checks merely by byte reuse without domain distinction.
 - L28 ledger signatures MUST NOT be accepted as M2M envelope signatures.
-- The domain context MUST identify protocol `L28-M2M` and version `0.1`.
+- Verifiers MUST independently recompute `payload_hash` and `message_id`.
 
 ## 6. Canonical serialization
 
 Protocol integers in JSON MUST be encoded without fractional parts. Floating-point encodings for those fields MUST be rejected.
 
-Any broader JSON canonicalization or hash algorithm used for M2M digests and signing inputs is an unresolved M2M dependency. L28 Protocol v1.0.0 does not name SHA-256 or a canonical JSON encoding as consensus primitives.
+M2M envelope canonicalization MUST follow L28-M2M Canonical JSON v0.1 in the interoperability profile (restricted RFC 8785-compatible subset). Digests use SHA-256 lowercase hex over domain-separated preimages.
 
-The public repository's transaction-identity helper uses SHA-256 over sorted-key compact JSON. That repository-supported practice MAY be adopted as an explicit peer agreement for M2M digests. It MUST NOT be claimed as an L28 Protocol v1.0.0 consensus rule. See [protocol_v0.1.md](protocol_v0.1.md) Section 10.
+This is an M2M interoperability rule and MUST NOT be claimed as an L28 Protocol v1.0.0 consensus primitive. L28 settlement transaction IDs remain those produced by Foundation 3 `compute_tx_id`.
 
 ## 7. Replay resistance
 
@@ -92,9 +102,10 @@ A replayed identical message MUST NOT apply side effects twice.
 
 ## 10. Payload substitution protection
 
-- `payload_hash` MUST equal the digest recomputed from the payload under the peers' agreed M2M digest profile.
-- Signature verification MUST cover `payload_hash` under the domain-separated envelope signing input.
-- A mutated payload with a stale signature MUST fail validation.
+- `payload_hash` MUST equal the recomputed profile payload digest.
+- Signature verification MUST cover the unsigned-envelope preimage that includes `payload_hash`.
+- A mutated payload with a stale signature or stale `payload_hash` MUST fail validation.
+- Transmitted `message_id` values MUST be recomputed; mismatches MUST reject.
 
 ## 11. Message-chain integrity
 
@@ -144,10 +155,15 @@ Before `settled`:
 
 1. Lookup the cited L28 record in the L28 source of truth.
 2. Verify sender, receiver, amount, and transaction identity consistency with the authorization.
-3. Reject if L28 state is unavailable.
-4. Reject reuse of a settlement record already bound to another M2M transaction.
+3. Recompute the cited L28 transaction ID from referenced transaction material using Foundation 3 `compute_tx_id` and reject on mismatch.
+4. Reject if L28 state is unavailable.
+5. Reject reuse of a settlement record already bound to another M2M transaction.
+
+Settlement means verified acceptance in the consulted L28 source of truth. This model MUST NOT claim confirmations, irreversible finality, escrow, refund, or chargeback.
 
 M2M MUST NEVER treat `payment_authorization` as proof of payment.
+
+Canonical issuance-state readiness remains unrelated to M2M message signing.
 
 ## 18. Failure recovery without double payment
 
@@ -171,6 +187,7 @@ Implementations MUST NOT write private keys, seed phrases, or signing secrets in
 - Existing optional L28 privacy mechanisms, if present in an implementation, MUST NOT have their claims expanded by M2M v0.1.
 - M2M metadata can reveal relationships, timing, service identifiers, and amounts unless protected by an existing compatible mechanism.
 - This specification establishes neither anonymity nor confidentiality by default.
+- Optional privacy transport semantics remain unresolved.
 - No statement in these documents promises unlinkability across counterparties.
 
 ## 21. Security non-goals for v0.1

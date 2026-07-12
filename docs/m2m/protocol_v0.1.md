@@ -192,14 +192,9 @@ Normatively established by L28 Protocol v1.0.0 and therefore reusable without re
 - Opaque string identity references for sender/receiver fields on L28 transfers
 - Policy-optional signatures on non-coinbase transfers, with verification supplied by the implementation
 
-Repository-supported but not named as L28 Protocol v1.0.0 consensus primitives in PROTOCOL.md:
+M2M-layer interoperability for digests, canonical JSON, Ed25519 suite selection, and machine-identity binding is defined by [interoperability_profile_v0.1.md](interoperability_profile_v0.1.md). That profile is subordinate to L28 Protocol v1.0.0 and MUST NOT be described as L28 consensus.
 
-- Integer timestamps interpreted as Unix seconds in transaction construction helpers
-- SHA-256 over sorted-key compact JSON in the repository transaction-identity helper
-
-Those repository-supported practices MUST NOT be silently elevated into L28 consensus by this M2M specification. They are recorded as unresolved M2M dependencies in Section 10.
-
-Where a required primitive is not normatively defined by L28 Protocol v1.0.0, M2M MUST record it as an unresolved protocol dependency and keep it outside L28 consensus.
+L28 settlement transaction identity for citations MUST use the stable Foundation 3 `compute_tx_id` behavior in `coin/tx_validation.py`.
 
 ## 9. Privacy boundary
 
@@ -210,36 +205,33 @@ Therefore:
 - M2M v0.1 MUST preserve any existing optional L28 privacy mechanisms without expanding their claims.
 - M2M metadata can reveal relationships, timing, service identifiers, and amounts unless protected by an existing compatible mechanism.
 - M2M v0.1 MUST NOT promise anonymity or confidentiality that this specification does not technically establish.
+- Optional privacy transport semantics remain unresolved.
 
 ## 10. Unresolved protocol dependencies
 
-The following items are required for interoperable M2M runtime implementations but are not fully defined as normative L28 Protocol v1.0.0 primitives in the public repository. They remain unresolved for M2M v0.1 and MUST stay outside L28 consensus:
+The following remain unresolved or deferred for interoperable M2M runtime operation and MUST stay outside L28 consensus:
 
-1. **Signature algorithm and key format**
-   L28 Protocol v1.0.0 states that signatures MAY be required by policy, but does not name a mandatory signature algorithm, public-key format, or signature encoding.
+1. **Operational Ed25519 verification implementation**
+   Suite `ed25519` is selected by the interoperability profile, but no verifier or cryptographic dependency is implemented in this milestone. Operational signed-envelope validation is deferred.
 
-2. **Address derivation and address format grammar**
-   L28 transfers use string sender/receiver identity references. The repository does not publish a normative address alphabet, checksum, or public-key-to-address derivation rule in PROTOCOL.md.
+2. **L28 address derivation / address grammar**
+   L28 transfers continue to use opaque string sender/receiver identity references. This profile does not invent a new L28 address format.
 
 3. **Named fractional subunit**
-   Amounts are integers. No named fractional subunit below the L28 integer amount unit is normatively defined.
+   Amounts remain integers. No fractional subunit is introduced.
 
-4. **Settlement finality predicate beyond acceptance**
-   M2M requires citation of an existing L28 settlement record. A richer finality vocabulary beyond L28 validation/acceptance is not normatively defined in PROTOCOL.md.
+4. **Settlement finality beyond acceptance**
+   Settlement evidence remains verified acceptance in the consulted L28 source of truth. Irreversible finality / confirmations remain unresolved.
 
-5. **M2M digest profile (SHA-256 and canonical JSON)**
-   The public repository's transaction-identity helper hashes sorted-key compact JSON with SHA-256. That practice is repository-supported. It is not named as a normative L28 Protocol v1.0.0 consensus primitive in PROTOCOL.md. M2M v0.1 therefore treats any required payload digest profile as an unresolved M2M dependency outside L28 consensus. Peers that need interoperable digests MUST agree explicitly and MUST NOT claim the agreement is an L28 Protocol v1.0.0 rule.
+5. **Optional privacy transport semantics**
+   Unresolved; claims MUST NOT be expanded.
 
-6. **Canonical signing serialization for M2M envelopes**
-   A normative, domain-separated M2M envelope signing-input layout is not defined by L28 Protocol v1.0.0. Exact signing-input bytes remain an M2M implementation dependency pending a future choice that does not alter L28 consensus.
+6. **Timestamp epoch interpretation**
+   L28 Protocol v1.0.0 requires integer timestamps. Unix-second interpretation remains repository construction practice, not a PROTOCOL.md-named consensus rule.
 
-7. **Timestamp epoch interpretation**
-   L28 Protocol v1.0.0 requires integer timestamps. Interpreting those integers as Unix seconds is repository construction practice, not a PROTOCOL.md-named consensus rule.
+Resolved at the M2M profile layer only (not as L28 consensus): canonical JSON subset, domain-separated SHA-256 digests, Ed25519 suite/encoding selection, machine-identity binding, and settlement citation using Foundation 3 `compute_tx_id`.
 
-8. **Optional privacy transport semantics**
-   Optional privacy labels exist in integration code paths, but PROTOCOL.md does not define confidentiality, unlinkability, or metadata-protection guarantees for M2M messages.
-
-Until those dependencies are resolved by an explicit future specification that remains subordinate to L28 Protocol v1.0.0, implementations MUST fail closed rather than invent consensus-affecting defaults.
+Until an audited signature verifier exists, implementations MUST fail closed for operational signed-message acceptance.
 
 ## 11. Out of scope for v0.1
 
@@ -258,4 +250,6 @@ The following are outside M2M Protocol v0.1:
 - Envelope and payload schemas: [message_schema_v0.1.md](message_schema_v0.1.md)
 - States and transitions: [state_machine.md](state_machine.md)
 - Security model: [security_model.md](security_model.md)
-- Index and non-goals: [README.md](README.md)
+- Interoperability profile: [interoperability_profile_v0.1.md](interoperability_profile_v0.1.md)
+- Offline test vectors: [test_vectors_v0.1.json](test_vectors_v0.1.json)
+- Index: [README.md](README.md)

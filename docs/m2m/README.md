@@ -26,6 +26,8 @@ M2M v0.1 is a coordination and evidence-exchange layer. It is not a second ledge
 | [message_schema_v0.1.md](message_schema_v0.1.md) | Common signed envelope and per-message payload schemas |
 | [state_machine.md](state_machine.md) | Deterministic transaction states and permitted transitions |
 | [security_model.md](security_model.md) | Identity, signature, replay, privacy, and settlement-verification boundaries |
+| [interoperability_profile_v0.1.md](interoperability_profile_v0.1.md) | M2M canonical JSON, digests, Ed25519 suite selection, identity binding |
+| [test_vectors_v0.1.json](test_vectors_v0.1.json) | Deterministic offline unsigned digest vectors (non-operational) |
 
 ## Normative language
 
@@ -68,3 +70,5 @@ Refunds, escrow, arbitration, and chargebacks are outside v0.1 unless already su
 ## Implementation status
 
 These documents are protocol-design specifications. They do not implement runtime functionality, start services, or assert that an always-on public L28 network is currently operating.
+
+The [interoperability profile](interoperability_profile_v0.1.md) selects Ed25519 and defines digests offline. Operational signed-envelope validation remains deferred until an audited verifier exists. Unsigned digest vectors are non-operational.
