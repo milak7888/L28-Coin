@@ -121,3 +121,7 @@ Economics/citations: `quote_reference_mismatch`, `amount_mismatch`, `service_ter
 Deterministic public fixtures: [test_vectors_transcript_v0.1.json](test_vectors_transcript_v0.1.json).
 
 All vectors are `test_only`, `live: false`, `accepted_settlement: false`, and `private_material_committed: false`.
+
+## 10. Conformance CLI
+
+Foundation 7 wraps this validator in an offline CLI (`coin/m2m_conformance_cli.py`) that emits a deterministic JSON report to stdout for one explicitly selected file or stdin transcript. See [conformance_cli_v0.1.md](conformance_cli_v0.1.md). The CLI does not weaken transcript rules, write report files, or claim settlement finality.

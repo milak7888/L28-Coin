@@ -28,9 +28,11 @@ M2M v0.1 is a coordination and evidence-exchange layer. It is not a second ledge
 | [security_model.md](security_model.md) | Identity, signature, replay, privacy, and settlement-verification boundaries |
 | [interoperability_profile_v0.1.md](interoperability_profile_v0.1.md) | M2M canonical JSON, digests, Ed25519 suite, identity binding, verify-only runtime |
 | [transcript_validation_v0.1.md](transcript_validation_v0.1.md) | Offline ordered exchange transcript validation (Foundation 6) |
+| [conformance_cli_v0.1.md](conformance_cli_v0.1.md) | Offline conformance CLI and deterministic report (Foundation 7) |
 | [test_vectors_v0.1.json](test_vectors_v0.1.json) | Deterministic offline unsigned digest vectors (non-operational) |
 | [test_vectors_signed_v0.1.json](test_vectors_signed_v0.1.json) | Independently verified signed public fixtures (test-only; not settlement) |
 | [test_vectors_transcript_v0.1.json](test_vectors_transcript_v0.1.json) | Independently verified signed transcript fixtures (test-only; not settlement) |
+| [test_vectors_report_v0.1.json](test_vectors_report_v0.1.json) | Deterministic conformance-report fixtures (test-only; not settlement) |
 
 ## Normative language
 
@@ -77,3 +79,5 @@ These documents specify the M2M coordination layer. They do not start services, 
 Foundation 5 provides a verify-only Ed25519 envelope verifier in `coin/m2m_verifier.py` with declared dependency `cryptography==49.0.0` (`requirements-m2m.txt`). The runtime verifies signatures only: it does not generate keys, sign messages, or store private material. Signature validity is not L28 settlement finality or service completion. Unsigned Foundation 4 digest vectors remain non-operational.
 
 Foundation 6 provides offline ordered transcript validation in `coin/m2m_transcript_validator.py`. It verifies already-signed envelope sequences against chain, role, state-machine, and citation rules. It does not sign, spend, query a ledger, persist replay state, or claim settlement finality.
+
+Foundation 7 provides an offline conformance CLI in `coin/m2m_conformance_cli.py` that reads one explicitly selected transcript (file or stdin) and emits one deterministic JSON report to stdout. It does not write report files, scan directories, sign, or claim settlement finality.

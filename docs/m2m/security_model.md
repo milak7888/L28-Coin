@@ -55,6 +55,7 @@ A `service_receipt` proves a provider asserted completion. It does not independe
 - Unsigned Foundation 4 digest vectors MUST NOT be accepted as operational messages.
 - Successful signature verification proves envelope authenticity under this profile. It does NOT prove service delivery, L28 transfer acceptance, irreversible finality, or settlement completion.
 - Foundation 6 adds offline ordered-transcript validation in `coin/m2m_transcript_validator.py`. Transcript success is coordination consistency only: it MUST NOT create a persistent replay database, query a live ledger, or claim settlement finality. See [transcript_validation_v0.1.md](transcript_validation_v0.1.md).
+- Foundation 7 adds an offline conformance CLI (`coin/m2m_conformance_cli.py`) that emits a deterministic stdout JSON report for one explicitly selected transcript. The CLI MUST NOT write report files, scan directories, sign messages, or claim settlement finality. See [conformance_cli_v0.1.md](conformance_cli_v0.1.md).
 - Suite selection is an M2M profile decision and MUST NOT be presented as an L28 Protocol v1.0.0 consensus invariant.
 
 ## 5. Domain separation
