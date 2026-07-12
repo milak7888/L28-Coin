@@ -211,8 +211,8 @@ Therefore:
 
 The following remain unresolved or deferred for interoperable M2M runtime operation and MUST stay outside L28 consensus:
 
-1. **Operational Ed25519 verification implementation**
-   Suite `ed25519` is selected by the interoperability profile, but no verifier or cryptographic dependency is implemented in this milestone. Operational signed-envelope validation is deferred.
+1. **Operational networking / transport binding**
+   Envelope and transcript verification exist offline. Discovery, delivery, and live transport remain outside this specification.
 
 2. **L28 address derivation / address grammar**
    L28 transfers continue to use opaque string sender/receiver identity references. This profile does not invent a new L28 address format.
@@ -221,7 +221,7 @@ The following remain unresolved or deferred for interoperable M2M runtime operat
    Amounts remain integers. No fractional subunit is introduced.
 
 4. **Settlement finality beyond acceptance**
-   Settlement evidence remains verified acceptance in the consulted L28 source of truth. Irreversible finality / confirmations remain unresolved.
+   Settlement evidence remains verified acceptance in the consulted L28 source of truth. Irreversible finality / confirmations remain unresolved. Offline transcript validation recomputes citation IDs only and MUST NOT claim ledger acceptance.
 
 5. **Optional privacy transport semantics**
    Unresolved; claims MUST NOT be expanded.
@@ -229,9 +229,7 @@ The following remain unresolved or deferred for interoperable M2M runtime operat
 6. **Timestamp epoch interpretation**
    L28 Protocol v1.0.0 requires integer timestamps. Unix-second interpretation remains repository construction practice, not a PROTOCOL.md-named consensus rule.
 
-Resolved at the M2M profile layer only (not as L28 consensus): canonical JSON subset, domain-separated SHA-256 digests, Ed25519 suite/encoding selection, machine-identity binding, and settlement citation using Foundation 3 `compute_tx_id`.
-
-Until an audited signature verifier exists, implementations MUST fail closed for operational signed-message acceptance.
+Resolved at the M2M profile layer only (not as L28 consensus): canonical JSON subset, domain-separated SHA-256 digests, Ed25519 suite/encoding selection, machine-identity binding, settlement citation using Foundation 3 `compute_tx_id`, Foundation 5 verify-only envelope verification, and Foundation 6 offline transcript validation.
 
 ## 11. Out of scope for v0.1
 
@@ -251,5 +249,6 @@ The following are outside M2M Protocol v0.1:
 - States and transitions: [state_machine.md](state_machine.md)
 - Security model: [security_model.md](security_model.md)
 - Interoperability profile: [interoperability_profile_v0.1.md](interoperability_profile_v0.1.md)
+- Transcript validation: [transcript_validation_v0.1.md](transcript_validation_v0.1.md)
 - Offline test vectors: [test_vectors_v0.1.json](test_vectors_v0.1.json)
 - Index: [README.md](README.md)

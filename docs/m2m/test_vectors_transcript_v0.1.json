@@ -1,0 +1,3685 @@
+{
+  "profile": "L28 M2M Transcript Validation v0.1",
+  "foundation": "6",
+  "status": "signed_transcript_vectors_offline",
+  "subordinate_to": "L28 Protocol v1.0.0",
+  "test_only": true,
+  "live": false,
+  "accepted_settlement": false,
+  "private_material_committed": false,
+  "contains_private_material": false,
+  "runtime_dependency": "cryptography==49.0.0",
+  "notes": "Public fixtures only. Disposable keys destroyed with TemporaryDirectory. Not accepted settlement.",
+  "l28_settlement_fixture": {
+    "transaction_material": {
+      "sender": "l28_test_account_alice",
+      "receiver": "l28_test_account_bob",
+      "amount": 5,
+      "timestamp": 1700001300,
+      "type": "transfer",
+      "network": "TEST"
+    },
+    "expected_l28_tx_id": "18cf2d29e1350efde9fcf983eb2fe6f84dbff936c33c6280fa132aab8aba1ef6",
+    "accepted": false,
+    "live": false
+  },
+  "valid_transcripts": [
+    {
+      "vector_id": "valid_happy_path_completed",
+      "notes": "Five-message happy path.",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "require_terminal": true,
+      "expected_code": "ok",
+      "expected_state": "completed",
+      "envelopes": [
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_request",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001000,
+          "expires_at": 1700005000,
+          "nonce": "nonce_req_001",
+          "previous_message_id": null,
+          "signature_suite": "ed25519",
+          "payload": {
+            "service_id": "echo",
+            "service_params": {},
+            "max_amount": 28,
+            "currency": "L28"
+          },
+          "payload_hash": "5018df9a94a08d4912de42c88679bcac010ecb27c372ea77954e670c2c63969b",
+          "message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature": "Mt4yzCzsn0NgB6zQliRe4zWRFbtfapEkI94VqVGP8JJeDm8iYLZ2O6AZT9pzZgpRu3tqUfrGpr2YXj7sdnDgBw"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_quote",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_key_id": "ed25519:RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_identity": "l28_test_account_bob",
+          "recipient_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "recipient_identity": "l28_test_account_alice",
+          "created_at": 1700001100,
+          "expires_at": 1700004500,
+          "nonce": "nonce_quote_001",
+          "previous_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature_suite": "ed25519",
+          "payload": {
+            "request_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+            "service_id": "echo",
+            "amount": 5,
+            "currency": "L28",
+            "quote_expires_at": 1700004000,
+            "service_terms_hash": "ba6abc447a4ddfb85ce7c2d6435a86ff30d8d78fd96edcb559af9810b9826477",
+            "service_terms": {
+              "term": "fixed_echo"
+            },
+            "rejectable": true
+          },
+          "payload_hash": "a7877526bbcb9440667ad0f483c6eda3f07dccd7320f2cf4884970bbd1693a32",
+          "message_id": "29f7db21b4b2660908e58f15293f66bd4566b229bdf5a578f4e05028ac0b4a35",
+          "signature": "kOmX36G2B3n9GcQBzenceXt1mdpdzVKV7UMbOqBG9IX7BNOjAJZvYwEs-8QWvIIi3-XJ81s9mQCoOnBKbzvAAQ"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "payment_authorization",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001200,
+          "expires_at": 1700004200,
+          "nonce": "nonce_auth_001",
+          "previous_message_id": "29f7db21b4b2660908e58f15293f66bd4566b229bdf5a578f4e05028ac0b4a35",
+          "signature_suite": "ed25519",
+          "payload": {
+            "quote_message_id": "29f7db21b4b2660908e58f15293f66bd4566b229bdf5a578f4e05028ac0b4a35",
+            "authorized_amount": 5,
+            "currency": "L28",
+            "payer_identity": "l28_test_account_alice",
+            "payee_identity": "l28_test_account_bob",
+            "authorization_expires_at": 1700004000,
+            "settlement_intent": "l28_transfer"
+          },
+          "payload_hash": "2729a5300d88ff94b614c82b0959d6888cbbcd2d021e509bb136c440fd1d4e34",
+          "message_id": "48132f3d37ebcf6e32f0d3c04d17d7127f2d0888ab242374fd2771a69065e208",
+          "signature": "8C1AsXqLCL3f20XS73HQUTLeC5sP0qAp-8zizb30f6e63Bba6cfTHQenuaj6vYYHw6SAYc6M60ozINyTFMXtBg"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "settlement_reference",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001300,
+          "expires_at": 1700004300,
+          "nonce": "nonce_settle_001",
+          "previous_message_id": "48132f3d37ebcf6e32f0d3c04d17d7127f2d0888ab242374fd2771a69065e208",
+          "signature_suite": "ed25519",
+          "payload": {
+            "authorization_message_id": "48132f3d37ebcf6e32f0d3c04d17d7127f2d0888ab242374fd2771a69065e208",
+            "l28_tx_id": "18cf2d29e1350efde9fcf983eb2fe6f84dbff936c33c6280fa132aab8aba1ef6",
+            "l28_sender": "l28_test_account_alice",
+            "l28_receiver": "l28_test_account_bob",
+            "amount": 5,
+            "l28_timestamp": 1700001300,
+            "verification_status": "verified",
+            "l28_transaction_material": {
+              "sender": "l28_test_account_alice",
+              "receiver": "l28_test_account_bob",
+              "amount": 5,
+              "timestamp": 1700001300,
+              "type": "transfer",
+              "network": "TEST"
+            }
+          },
+          "payload_hash": "e518eab7f7e6e62330c4074e140cb5f9d22376f4a9c60ae6c9be356aff3842b5",
+          "message_id": "f99ec498943424da9aea62f8a998c4d73bffd27fd15f9941d283b3b32520cdfc",
+          "signature": "KtaX1AsafZygK2A5NEE4jXHIriUiN-UjqO1XhEK2xpXDyTAn0YLP7CHKkAFZYOKjd3IunexHZroIa4fgePiFCQ"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_receipt",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_key_id": "ed25519:RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_identity": "l28_test_account_bob",
+          "recipient_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "recipient_identity": "l28_test_account_alice",
+          "created_at": 1700001400,
+          "expires_at": 1700004400,
+          "nonce": "nonce_receipt_001",
+          "previous_message_id": "f99ec498943424da9aea62f8a998c4d73bffd27fd15f9941d283b3b32520cdfc",
+          "signature_suite": "ed25519",
+          "payload": {
+            "settlement_message_id": "f99ec498943424da9aea62f8a998c4d73bffd27fd15f9941d283b3b32520cdfc",
+            "l28_tx_id": "18cf2d29e1350efde9fcf983eb2fe6f84dbff936c33c6280fa132aab8aba1ef6",
+            "service_id": "echo",
+            "result_hash": "8b5fc84664df64b36273f3a0500a06a9ee6849c255d5dac13025004e3d1490b9",
+            "completed_at": 1700001400,
+            "completion_assertion": "provider_asserted_complete"
+          },
+          "payload_hash": "a56f8d85a321b18ccb2f9ea42f3b47903107853228a3bbe3e2cccbaeaeedecd4",
+          "message_id": "b12f94fdbaf134b931f31a8843239a9dfe9cf070a86a46635ae1615fa0c22866",
+          "signature": "xgbzLIhbnoFWY2zrIMPeirrAFEwXU75Tu6nchqN15XvjzoUKob12V1UuDse-mOu4-RX-pQs2wAfHNi8o6yVYCQ"
+        }
+      ],
+      "independent_verification": [
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        }
+      ]
+    },
+    {
+      "vector_id": "valid_partial_quoted",
+      "notes": "Valid prefix ending quoted.",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "require_terminal": false,
+      "expected_code": "ok",
+      "expected_state": "quoted",
+      "envelopes": [
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_request",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001000,
+          "expires_at": 1700005000,
+          "nonce": "nonce_req_001",
+          "previous_message_id": null,
+          "signature_suite": "ed25519",
+          "payload": {
+            "service_id": "echo",
+            "service_params": {},
+            "max_amount": 28,
+            "currency": "L28"
+          },
+          "payload_hash": "5018df9a94a08d4912de42c88679bcac010ecb27c372ea77954e670c2c63969b",
+          "message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature": "Mt4yzCzsn0NgB6zQliRe4zWRFbtfapEkI94VqVGP8JJeDm8iYLZ2O6AZT9pzZgpRu3tqUfrGpr2YXj7sdnDgBw"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_quote",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_key_id": "ed25519:RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_identity": "l28_test_account_bob",
+          "recipient_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "recipient_identity": "l28_test_account_alice",
+          "created_at": 1700001100,
+          "expires_at": 1700004500,
+          "nonce": "nonce_quote_001",
+          "previous_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature_suite": "ed25519",
+          "payload": {
+            "request_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+            "service_id": "echo",
+            "amount": 5,
+            "currency": "L28",
+            "quote_expires_at": 1700004000,
+            "service_terms_hash": "ba6abc447a4ddfb85ce7c2d6435a86ff30d8d78fd96edcb559af9810b9826477",
+            "service_terms": {
+              "term": "fixed_echo"
+            },
+            "rejectable": true
+          },
+          "payload_hash": "a7877526bbcb9440667ad0f483c6eda3f07dccd7320f2cf4884970bbd1693a32",
+          "message_id": "29f7db21b4b2660908e58f15293f66bd4566b229bdf5a578f4e05028ac0b4a35",
+          "signature": "kOmX36G2B3n9GcQBzenceXt1mdpdzVKV7UMbOqBG9IX7BNOjAJZvYwEs-8QWvIIi3-XJ81s9mQCoOnBKbzvAAQ"
+        }
+      ],
+      "independent_verification": [
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        }
+      ]
+    },
+    {
+      "vector_id": "valid_terminal_cancelled",
+      "notes": "Requester cancels before quote.",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "require_terminal": true,
+      "expected_code": "ok",
+      "expected_state": "cancelled",
+      "envelopes": [
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_request",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001000,
+          "expires_at": 1700005000,
+          "nonce": "nonce_req_001",
+          "previous_message_id": null,
+          "signature_suite": "ed25519",
+          "payload": {
+            "service_id": "echo",
+            "service_params": {},
+            "max_amount": 28,
+            "currency": "L28"
+          },
+          "payload_hash": "5018df9a94a08d4912de42c88679bcac010ecb27c372ea77954e670c2c63969b",
+          "message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature": "Mt4yzCzsn0NgB6zQliRe4zWRFbtfapEkI94VqVGP8JJeDm8iYLZ2O6AZT9pzZgpRu3tqUfrGpr2YXj7sdnDgBw"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "failure_notice",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001050,
+          "expires_at": 1700004800,
+          "nonce": "nonce_fail_cancel_001",
+          "previous_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature_suite": "ed25519",
+          "payload": {
+            "related_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+            "failure_code": "cancelled_by_sender",
+            "failure_detail": "test_only_cancel",
+            "terminal": true
+          },
+          "payload_hash": "ab38a5552a34e360a0a0cd58238d8b5ed9590fae650878140d51ff822cb6720c",
+          "message_id": "24286851db5aa4fd3fdd2848623dcdffba946c13e4588d456d11ac13643090cd",
+          "signature": "piXm27HjTZ0ybvrO_K4_UmhwFywrA5zs-Tn3SqFTKP84vaYWbdG3ifmt05dmuAQGfB2pWEVLzlIWiY3USaJjBg"
+        }
+      ],
+      "independent_verification": [
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        }
+      ]
+    }
+  ],
+  "invalid_transcripts": [
+    {
+      "vector_id": "invalid_broken_previous_message_id",
+      "notes": "",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "require_terminal": false,
+      "expected_code": "message_chain_broken",
+      "expected_state": "requested",
+      "envelopes": [
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_request",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001000,
+          "expires_at": 1700005000,
+          "nonce": "nonce_req_001",
+          "previous_message_id": null,
+          "signature_suite": "ed25519",
+          "payload": {
+            "service_id": "echo",
+            "service_params": {},
+            "max_amount": 28,
+            "currency": "L28"
+          },
+          "payload_hash": "5018df9a94a08d4912de42c88679bcac010ecb27c372ea77954e670c2c63969b",
+          "message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature": "Mt4yzCzsn0NgB6zQliRe4zWRFbtfapEkI94VqVGP8JJeDm8iYLZ2O6AZT9pzZgpRu3tqUfrGpr2YXj7sdnDgBw"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_quote",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_key_id": "ed25519:RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_identity": "l28_test_account_bob",
+          "recipient_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "recipient_identity": "l28_test_account_alice",
+          "created_at": 1700001100,
+          "expires_at": 1700004500,
+          "nonce": "nonce_quote_001",
+          "previous_message_id": "0000000000000000000000000000000000000000000000000000000000000000",
+          "signature_suite": "ed25519",
+          "payload": {
+            "request_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+            "service_id": "echo",
+            "amount": 5,
+            "currency": "L28",
+            "quote_expires_at": 1700004000,
+            "service_terms_hash": "ba6abc447a4ddfb85ce7c2d6435a86ff30d8d78fd96edcb559af9810b9826477",
+            "service_terms": {
+              "term": "fixed_echo"
+            },
+            "rejectable": true
+          },
+          "payload_hash": "a7877526bbcb9440667ad0f483c6eda3f07dccd7320f2cf4884970bbd1693a32",
+          "message_id": "652a0af4bd270dd34884d326a568720a75f91665fbe4bcf36cb6a4834f956399",
+          "signature": "lMxDteZa30yoUetQUpJmY6mKqYLcHSwkvjLKlzIFaOl1ufGpYA81h4rDokgEL0LDYqjZBzjrUhR-St_acwgrAg"
+        }
+      ],
+      "independent_verification": [
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        }
+      ]
+    },
+    {
+      "vector_id": "invalid_duplicate_message_id",
+      "notes": "",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "require_terminal": false,
+      "expected_code": "duplicate_message_id",
+      "expected_state": "requested",
+      "envelopes": [
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_request",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001000,
+          "expires_at": 1700005000,
+          "nonce": "nonce_req_001",
+          "previous_message_id": null,
+          "signature_suite": "ed25519",
+          "payload": {
+            "service_id": "echo",
+            "service_params": {},
+            "max_amount": 28,
+            "currency": "L28"
+          },
+          "payload_hash": "5018df9a94a08d4912de42c88679bcac010ecb27c372ea77954e670c2c63969b",
+          "message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature": "Mt4yzCzsn0NgB6zQliRe4zWRFbtfapEkI94VqVGP8JJeDm8iYLZ2O6AZT9pzZgpRu3tqUfrGpr2YXj7sdnDgBw"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_request",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001000,
+          "expires_at": 1700005000,
+          "nonce": "nonce_req_001",
+          "previous_message_id": null,
+          "signature_suite": "ed25519",
+          "payload": {
+            "service_id": "echo",
+            "service_params": {},
+            "max_amount": 28,
+            "currency": "L28"
+          },
+          "payload_hash": "5018df9a94a08d4912de42c88679bcac010ecb27c372ea77954e670c2c63969b",
+          "message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature": "Mt4yzCzsn0NgB6zQliRe4zWRFbtfapEkI94VqVGP8JJeDm8iYLZ2O6AZT9pzZgpRu3tqUfrGpr2YXj7sdnDgBw"
+        }
+      ],
+      "independent_verification": [
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        }
+      ]
+    },
+    {
+      "vector_id": "invalid_replayed_envelope",
+      "notes": "",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "require_terminal": false,
+      "expected_code": "duplicate_message_id",
+      "expected_state": "requested",
+      "envelopes": [
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_request",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001000,
+          "expires_at": 1700005000,
+          "nonce": "nonce_req_001",
+          "previous_message_id": null,
+          "signature_suite": "ed25519",
+          "payload": {
+            "service_id": "echo",
+            "service_params": {},
+            "max_amount": 28,
+            "currency": "L28"
+          },
+          "payload_hash": "5018df9a94a08d4912de42c88679bcac010ecb27c372ea77954e670c2c63969b",
+          "message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature": "Mt4yzCzsn0NgB6zQliRe4zWRFbtfapEkI94VqVGP8JJeDm8iYLZ2O6AZT9pzZgpRu3tqUfrGpr2YXj7sdnDgBw"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_request",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001000,
+          "expires_at": 1700005000,
+          "nonce": "nonce_req_001",
+          "previous_message_id": null,
+          "signature_suite": "ed25519",
+          "payload": {
+            "service_id": "echo",
+            "service_params": {},
+            "max_amount": 28,
+            "currency": "L28"
+          },
+          "payload_hash": "5018df9a94a08d4912de42c88679bcac010ecb27c372ea77954e670c2c63969b",
+          "message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature": "Mt4yzCzsn0NgB6zQliRe4zWRFbtfapEkI94VqVGP8JJeDm8iYLZ2O6AZT9pzZgpRu3tqUfrGpr2YXj7sdnDgBw"
+        }
+      ],
+      "independent_verification": [
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        }
+      ]
+    },
+    {
+      "vector_id": "invalid_reordered_quote_authorization",
+      "notes": "",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "require_terminal": false,
+      "expected_code": "invalid_transition",
+      "expected_state": "requested",
+      "envelopes": [
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_request",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001000,
+          "expires_at": 1700005000,
+          "nonce": "nonce_req_001",
+          "previous_message_id": null,
+          "signature_suite": "ed25519",
+          "payload": {
+            "service_id": "echo",
+            "service_params": {},
+            "max_amount": 28,
+            "currency": "L28"
+          },
+          "payload_hash": "5018df9a94a08d4912de42c88679bcac010ecb27c372ea77954e670c2c63969b",
+          "message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature": "Mt4yzCzsn0NgB6zQliRe4zWRFbtfapEkI94VqVGP8JJeDm8iYLZ2O6AZT9pzZgpRu3tqUfrGpr2YXj7sdnDgBw"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "payment_authorization",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001200,
+          "expires_at": 1700004200,
+          "nonce": "nonce_auth_001",
+          "previous_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature_suite": "ed25519",
+          "payload": {
+            "quote_message_id": "0000000000000000000000000000000000000000000000000000000000000000",
+            "authorized_amount": 5,
+            "currency": "L28",
+            "payer_identity": "l28_test_account_alice",
+            "payee_identity": "l28_test_account_bob",
+            "authorization_expires_at": 1700004000,
+            "settlement_intent": "l28_transfer"
+          },
+          "payload_hash": "dff89fa961290ed2960ccbb97ffa7a7a71571e8068194126e0d516062046652b",
+          "message_id": "90bdd310bdcf515022b49ffd3205312a1f4af04dbd003e6f2fc7088acddbcbd2",
+          "signature": "YJHZKnw7astiZb6h9zfQaRVW2i_N4kyKe-U2k-4E3hj14y5mwPVaJEOk0mC4C32XLOtyjMg_S0g0Sxp_mgo7Dw"
+        }
+      ],
+      "independent_verification": [
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        }
+      ]
+    },
+    {
+      "vector_id": "invalid_mixed_exchange_id",
+      "notes": "",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "require_terminal": false,
+      "expected_code": "exchange_id_mismatch",
+      "expected_state": "requested",
+      "envelopes": [
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_request",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001000,
+          "expires_at": 1700005000,
+          "nonce": "nonce_req_001",
+          "previous_message_id": null,
+          "signature_suite": "ed25519",
+          "payload": {
+            "service_id": "echo",
+            "service_params": {},
+            "max_amount": 28,
+            "currency": "L28"
+          },
+          "payload_hash": "5018df9a94a08d4912de42c88679bcac010ecb27c372ea77954e670c2c63969b",
+          "message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature": "Mt4yzCzsn0NgB6zQliRe4zWRFbtfapEkI94VqVGP8JJeDm8iYLZ2O6AZT9pzZgpRu3tqUfrGpr2YXj7sdnDgBw"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_quote",
+          "transaction_id": "m2m_tx_other",
+          "sender_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_key_id": "ed25519:RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_identity": "l28_test_account_bob",
+          "recipient_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "recipient_identity": "l28_test_account_alice",
+          "created_at": 1700001100,
+          "expires_at": 1700004500,
+          "nonce": "nonce_quote_001",
+          "previous_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature_suite": "ed25519",
+          "payload": {
+            "request_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+            "service_id": "echo",
+            "amount": 5,
+            "currency": "L28",
+            "quote_expires_at": 1700004000,
+            "service_terms_hash": "ba6abc447a4ddfb85ce7c2d6435a86ff30d8d78fd96edcb559af9810b9826477",
+            "service_terms": {
+              "term": "fixed_echo"
+            },
+            "rejectable": true
+          },
+          "payload_hash": "a7877526bbcb9440667ad0f483c6eda3f07dccd7320f2cf4884970bbd1693a32",
+          "message_id": "5d18259308d827894ae69a56afe5b26155df0a46d1b6219f6736ae94251862d3",
+          "signature": "_9nnTcNHztrnSKWRKnkuyJQvQ6DLbwaBmQ18-g2GVVixPs24K1Rwf_a4-88H6-YsdrOwRhBEyns0bkRec7WeBg"
+        }
+      ],
+      "independent_verification": [
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        }
+      ]
+    },
+    {
+      "vector_id": "invalid_third_party_participant",
+      "notes": "",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "require_terminal": false,
+      "expected_code": "participant_mismatch",
+      "expected_state": "requested",
+      "envelopes": [
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_request",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001000,
+          "expires_at": 1700005000,
+          "nonce": "nonce_req_001",
+          "previous_message_id": null,
+          "signature_suite": "ed25519",
+          "payload": {
+            "service_id": "echo",
+            "service_params": {},
+            "max_amount": 28,
+            "currency": "L28"
+          },
+          "payload_hash": "5018df9a94a08d4912de42c88679bcac010ecb27c372ea77954e670c2c63969b",
+          "message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature": "Mt4yzCzsn0NgB6zQliRe4zWRFbtfapEkI94VqVGP8JJeDm8iYLZ2O6AZT9pzZgpRu3tqUfrGpr2YXj7sdnDgBw"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_quote",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "Mt0MpYMpHga9iiy6lW6jUnkWPsC0dufoECQ3Bsc0B_Y",
+          "sender_key_id": "ed25519:Mt0MpYMpHga9iiy6lW6jUnkWPsC0dufoECQ3Bsc0B_Y",
+          "sender_identity": "l28_test_account_eve",
+          "recipient_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "recipient_identity": "l28_test_account_alice",
+          "created_at": 1700001100,
+          "expires_at": 1700004500,
+          "nonce": "nonce_quote_eve",
+          "previous_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature_suite": "ed25519",
+          "payload": {
+            "request_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+            "service_id": "echo",
+            "amount": 5,
+            "currency": "L28",
+            "quote_expires_at": 1700004000,
+            "service_terms_hash": "ba6abc447a4ddfb85ce7c2d6435a86ff30d8d78fd96edcb559af9810b9826477",
+            "service_terms": {
+              "term": "fixed_echo"
+            },
+            "rejectable": true
+          },
+          "payload_hash": "a7877526bbcb9440667ad0f483c6eda3f07dccd7320f2cf4884970bbd1693a32",
+          "message_id": "4179aea9cdff87e9f74c3c35cfdeb106c0e445f7af19a1da83c9d1acb94c87d0",
+          "signature": "Tvq22ONh9UKJkM_jXLcLeD5WTOKOCB7npgP_fyN2q6dxo2rDiH2OQWGfVU_TKjKF1XUjp_3ZpnbhN0D2NKjUAg"
+        }
+      ],
+      "independent_verification": [
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        }
+      ]
+    },
+    {
+      "vector_id": "invalid_role_reversal",
+      "notes": "",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "require_terminal": false,
+      "expected_code": "role_mismatch",
+      "expected_state": "requested",
+      "envelopes": [
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_request",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001000,
+          "expires_at": 1700005000,
+          "nonce": "nonce_req_001",
+          "previous_message_id": null,
+          "signature_suite": "ed25519",
+          "payload": {
+            "service_id": "echo",
+            "service_params": {},
+            "max_amount": 28,
+            "currency": "L28"
+          },
+          "payload_hash": "5018df9a94a08d4912de42c88679bcac010ecb27c372ea77954e670c2c63969b",
+          "message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature": "Mt4yzCzsn0NgB6zQliRe4zWRFbtfapEkI94VqVGP8JJeDm8iYLZ2O6AZT9pzZgpRu3tqUfrGpr2YXj7sdnDgBw"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_quote",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001100,
+          "expires_at": 1700004500,
+          "nonce": "nonce_quote_role",
+          "previous_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature_suite": "ed25519",
+          "payload": {
+            "request_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+            "service_id": "echo",
+            "amount": 5,
+            "currency": "L28",
+            "quote_expires_at": 1700004000,
+            "service_terms_hash": "ba6abc447a4ddfb85ce7c2d6435a86ff30d8d78fd96edcb559af9810b9826477",
+            "service_terms": {
+              "term": "fixed_echo"
+            },
+            "rejectable": true
+          },
+          "payload_hash": "a7877526bbcb9440667ad0f483c6eda3f07dccd7320f2cf4884970bbd1693a32",
+          "message_id": "308fbb2ceab2d015d5319c67d2341f4a9a335b4f28af26787389e09bdb6fda11",
+          "signature": "lRixIk-u2zmGSfPDaf-dx71lp1ktd0qZmPFFV7qeAtvZzOo8BpuacWkF65BiV3GkK_-Oqj0Zb1RD7Uoy6pHWAA"
+        }
+      ],
+      "independent_verification": [
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        }
+      ]
+    },
+    {
+      "vector_id": "invalid_duplicate_sender_nonce",
+      "notes": "",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "require_terminal": false,
+      "expected_code": "duplicate_nonce",
+      "expected_state": "quoted",
+      "envelopes": [
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_request",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001000,
+          "expires_at": 1700005000,
+          "nonce": "nonce_req_001",
+          "previous_message_id": null,
+          "signature_suite": "ed25519",
+          "payload": {
+            "service_id": "echo",
+            "service_params": {},
+            "max_amount": 28,
+            "currency": "L28"
+          },
+          "payload_hash": "5018df9a94a08d4912de42c88679bcac010ecb27c372ea77954e670c2c63969b",
+          "message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature": "Mt4yzCzsn0NgB6zQliRe4zWRFbtfapEkI94VqVGP8JJeDm8iYLZ2O6AZT9pzZgpRu3tqUfrGpr2YXj7sdnDgBw"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_quote",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_key_id": "ed25519:RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_identity": "l28_test_account_bob",
+          "recipient_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "recipient_identity": "l28_test_account_alice",
+          "created_at": 1700001100,
+          "expires_at": 1700004500,
+          "nonce": "nonce_quote_001",
+          "previous_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature_suite": "ed25519",
+          "payload": {
+            "request_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+            "service_id": "echo",
+            "amount": 5,
+            "currency": "L28",
+            "quote_expires_at": 1700004000,
+            "service_terms_hash": "ba6abc447a4ddfb85ce7c2d6435a86ff30d8d78fd96edcb559af9810b9826477",
+            "service_terms": {
+              "term": "fixed_echo"
+            },
+            "rejectable": true
+          },
+          "payload_hash": "a7877526bbcb9440667ad0f483c6eda3f07dccd7320f2cf4884970bbd1693a32",
+          "message_id": "29f7db21b4b2660908e58f15293f66bd4566b229bdf5a578f4e05028ac0b4a35",
+          "signature": "kOmX36G2B3n9GcQBzenceXt1mdpdzVKV7UMbOqBG9IX7BNOjAJZvYwEs-8QWvIIi3-XJ81s9mQCoOnBKbzvAAQ"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "payment_authorization",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001200,
+          "expires_at": 1700004200,
+          "nonce": "nonce_req_001",
+          "previous_message_id": "29f7db21b4b2660908e58f15293f66bd4566b229bdf5a578f4e05028ac0b4a35",
+          "signature_suite": "ed25519",
+          "payload": {
+            "quote_message_id": "29f7db21b4b2660908e58f15293f66bd4566b229bdf5a578f4e05028ac0b4a35",
+            "authorized_amount": 5,
+            "currency": "L28",
+            "payer_identity": "l28_test_account_alice",
+            "payee_identity": "l28_test_account_bob",
+            "authorization_expires_at": 1700004000,
+            "settlement_intent": "l28_transfer"
+          },
+          "payload_hash": "2729a5300d88ff94b614c82b0959d6888cbbcd2d021e509bb136c440fd1d4e34",
+          "message_id": "d52f4a16214509762b59e99925151a63b02f4fdc69d6299e83fb2c17c2ba8022",
+          "signature": "6j9dbSzlTtwKGKEAuQSvdwzYnVvFsrCVjm0ApBZ8wCCkbuz3e2gjLpCKtkhTa57j0Og-BaWchNxFF8zSU6yvDQ"
+        }
+      ],
+      "independent_verification": [
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        }
+      ]
+    },
+    {
+      "vector_id": "invalid_timestamp_regression",
+      "notes": "",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "require_terminal": false,
+      "expected_code": "timestamp_regression",
+      "expected_state": "requested",
+      "envelopes": [
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_request",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001000,
+          "expires_at": 1700005000,
+          "nonce": "nonce_req_001",
+          "previous_message_id": null,
+          "signature_suite": "ed25519",
+          "payload": {
+            "service_id": "echo",
+            "service_params": {},
+            "max_amount": 28,
+            "currency": "L28"
+          },
+          "payload_hash": "5018df9a94a08d4912de42c88679bcac010ecb27c372ea77954e670c2c63969b",
+          "message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature": "Mt4yzCzsn0NgB6zQliRe4zWRFbtfapEkI94VqVGP8JJeDm8iYLZ2O6AZT9pzZgpRu3tqUfrGpr2YXj7sdnDgBw"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_quote",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_key_id": "ed25519:RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_identity": "l28_test_account_bob",
+          "recipient_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "recipient_identity": "l28_test_account_alice",
+          "created_at": 1700000900,
+          "expires_at": 1700004500,
+          "nonce": "nonce_quote_001",
+          "previous_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature_suite": "ed25519",
+          "payload": {
+            "request_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+            "service_id": "echo",
+            "amount": 5,
+            "currency": "L28",
+            "quote_expires_at": 1700004000,
+            "service_terms_hash": "ba6abc447a4ddfb85ce7c2d6435a86ff30d8d78fd96edcb559af9810b9826477",
+            "service_terms": {
+              "term": "fixed_echo"
+            },
+            "rejectable": true
+          },
+          "payload_hash": "a7877526bbcb9440667ad0f483c6eda3f07dccd7320f2cf4884970bbd1693a32",
+          "message_id": "63445f94b45037e01b81e57350b493e31424d287e74b50a882afd7f513a6448a",
+          "signature": "BtiXnXzQGiBathEWh0zTh6LEoAUXbwkWWStHISgpCoRazZ9BluoJ2MnDmjhFpaqIw-d7A4qicFdomWT7NpBPCA"
+        }
+      ],
+      "independent_verification": [
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        }
+      ]
+    },
+    {
+      "vector_id": "invalid_prior_message_expired",
+      "notes": "",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "require_terminal": false,
+      "expected_code": "prior_message_expired",
+      "expected_state": "requested",
+      "envelopes": [
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_request",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001000,
+          "expires_at": 1700005000,
+          "nonce": "nonce_req_001",
+          "previous_message_id": null,
+          "signature_suite": "ed25519",
+          "payload": {
+            "service_id": "echo",
+            "service_params": {},
+            "max_amount": 28,
+            "currency": "L28"
+          },
+          "payload_hash": "5018df9a94a08d4912de42c88679bcac010ecb27c372ea77954e670c2c63969b",
+          "message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature": "Mt4yzCzsn0NgB6zQliRe4zWRFbtfapEkI94VqVGP8JJeDm8iYLZ2O6AZT9pzZgpRu3tqUfrGpr2YXj7sdnDgBw"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_quote",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_key_id": "ed25519:RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_identity": "l28_test_account_bob",
+          "recipient_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "recipient_identity": "l28_test_account_alice",
+          "created_at": 1700006000,
+          "expires_at": 1700007000,
+          "nonce": "nonce_quote_001",
+          "previous_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature_suite": "ed25519",
+          "payload": {
+            "request_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+            "service_id": "echo",
+            "amount": 5,
+            "currency": "L28",
+            "quote_expires_at": 1700004000,
+            "service_terms_hash": "ba6abc447a4ddfb85ce7c2d6435a86ff30d8d78fd96edcb559af9810b9826477",
+            "service_terms": {
+              "term": "fixed_echo"
+            },
+            "rejectable": true
+          },
+          "payload_hash": "a7877526bbcb9440667ad0f483c6eda3f07dccd7320f2cf4884970bbd1693a32",
+          "message_id": "882289d929810a72d2d1066c1595ef17e94a0f5fc8111e4a9a8694895b7b75cf",
+          "signature": "bVg8_IZCtN_CkXcg95Ts6NFR191EZneSXKPkAXSydwByjFRYenBeqMogkKl_x8UWcWoL-VoZZlbHvBVnxTPoAA"
+        }
+      ],
+      "independent_verification": [
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        }
+      ]
+    },
+    {
+      "vector_id": "invalid_quote_reference_mismatch",
+      "notes": "",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "require_terminal": false,
+      "expected_code": "quote_reference_mismatch",
+      "expected_state": "quoted",
+      "envelopes": [
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_request",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001000,
+          "expires_at": 1700005000,
+          "nonce": "nonce_req_001",
+          "previous_message_id": null,
+          "signature_suite": "ed25519",
+          "payload": {
+            "service_id": "echo",
+            "service_params": {},
+            "max_amount": 28,
+            "currency": "L28"
+          },
+          "payload_hash": "5018df9a94a08d4912de42c88679bcac010ecb27c372ea77954e670c2c63969b",
+          "message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature": "Mt4yzCzsn0NgB6zQliRe4zWRFbtfapEkI94VqVGP8JJeDm8iYLZ2O6AZT9pzZgpRu3tqUfrGpr2YXj7sdnDgBw"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_quote",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_key_id": "ed25519:RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_identity": "l28_test_account_bob",
+          "recipient_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "recipient_identity": "l28_test_account_alice",
+          "created_at": 1700001100,
+          "expires_at": 1700004500,
+          "nonce": "nonce_quote_001",
+          "previous_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature_suite": "ed25519",
+          "payload": {
+            "request_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+            "service_id": "echo",
+            "amount": 5,
+            "currency": "L28",
+            "quote_expires_at": 1700004000,
+            "service_terms_hash": "ba6abc447a4ddfb85ce7c2d6435a86ff30d8d78fd96edcb559af9810b9826477",
+            "service_terms": {
+              "term": "fixed_echo"
+            },
+            "rejectable": true
+          },
+          "payload_hash": "a7877526bbcb9440667ad0f483c6eda3f07dccd7320f2cf4884970bbd1693a32",
+          "message_id": "29f7db21b4b2660908e58f15293f66bd4566b229bdf5a578f4e05028ac0b4a35",
+          "signature": "kOmX36G2B3n9GcQBzenceXt1mdpdzVKV7UMbOqBG9IX7BNOjAJZvYwEs-8QWvIIi3-XJ81s9mQCoOnBKbzvAAQ"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "payment_authorization",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001200,
+          "expires_at": 1700004200,
+          "nonce": "nonce_auth_001",
+          "previous_message_id": "29f7db21b4b2660908e58f15293f66bd4566b229bdf5a578f4e05028ac0b4a35",
+          "signature_suite": "ed25519",
+          "payload": {
+            "quote_message_id": "1111111111111111111111111111111111111111111111111111111111111111",
+            "authorized_amount": 5,
+            "currency": "L28",
+            "payer_identity": "l28_test_account_alice",
+            "payee_identity": "l28_test_account_bob",
+            "authorization_expires_at": 1700004000,
+            "settlement_intent": "l28_transfer"
+          },
+          "payload_hash": "789d5b30e51e9178d5c2130e56c2fd87d306b1a69d72d9b2221a0b86c2efbf0d",
+          "message_id": "82f56bcd4e76fb1e7e18b41ed3bdbb3bfe81237dcb869e6048b3870a28907a62",
+          "signature": "NNZt0EDtqVsoUFDAFMGuUlyhl-DxTzHdPTtf24VOIzEFf4HkL2O7oOKA4PXF3bUuEQNQ3V46HhMQBgKHGQoeBA"
+        }
+      ],
+      "independent_verification": [
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        }
+      ]
+    },
+    {
+      "vector_id": "invalid_authorization_amount_mismatch",
+      "notes": "",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "require_terminal": false,
+      "expected_code": "amount_mismatch",
+      "expected_state": "quoted",
+      "envelopes": [
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_request",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001000,
+          "expires_at": 1700005000,
+          "nonce": "nonce_req_001",
+          "previous_message_id": null,
+          "signature_suite": "ed25519",
+          "payload": {
+            "service_id": "echo",
+            "service_params": {},
+            "max_amount": 28,
+            "currency": "L28"
+          },
+          "payload_hash": "5018df9a94a08d4912de42c88679bcac010ecb27c372ea77954e670c2c63969b",
+          "message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature": "Mt4yzCzsn0NgB6zQliRe4zWRFbtfapEkI94VqVGP8JJeDm8iYLZ2O6AZT9pzZgpRu3tqUfrGpr2YXj7sdnDgBw"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_quote",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_key_id": "ed25519:RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_identity": "l28_test_account_bob",
+          "recipient_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "recipient_identity": "l28_test_account_alice",
+          "created_at": 1700001100,
+          "expires_at": 1700004500,
+          "nonce": "nonce_quote_001",
+          "previous_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature_suite": "ed25519",
+          "payload": {
+            "request_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+            "service_id": "echo",
+            "amount": 5,
+            "currency": "L28",
+            "quote_expires_at": 1700004000,
+            "service_terms_hash": "ba6abc447a4ddfb85ce7c2d6435a86ff30d8d78fd96edcb559af9810b9826477",
+            "service_terms": {
+              "term": "fixed_echo"
+            },
+            "rejectable": true
+          },
+          "payload_hash": "a7877526bbcb9440667ad0f483c6eda3f07dccd7320f2cf4884970bbd1693a32",
+          "message_id": "29f7db21b4b2660908e58f15293f66bd4566b229bdf5a578f4e05028ac0b4a35",
+          "signature": "kOmX36G2B3n9GcQBzenceXt1mdpdzVKV7UMbOqBG9IX7BNOjAJZvYwEs-8QWvIIi3-XJ81s9mQCoOnBKbzvAAQ"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "payment_authorization",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001200,
+          "expires_at": 1700004200,
+          "nonce": "nonce_auth_001",
+          "previous_message_id": "29f7db21b4b2660908e58f15293f66bd4566b229bdf5a578f4e05028ac0b4a35",
+          "signature_suite": "ed25519",
+          "payload": {
+            "quote_message_id": "29f7db21b4b2660908e58f15293f66bd4566b229bdf5a578f4e05028ac0b4a35",
+            "authorized_amount": 6,
+            "currency": "L28",
+            "payer_identity": "l28_test_account_alice",
+            "payee_identity": "l28_test_account_bob",
+            "authorization_expires_at": 1700004000,
+            "settlement_intent": "l28_transfer"
+          },
+          "payload_hash": "38bc8327d70459c24ff2e35af76077db277565c40df9a23cc192525a2ba18479",
+          "message_id": "eba5cc35f4d8ca3151a8f916ce21b946b0468a08e3dde411daec472b74cf3e72",
+          "signature": "aRSTpuMVJ9GNCkeBr-HxONlPNxSw3uLcSvJxloyz7Sur6S91xBVUYIYoeeCyiPVg6bl1X-YxcF-n7mm764UVAQ"
+        }
+      ],
+      "independent_verification": [
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        }
+      ]
+    },
+    {
+      "vector_id": "invalid_settlement_amount_mismatch",
+      "notes": "",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "require_terminal": false,
+      "expected_code": "amount_mismatch",
+      "expected_state": "authorized",
+      "envelopes": [
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_request",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001000,
+          "expires_at": 1700005000,
+          "nonce": "nonce_req_001",
+          "previous_message_id": null,
+          "signature_suite": "ed25519",
+          "payload": {
+            "service_id": "echo",
+            "service_params": {},
+            "max_amount": 28,
+            "currency": "L28"
+          },
+          "payload_hash": "5018df9a94a08d4912de42c88679bcac010ecb27c372ea77954e670c2c63969b",
+          "message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature": "Mt4yzCzsn0NgB6zQliRe4zWRFbtfapEkI94VqVGP8JJeDm8iYLZ2O6AZT9pzZgpRu3tqUfrGpr2YXj7sdnDgBw"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_quote",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_key_id": "ed25519:RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_identity": "l28_test_account_bob",
+          "recipient_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "recipient_identity": "l28_test_account_alice",
+          "created_at": 1700001100,
+          "expires_at": 1700004500,
+          "nonce": "nonce_quote_001",
+          "previous_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature_suite": "ed25519",
+          "payload": {
+            "request_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+            "service_id": "echo",
+            "amount": 5,
+            "currency": "L28",
+            "quote_expires_at": 1700004000,
+            "service_terms_hash": "ba6abc447a4ddfb85ce7c2d6435a86ff30d8d78fd96edcb559af9810b9826477",
+            "service_terms": {
+              "term": "fixed_echo"
+            },
+            "rejectable": true
+          },
+          "payload_hash": "a7877526bbcb9440667ad0f483c6eda3f07dccd7320f2cf4884970bbd1693a32",
+          "message_id": "29f7db21b4b2660908e58f15293f66bd4566b229bdf5a578f4e05028ac0b4a35",
+          "signature": "kOmX36G2B3n9GcQBzenceXt1mdpdzVKV7UMbOqBG9IX7BNOjAJZvYwEs-8QWvIIi3-XJ81s9mQCoOnBKbzvAAQ"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "payment_authorization",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001200,
+          "expires_at": 1700004200,
+          "nonce": "nonce_auth_001",
+          "previous_message_id": "29f7db21b4b2660908e58f15293f66bd4566b229bdf5a578f4e05028ac0b4a35",
+          "signature_suite": "ed25519",
+          "payload": {
+            "quote_message_id": "29f7db21b4b2660908e58f15293f66bd4566b229bdf5a578f4e05028ac0b4a35",
+            "authorized_amount": 5,
+            "currency": "L28",
+            "payer_identity": "l28_test_account_alice",
+            "payee_identity": "l28_test_account_bob",
+            "authorization_expires_at": 1700004000,
+            "settlement_intent": "l28_transfer"
+          },
+          "payload_hash": "2729a5300d88ff94b614c82b0959d6888cbbcd2d021e509bb136c440fd1d4e34",
+          "message_id": "48132f3d37ebcf6e32f0d3c04d17d7127f2d0888ab242374fd2771a69065e208",
+          "signature": "8C1AsXqLCL3f20XS73HQUTLeC5sP0qAp-8zizb30f6e63Bba6cfTHQenuaj6vYYHw6SAYc6M60ozINyTFMXtBg"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "settlement_reference",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001300,
+          "expires_at": 1700004300,
+          "nonce": "nonce_settle_001",
+          "previous_message_id": "48132f3d37ebcf6e32f0d3c04d17d7127f2d0888ab242374fd2771a69065e208",
+          "signature_suite": "ed25519",
+          "payload": {
+            "authorization_message_id": "48132f3d37ebcf6e32f0d3c04d17d7127f2d0888ab242374fd2771a69065e208",
+            "l28_tx_id": "18cf2d29e1350efde9fcf983eb2fe6f84dbff936c33c6280fa132aab8aba1ef6",
+            "l28_sender": "l28_test_account_alice",
+            "l28_receiver": "l28_test_account_bob",
+            "amount": 6,
+            "l28_timestamp": 1700001300,
+            "verification_status": "verified",
+            "l28_transaction_material": {
+              "sender": "l28_test_account_alice",
+              "receiver": "l28_test_account_bob",
+              "amount": 5,
+              "timestamp": 1700001300,
+              "type": "transfer",
+              "network": "TEST"
+            }
+          },
+          "payload_hash": "cdd5662e7ca07c64c0ca001881e0649bdb1e491a2ec616fc7f048b54b633ff23",
+          "message_id": "36708a76bba19510544c323ae31e6eca30923f3853b6b4a293fb6c530bc95c59",
+          "signature": "G_Eeo0KaiIatjcFSpFqCN--slPcxo5yOYqUIqLzTkTp5Z_zWhVtq09gZHrkckBAhhTR4yWlp-pjde0ixiboJDA"
+        }
+      ],
+      "independent_verification": [
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        }
+      ]
+    },
+    {
+      "vector_id": "invalid_settlement_participant_mismatch",
+      "notes": "",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "require_terminal": false,
+      "expected_code": "settlement_participant_mismatch",
+      "expected_state": "authorized",
+      "envelopes": [
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_request",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001000,
+          "expires_at": 1700005000,
+          "nonce": "nonce_req_001",
+          "previous_message_id": null,
+          "signature_suite": "ed25519",
+          "payload": {
+            "service_id": "echo",
+            "service_params": {},
+            "max_amount": 28,
+            "currency": "L28"
+          },
+          "payload_hash": "5018df9a94a08d4912de42c88679bcac010ecb27c372ea77954e670c2c63969b",
+          "message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature": "Mt4yzCzsn0NgB6zQliRe4zWRFbtfapEkI94VqVGP8JJeDm8iYLZ2O6AZT9pzZgpRu3tqUfrGpr2YXj7sdnDgBw"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_quote",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_key_id": "ed25519:RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_identity": "l28_test_account_bob",
+          "recipient_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "recipient_identity": "l28_test_account_alice",
+          "created_at": 1700001100,
+          "expires_at": 1700004500,
+          "nonce": "nonce_quote_001",
+          "previous_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature_suite": "ed25519",
+          "payload": {
+            "request_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+            "service_id": "echo",
+            "amount": 5,
+            "currency": "L28",
+            "quote_expires_at": 1700004000,
+            "service_terms_hash": "ba6abc447a4ddfb85ce7c2d6435a86ff30d8d78fd96edcb559af9810b9826477",
+            "service_terms": {
+              "term": "fixed_echo"
+            },
+            "rejectable": true
+          },
+          "payload_hash": "a7877526bbcb9440667ad0f483c6eda3f07dccd7320f2cf4884970bbd1693a32",
+          "message_id": "29f7db21b4b2660908e58f15293f66bd4566b229bdf5a578f4e05028ac0b4a35",
+          "signature": "kOmX36G2B3n9GcQBzenceXt1mdpdzVKV7UMbOqBG9IX7BNOjAJZvYwEs-8QWvIIi3-XJ81s9mQCoOnBKbzvAAQ"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "payment_authorization",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001200,
+          "expires_at": 1700004200,
+          "nonce": "nonce_auth_001",
+          "previous_message_id": "29f7db21b4b2660908e58f15293f66bd4566b229bdf5a578f4e05028ac0b4a35",
+          "signature_suite": "ed25519",
+          "payload": {
+            "quote_message_id": "29f7db21b4b2660908e58f15293f66bd4566b229bdf5a578f4e05028ac0b4a35",
+            "authorized_amount": 5,
+            "currency": "L28",
+            "payer_identity": "l28_test_account_alice",
+            "payee_identity": "l28_test_account_bob",
+            "authorization_expires_at": 1700004000,
+            "settlement_intent": "l28_transfer"
+          },
+          "payload_hash": "2729a5300d88ff94b614c82b0959d6888cbbcd2d021e509bb136c440fd1d4e34",
+          "message_id": "48132f3d37ebcf6e32f0d3c04d17d7127f2d0888ab242374fd2771a69065e208",
+          "signature": "8C1AsXqLCL3f20XS73HQUTLeC5sP0qAp-8zizb30f6e63Bba6cfTHQenuaj6vYYHw6SAYc6M60ozINyTFMXtBg"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "settlement_reference",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001300,
+          "expires_at": 1700004300,
+          "nonce": "nonce_settle_001",
+          "previous_message_id": "48132f3d37ebcf6e32f0d3c04d17d7127f2d0888ab242374fd2771a69065e208",
+          "signature_suite": "ed25519",
+          "payload": {
+            "authorization_message_id": "48132f3d37ebcf6e32f0d3c04d17d7127f2d0888ab242374fd2771a69065e208",
+            "l28_tx_id": "18cf2d29e1350efde9fcf983eb2fe6f84dbff936c33c6280fa132aab8aba1ef6",
+            "l28_sender": "l28_test_account_bob",
+            "l28_receiver": "l28_test_account_alice",
+            "amount": 5,
+            "l28_timestamp": 1700001300,
+            "verification_status": "verified",
+            "l28_transaction_material": {
+              "sender": "l28_test_account_alice",
+              "receiver": "l28_test_account_bob",
+              "amount": 5,
+              "timestamp": 1700001300,
+              "type": "transfer",
+              "network": "TEST"
+            }
+          },
+          "payload_hash": "ca04da71c6f10802aaa0590422e963c431e5851d65e7d60789ad3c41d1da733e",
+          "message_id": "9d9a79c20c4ddf2872f0c1ae0f311becb2128fba10c594d833e50e4a2a7a0b21",
+          "signature": "VEHVPe6CrX_cb3zv7acCkcFIFPk94zTGBmmLEaIWIIjfzXbHjkC5ASrMbpUw9KDFtozRwhDsDqCMDDvLOYRwCA"
+        }
+      ],
+      "independent_verification": [
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        }
+      ]
+    },
+    {
+      "vector_id": "invalid_altered_settlement_material",
+      "notes": "",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "require_terminal": false,
+      "expected_code": "settlement_citation_invalid",
+      "expected_state": "authorized",
+      "envelopes": [
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_request",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001000,
+          "expires_at": 1700005000,
+          "nonce": "nonce_req_001",
+          "previous_message_id": null,
+          "signature_suite": "ed25519",
+          "payload": {
+            "service_id": "echo",
+            "service_params": {},
+            "max_amount": 28,
+            "currency": "L28"
+          },
+          "payload_hash": "5018df9a94a08d4912de42c88679bcac010ecb27c372ea77954e670c2c63969b",
+          "message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature": "Mt4yzCzsn0NgB6zQliRe4zWRFbtfapEkI94VqVGP8JJeDm8iYLZ2O6AZT9pzZgpRu3tqUfrGpr2YXj7sdnDgBw"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_quote",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_key_id": "ed25519:RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_identity": "l28_test_account_bob",
+          "recipient_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "recipient_identity": "l28_test_account_alice",
+          "created_at": 1700001100,
+          "expires_at": 1700004500,
+          "nonce": "nonce_quote_001",
+          "previous_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature_suite": "ed25519",
+          "payload": {
+            "request_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+            "service_id": "echo",
+            "amount": 5,
+            "currency": "L28",
+            "quote_expires_at": 1700004000,
+            "service_terms_hash": "ba6abc447a4ddfb85ce7c2d6435a86ff30d8d78fd96edcb559af9810b9826477",
+            "service_terms": {
+              "term": "fixed_echo"
+            },
+            "rejectable": true
+          },
+          "payload_hash": "a7877526bbcb9440667ad0f483c6eda3f07dccd7320f2cf4884970bbd1693a32",
+          "message_id": "29f7db21b4b2660908e58f15293f66bd4566b229bdf5a578f4e05028ac0b4a35",
+          "signature": "kOmX36G2B3n9GcQBzenceXt1mdpdzVKV7UMbOqBG9IX7BNOjAJZvYwEs-8QWvIIi3-XJ81s9mQCoOnBKbzvAAQ"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "payment_authorization",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001200,
+          "expires_at": 1700004200,
+          "nonce": "nonce_auth_001",
+          "previous_message_id": "29f7db21b4b2660908e58f15293f66bd4566b229bdf5a578f4e05028ac0b4a35",
+          "signature_suite": "ed25519",
+          "payload": {
+            "quote_message_id": "29f7db21b4b2660908e58f15293f66bd4566b229bdf5a578f4e05028ac0b4a35",
+            "authorized_amount": 5,
+            "currency": "L28",
+            "payer_identity": "l28_test_account_alice",
+            "payee_identity": "l28_test_account_bob",
+            "authorization_expires_at": 1700004000,
+            "settlement_intent": "l28_transfer"
+          },
+          "payload_hash": "2729a5300d88ff94b614c82b0959d6888cbbcd2d021e509bb136c440fd1d4e34",
+          "message_id": "48132f3d37ebcf6e32f0d3c04d17d7127f2d0888ab242374fd2771a69065e208",
+          "signature": "8C1AsXqLCL3f20XS73HQUTLeC5sP0qAp-8zizb30f6e63Bba6cfTHQenuaj6vYYHw6SAYc6M60ozINyTFMXtBg"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "settlement_reference",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001300,
+          "expires_at": 1700004300,
+          "nonce": "nonce_settle_001",
+          "previous_message_id": "48132f3d37ebcf6e32f0d3c04d17d7127f2d0888ab242374fd2771a69065e208",
+          "signature_suite": "ed25519",
+          "payload": {
+            "authorization_message_id": "48132f3d37ebcf6e32f0d3c04d17d7127f2d0888ab242374fd2771a69065e208",
+            "l28_tx_id": "18cf2d29e1350efde9fcf983eb2fe6f84dbff936c33c6280fa132aab8aba1ef6",
+            "l28_sender": "l28_test_account_alice",
+            "l28_receiver": "l28_test_account_bob",
+            "amount": 5,
+            "l28_timestamp": 1700001300,
+            "verification_status": "verified",
+            "l28_transaction_material": {
+              "sender": "l28_test_account_alice",
+              "receiver": "l28_test_account_bob",
+              "amount": 7,
+              "timestamp": 1700001300,
+              "type": "transfer",
+              "network": "TEST"
+            }
+          },
+          "payload_hash": "ab374b0e52964bffd15a504216414f674099856a5720fc54662618f85a3650ee",
+          "message_id": "5ca760fa2ef53bc3fccd4e215681afb3e412c03ea3fdbd562b37327f1220a8d6",
+          "signature": "vwN_eNYfZD4iyhsdvQHqOu1UlWRvIZlmPKgHnJns_WshngBUofW_Jh17VmRVPaCEv_N2ElgrSq1bEwbfqfv-CQ"
+        }
+      ],
+      "independent_verification": [
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        }
+      ],
+      "expected_envelope_code": "altered_settlement_material"
+    },
+    {
+      "vector_id": "invalid_receipt_before_settlement",
+      "notes": "",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "require_terminal": false,
+      "expected_code": "invalid_transition",
+      "expected_state": "authorized",
+      "envelopes": [
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_request",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001000,
+          "expires_at": 1700005000,
+          "nonce": "nonce_req_001",
+          "previous_message_id": null,
+          "signature_suite": "ed25519",
+          "payload": {
+            "service_id": "echo",
+            "service_params": {},
+            "max_amount": 28,
+            "currency": "L28"
+          },
+          "payload_hash": "5018df9a94a08d4912de42c88679bcac010ecb27c372ea77954e670c2c63969b",
+          "message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature": "Mt4yzCzsn0NgB6zQliRe4zWRFbtfapEkI94VqVGP8JJeDm8iYLZ2O6AZT9pzZgpRu3tqUfrGpr2YXj7sdnDgBw"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_quote",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_key_id": "ed25519:RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_identity": "l28_test_account_bob",
+          "recipient_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "recipient_identity": "l28_test_account_alice",
+          "created_at": 1700001100,
+          "expires_at": 1700004500,
+          "nonce": "nonce_quote_001",
+          "previous_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature_suite": "ed25519",
+          "payload": {
+            "request_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+            "service_id": "echo",
+            "amount": 5,
+            "currency": "L28",
+            "quote_expires_at": 1700004000,
+            "service_terms_hash": "ba6abc447a4ddfb85ce7c2d6435a86ff30d8d78fd96edcb559af9810b9826477",
+            "service_terms": {
+              "term": "fixed_echo"
+            },
+            "rejectable": true
+          },
+          "payload_hash": "a7877526bbcb9440667ad0f483c6eda3f07dccd7320f2cf4884970bbd1693a32",
+          "message_id": "29f7db21b4b2660908e58f15293f66bd4566b229bdf5a578f4e05028ac0b4a35",
+          "signature": "kOmX36G2B3n9GcQBzenceXt1mdpdzVKV7UMbOqBG9IX7BNOjAJZvYwEs-8QWvIIi3-XJ81s9mQCoOnBKbzvAAQ"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "payment_authorization",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001200,
+          "expires_at": 1700004200,
+          "nonce": "nonce_auth_001",
+          "previous_message_id": "29f7db21b4b2660908e58f15293f66bd4566b229bdf5a578f4e05028ac0b4a35",
+          "signature_suite": "ed25519",
+          "payload": {
+            "quote_message_id": "29f7db21b4b2660908e58f15293f66bd4566b229bdf5a578f4e05028ac0b4a35",
+            "authorized_amount": 5,
+            "currency": "L28",
+            "payer_identity": "l28_test_account_alice",
+            "payee_identity": "l28_test_account_bob",
+            "authorization_expires_at": 1700004000,
+            "settlement_intent": "l28_transfer"
+          },
+          "payload_hash": "2729a5300d88ff94b614c82b0959d6888cbbcd2d021e509bb136c440fd1d4e34",
+          "message_id": "48132f3d37ebcf6e32f0d3c04d17d7127f2d0888ab242374fd2771a69065e208",
+          "signature": "8C1AsXqLCL3f20XS73HQUTLeC5sP0qAp-8zizb30f6e63Bba6cfTHQenuaj6vYYHw6SAYc6M60ozINyTFMXtBg"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_receipt",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_key_id": "ed25519:RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_identity": "l28_test_account_bob",
+          "recipient_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "recipient_identity": "l28_test_account_alice",
+          "created_at": 1700001400,
+          "expires_at": 1700004400,
+          "nonce": "nonce_receipt_001",
+          "previous_message_id": "48132f3d37ebcf6e32f0d3c04d17d7127f2d0888ab242374fd2771a69065e208",
+          "signature_suite": "ed25519",
+          "payload": {
+            "settlement_message_id": "0000000000000000000000000000000000000000000000000000000000000000",
+            "l28_tx_id": "18cf2d29e1350efde9fcf983eb2fe6f84dbff936c33c6280fa132aab8aba1ef6",
+            "service_id": "echo",
+            "result_hash": "8b5fc84664df64b36273f3a0500a06a9ee6849c255d5dac13025004e3d1490b9",
+            "completed_at": 1700001400,
+            "completion_assertion": "provider_asserted_complete"
+          },
+          "payload_hash": "d2e824c1ef92b629d20635a780f4296006343d15b344ac57d51e6250abc2542c",
+          "message_id": "9fd80a94ac59a3d89d8bdc7980c993c240dfcc48b843326f1df133186395cef9",
+          "signature": "p1V6YFZkzxGAI7Fjigdf_4R8q792uOoKoqM91XoZ9gt_Ej24-xXrcMQmXTWl15jSR5WDqx3eyzCHpHJucwcqDg"
+        }
+      ],
+      "independent_verification": [
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        }
+      ]
+    },
+    {
+      "vector_id": "invalid_wrong_receipt_settlement_reference",
+      "notes": "",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "require_terminal": false,
+      "expected_code": "receipt_reference_mismatch",
+      "expected_state": "settled",
+      "envelopes": [
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_request",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001000,
+          "expires_at": 1700005000,
+          "nonce": "nonce_req_001",
+          "previous_message_id": null,
+          "signature_suite": "ed25519",
+          "payload": {
+            "service_id": "echo",
+            "service_params": {},
+            "max_amount": 28,
+            "currency": "L28"
+          },
+          "payload_hash": "5018df9a94a08d4912de42c88679bcac010ecb27c372ea77954e670c2c63969b",
+          "message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature": "Mt4yzCzsn0NgB6zQliRe4zWRFbtfapEkI94VqVGP8JJeDm8iYLZ2O6AZT9pzZgpRu3tqUfrGpr2YXj7sdnDgBw"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_quote",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_key_id": "ed25519:RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_identity": "l28_test_account_bob",
+          "recipient_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "recipient_identity": "l28_test_account_alice",
+          "created_at": 1700001100,
+          "expires_at": 1700004500,
+          "nonce": "nonce_quote_001",
+          "previous_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature_suite": "ed25519",
+          "payload": {
+            "request_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+            "service_id": "echo",
+            "amount": 5,
+            "currency": "L28",
+            "quote_expires_at": 1700004000,
+            "service_terms_hash": "ba6abc447a4ddfb85ce7c2d6435a86ff30d8d78fd96edcb559af9810b9826477",
+            "service_terms": {
+              "term": "fixed_echo"
+            },
+            "rejectable": true
+          },
+          "payload_hash": "a7877526bbcb9440667ad0f483c6eda3f07dccd7320f2cf4884970bbd1693a32",
+          "message_id": "29f7db21b4b2660908e58f15293f66bd4566b229bdf5a578f4e05028ac0b4a35",
+          "signature": "kOmX36G2B3n9GcQBzenceXt1mdpdzVKV7UMbOqBG9IX7BNOjAJZvYwEs-8QWvIIi3-XJ81s9mQCoOnBKbzvAAQ"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "payment_authorization",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001200,
+          "expires_at": 1700004200,
+          "nonce": "nonce_auth_001",
+          "previous_message_id": "29f7db21b4b2660908e58f15293f66bd4566b229bdf5a578f4e05028ac0b4a35",
+          "signature_suite": "ed25519",
+          "payload": {
+            "quote_message_id": "29f7db21b4b2660908e58f15293f66bd4566b229bdf5a578f4e05028ac0b4a35",
+            "authorized_amount": 5,
+            "currency": "L28",
+            "payer_identity": "l28_test_account_alice",
+            "payee_identity": "l28_test_account_bob",
+            "authorization_expires_at": 1700004000,
+            "settlement_intent": "l28_transfer"
+          },
+          "payload_hash": "2729a5300d88ff94b614c82b0959d6888cbbcd2d021e509bb136c440fd1d4e34",
+          "message_id": "48132f3d37ebcf6e32f0d3c04d17d7127f2d0888ab242374fd2771a69065e208",
+          "signature": "8C1AsXqLCL3f20XS73HQUTLeC5sP0qAp-8zizb30f6e63Bba6cfTHQenuaj6vYYHw6SAYc6M60ozINyTFMXtBg"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "settlement_reference",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001300,
+          "expires_at": 1700004300,
+          "nonce": "nonce_settle_001",
+          "previous_message_id": "48132f3d37ebcf6e32f0d3c04d17d7127f2d0888ab242374fd2771a69065e208",
+          "signature_suite": "ed25519",
+          "payload": {
+            "authorization_message_id": "48132f3d37ebcf6e32f0d3c04d17d7127f2d0888ab242374fd2771a69065e208",
+            "l28_tx_id": "18cf2d29e1350efde9fcf983eb2fe6f84dbff936c33c6280fa132aab8aba1ef6",
+            "l28_sender": "l28_test_account_alice",
+            "l28_receiver": "l28_test_account_bob",
+            "amount": 5,
+            "l28_timestamp": 1700001300,
+            "verification_status": "verified",
+            "l28_transaction_material": {
+              "sender": "l28_test_account_alice",
+              "receiver": "l28_test_account_bob",
+              "amount": 5,
+              "timestamp": 1700001300,
+              "type": "transfer",
+              "network": "TEST"
+            }
+          },
+          "payload_hash": "e518eab7f7e6e62330c4074e140cb5f9d22376f4a9c60ae6c9be356aff3842b5",
+          "message_id": "f99ec498943424da9aea62f8a998c4d73bffd27fd15f9941d283b3b32520cdfc",
+          "signature": "KtaX1AsafZygK2A5NEE4jXHIriUiN-UjqO1XhEK2xpXDyTAn0YLP7CHKkAFZYOKjd3IunexHZroIa4fgePiFCQ"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_receipt",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_key_id": "ed25519:RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_identity": "l28_test_account_bob",
+          "recipient_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "recipient_identity": "l28_test_account_alice",
+          "created_at": 1700001400,
+          "expires_at": 1700004400,
+          "nonce": "nonce_receipt_001",
+          "previous_message_id": "f99ec498943424da9aea62f8a998c4d73bffd27fd15f9941d283b3b32520cdfc",
+          "signature_suite": "ed25519",
+          "payload": {
+            "settlement_message_id": "2222222222222222222222222222222222222222222222222222222222222222",
+            "l28_tx_id": "18cf2d29e1350efde9fcf983eb2fe6f84dbff936c33c6280fa132aab8aba1ef6",
+            "service_id": "echo",
+            "result_hash": "8b5fc84664df64b36273f3a0500a06a9ee6849c255d5dac13025004e3d1490b9",
+            "completed_at": 1700001400,
+            "completion_assertion": "provider_asserted_complete"
+          },
+          "payload_hash": "0b32460e387c2bfe1399b9e99062726f07bd39f87ffdd6da72da45c3b8c133bc",
+          "message_id": "d49cc5f97d7d8b1534c1729480e416e368faafdd2ad1a0ebbf3e627861d82437",
+          "signature": "Au6i6sUBKP0BXOqNAsGDrfozSkn0OXTAfNAe4bXamNDAdOdqR6dYVOnrg_QKaaIFwwsnvFUgsjAettAK-gUuCg"
+        }
+      ],
+      "independent_verification": [
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        }
+      ]
+    },
+    {
+      "vector_id": "invalid_message_after_terminal",
+      "notes": "",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "require_terminal": false,
+      "expected_code": "message_after_terminal",
+      "expected_state": "cancelled",
+      "envelopes": [
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_request",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001000,
+          "expires_at": 1700005000,
+          "nonce": "nonce_req_001",
+          "previous_message_id": null,
+          "signature_suite": "ed25519",
+          "payload": {
+            "service_id": "echo",
+            "service_params": {},
+            "max_amount": 28,
+            "currency": "L28"
+          },
+          "payload_hash": "5018df9a94a08d4912de42c88679bcac010ecb27c372ea77954e670c2c63969b",
+          "message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature": "Mt4yzCzsn0NgB6zQliRe4zWRFbtfapEkI94VqVGP8JJeDm8iYLZ2O6AZT9pzZgpRu3tqUfrGpr2YXj7sdnDgBw"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "failure_notice",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001050,
+          "expires_at": 1700004800,
+          "nonce": "nonce_fail_cancel_001",
+          "previous_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature_suite": "ed25519",
+          "payload": {
+            "related_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+            "failure_code": "cancelled_by_sender",
+            "failure_detail": "test_only_cancel",
+            "terminal": true
+          },
+          "payload_hash": "ab38a5552a34e360a0a0cd58238d8b5ed9590fae650878140d51ff822cb6720c",
+          "message_id": "24286851db5aa4fd3fdd2848623dcdffba946c13e4588d456d11ac13643090cd",
+          "signature": "piXm27HjTZ0ybvrO_K4_UmhwFywrA5zs-Tn3SqFTKP84vaYWbdG3ifmt05dmuAQGfB2pWEVLzlIWiY3USaJjBg"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_quote",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_key_id": "ed25519:RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_identity": "l28_test_account_bob",
+          "recipient_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "recipient_identity": "l28_test_account_alice",
+          "created_at": 1700001100,
+          "expires_at": 1700004500,
+          "nonce": "nonce_after_term",
+          "previous_message_id": "24286851db5aa4fd3fdd2848623dcdffba946c13e4588d456d11ac13643090cd",
+          "signature_suite": "ed25519",
+          "payload": {
+            "request_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+            "service_id": "echo",
+            "amount": 5,
+            "currency": "L28",
+            "quote_expires_at": 1700004000,
+            "service_terms_hash": "ba6abc447a4ddfb85ce7c2d6435a86ff30d8d78fd96edcb559af9810b9826477",
+            "service_terms": {
+              "term": "fixed_echo"
+            },
+            "rejectable": true
+          },
+          "payload_hash": "a7877526bbcb9440667ad0f483c6eda3f07dccd7320f2cf4884970bbd1693a32",
+          "message_id": "2a0c584ebaf00d7c303e9c3c760e488f8bb78dc4e5922ff9416214938fa87fa1",
+          "signature": "CXWkmsFNFHBfSm61jT3gttk9OZ8IOqS_9-0uYru3DB2mMe0EarY-WVOwPPp0_7GVaKwFsA9DSomR4C8CrIL4DA"
+        }
+      ],
+      "independent_verification": [
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        }
+      ]
+    },
+    {
+      "vector_id": "invalid_unauthorized_failure_transition",
+      "notes": "",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "require_terminal": false,
+      "expected_code": "unauthorized_terminal_transition",
+      "expected_state": "authorized",
+      "envelopes": [
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_request",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001000,
+          "expires_at": 1700005000,
+          "nonce": "nonce_req_001",
+          "previous_message_id": null,
+          "signature_suite": "ed25519",
+          "payload": {
+            "service_id": "echo",
+            "service_params": {},
+            "max_amount": 28,
+            "currency": "L28"
+          },
+          "payload_hash": "5018df9a94a08d4912de42c88679bcac010ecb27c372ea77954e670c2c63969b",
+          "message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature": "Mt4yzCzsn0NgB6zQliRe4zWRFbtfapEkI94VqVGP8JJeDm8iYLZ2O6AZT9pzZgpRu3tqUfrGpr2YXj7sdnDgBw"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_quote",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_key_id": "ed25519:RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_identity": "l28_test_account_bob",
+          "recipient_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "recipient_identity": "l28_test_account_alice",
+          "created_at": 1700001100,
+          "expires_at": 1700004500,
+          "nonce": "nonce_quote_001",
+          "previous_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature_suite": "ed25519",
+          "payload": {
+            "request_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+            "service_id": "echo",
+            "amount": 5,
+            "currency": "L28",
+            "quote_expires_at": 1700004000,
+            "service_terms_hash": "ba6abc447a4ddfb85ce7c2d6435a86ff30d8d78fd96edcb559af9810b9826477",
+            "service_terms": {
+              "term": "fixed_echo"
+            },
+            "rejectable": true
+          },
+          "payload_hash": "a7877526bbcb9440667ad0f483c6eda3f07dccd7320f2cf4884970bbd1693a32",
+          "message_id": "29f7db21b4b2660908e58f15293f66bd4566b229bdf5a578f4e05028ac0b4a35",
+          "signature": "kOmX36G2B3n9GcQBzenceXt1mdpdzVKV7UMbOqBG9IX7BNOjAJZvYwEs-8QWvIIi3-XJ81s9mQCoOnBKbzvAAQ"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "payment_authorization",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001200,
+          "expires_at": 1700004200,
+          "nonce": "nonce_auth_001",
+          "previous_message_id": "29f7db21b4b2660908e58f15293f66bd4566b229bdf5a578f4e05028ac0b4a35",
+          "signature_suite": "ed25519",
+          "payload": {
+            "quote_message_id": "29f7db21b4b2660908e58f15293f66bd4566b229bdf5a578f4e05028ac0b4a35",
+            "authorized_amount": 5,
+            "currency": "L28",
+            "payer_identity": "l28_test_account_alice",
+            "payee_identity": "l28_test_account_bob",
+            "authorization_expires_at": 1700004000,
+            "settlement_intent": "l28_transfer"
+          },
+          "payload_hash": "2729a5300d88ff94b614c82b0959d6888cbbcd2d021e509bb136c440fd1d4e34",
+          "message_id": "48132f3d37ebcf6e32f0d3c04d17d7127f2d0888ab242374fd2771a69065e208",
+          "signature": "8C1AsXqLCL3f20XS73HQUTLeC5sP0qAp-8zizb30f6e63Bba6cfTHQenuaj6vYYHw6SAYc6M60ozINyTFMXtBg"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "failure_notice",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001250,
+          "expires_at": 1700004100,
+          "nonce": "nonce_bad_cancel",
+          "previous_message_id": "48132f3d37ebcf6e32f0d3c04d17d7127f2d0888ab242374fd2771a69065e208",
+          "signature_suite": "ed25519",
+          "payload": {
+            "related_message_id": "48132f3d37ebcf6e32f0d3c04d17d7127f2d0888ab242374fd2771a69065e208",
+            "failure_code": "cancelled_by_sender",
+            "failure_detail": "x",
+            "terminal": true
+          },
+          "payload_hash": "e3809a744abd8f9860f4b8333c0d69ab191d352dbe7ddedaae0c504a0f06912d",
+          "message_id": "42dac5f12c638d8a4728a92e94461097101c145d27368f5f8e4d6ef72d489b10",
+          "signature": "DSL-hnCznFCPe4KC2cOdO4cVM9d7ir4-jztr0hgzcuc2VPsWygB_s-TdLaOt3-ehmKdKBZJSj2WvMkXSmS3KCA"
+        }
+      ],
+      "independent_verification": [
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        }
+      ]
+    },
+    {
+      "vector_id": "invalid_failure_terminal_state",
+      "notes": "",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "require_terminal": false,
+      "expected_code": "invalid_terminal_state",
+      "expected_state": "requested",
+      "envelopes": [
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_request",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001000,
+          "expires_at": 1700005000,
+          "nonce": "nonce_req_001",
+          "previous_message_id": null,
+          "signature_suite": "ed25519",
+          "payload": {
+            "service_id": "echo",
+            "service_params": {},
+            "max_amount": 28,
+            "currency": "L28"
+          },
+          "payload_hash": "5018df9a94a08d4912de42c88679bcac010ecb27c372ea77954e670c2c63969b",
+          "message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature": "Mt4yzCzsn0NgB6zQliRe4zWRFbtfapEkI94VqVGP8JJeDm8iYLZ2O6AZT9pzZgpRu3tqUfrGpr2YXj7sdnDgBw"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "failure_notice",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001050,
+          "expires_at": 1700004800,
+          "nonce": "nonce_bad_code",
+          "previous_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature_suite": "ed25519",
+          "payload": {
+            "related_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+            "failure_code": "not_a_code",
+            "failure_detail": "x",
+            "terminal": true
+          },
+          "payload_hash": "9b822cd3f96d7b6d5ea3944e165362593a1d1a4b052406e2deaaa9f5091c1273",
+          "message_id": "0b3e12faef9a5f5b6f4edb940e0654314131303d91ae9d89cdc7760a96bc205e",
+          "signature": "ZlzZEbx8Z4-QyTiSynyMfipX378c-r_UN1ov-LWIhGGsacSY9ifm5XWzK8gzGXG2YgKs_ACoUL3YR7TidzgbAQ"
+        }
+      ],
+      "independent_verification": [
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        }
+      ]
+    },
+    {
+      "vector_id": "invalid_incomplete_when_terminal_required",
+      "notes": "",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "require_terminal": true,
+      "expected_code": "incomplete_transcript",
+      "expected_state": "quoted",
+      "envelopes": [
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_request",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001000,
+          "expires_at": 1700005000,
+          "nonce": "nonce_req_001",
+          "previous_message_id": null,
+          "signature_suite": "ed25519",
+          "payload": {
+            "service_id": "echo",
+            "service_params": {},
+            "max_amount": 28,
+            "currency": "L28"
+          },
+          "payload_hash": "5018df9a94a08d4912de42c88679bcac010ecb27c372ea77954e670c2c63969b",
+          "message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature": "Mt4yzCzsn0NgB6zQliRe4zWRFbtfapEkI94VqVGP8JJeDm8iYLZ2O6AZT9pzZgpRu3tqUfrGpr2YXj7sdnDgBw"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_quote",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_key_id": "ed25519:RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_identity": "l28_test_account_bob",
+          "recipient_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "recipient_identity": "l28_test_account_alice",
+          "created_at": 1700001100,
+          "expires_at": 1700004500,
+          "nonce": "nonce_quote_001",
+          "previous_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature_suite": "ed25519",
+          "payload": {
+            "request_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+            "service_id": "echo",
+            "amount": 5,
+            "currency": "L28",
+            "quote_expires_at": 1700004000,
+            "service_terms_hash": "ba6abc447a4ddfb85ce7c2d6435a86ff30d8d78fd96edcb559af9810b9826477",
+            "service_terms": {
+              "term": "fixed_echo"
+            },
+            "rejectable": true
+          },
+          "payload_hash": "a7877526bbcb9440667ad0f483c6eda3f07dccd7320f2cf4884970bbd1693a32",
+          "message_id": "29f7db21b4b2660908e58f15293f66bd4566b229bdf5a578f4e05028ac0b4a35",
+          "signature": "kOmX36G2B3n9GcQBzenceXt1mdpdzVKV7UMbOqBG9IX7BNOjAJZvYwEs-8QWvIIi3-XJ81s9mQCoOnBKbzvAAQ"
+        }
+      ],
+      "independent_verification": [
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        }
+      ]
+    },
+    {
+      "vector_id": "invalid_bad_signature",
+      "notes": "",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "require_terminal": false,
+      "expected_code": "envelope_verification_failed",
+      "expected_state": null,
+      "envelopes": [
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_request",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_key_id": "ed25519:080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "sender_identity": "l28_test_account_alice",
+          "recipient_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "recipient_identity": "l28_test_account_bob",
+          "created_at": 1700001000,
+          "expires_at": 1700005000,
+          "nonce": "nonce_req_001",
+          "previous_message_id": null,
+          "signature_suite": "ed25519",
+          "payload": {
+            "service_id": "echo",
+            "service_params": {},
+            "max_amount": 28,
+            "currency": "L28"
+          },
+          "payload_hash": "5018df9a94a08d4912de42c88679bcac010ecb27c372ea77954e670c2c63969b",
+          "message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature": "Mt4yzCzsn0NgB6zQliRe4zWRFbtfapEkI94VqVGP8JJeDm8iYLZ2O6AZT9pzZgpRu3tqUfrGpr2YXj7sdnDgBw"
+        },
+        {
+          "protocol": "L28-M2M",
+          "protocol_version": "0.1",
+          "message_type": "service_quote",
+          "transaction_id": "m2m_tx_transcript_001",
+          "sender_public_key": "RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_key_id": "ed25519:RC4EgOlQ0jBP5GPueVW0CmXQWmNapI6ZrZVXBFd3S14",
+          "sender_identity": "l28_test_account_bob",
+          "recipient_public_key": "080JCjrTUPrtTI5aK3ZHPrVznbx9V7PY_CyMxgfJ_fA",
+          "recipient_identity": "l28_test_account_alice",
+          "created_at": 1700001100,
+          "expires_at": 1700004500,
+          "nonce": "nonce_quote_001",
+          "previous_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+          "signature_suite": "ed25519",
+          "payload": {
+            "request_message_id": "b35546db0ecec78774565ef150b2c93a03db6ce5a1195d984a7967ffac10a1d2",
+            "service_id": "echo",
+            "amount": 5,
+            "currency": "L28",
+            "quote_expires_at": 1700004000,
+            "service_terms_hash": "ba6abc447a4ddfb85ce7c2d6435a86ff30d8d78fd96edcb559af9810b9826477",
+            "service_terms": {
+              "term": "fixed_echo"
+            },
+            "rejectable": true
+          },
+          "payload_hash": "a7877526bbcb9440667ad0f483c6eda3f07dccd7320f2cf4884970bbd1693a32",
+          "message_id": "29f7db21b4b2660908e58f15293f66bd4566b229bdf5a578f4e05028ac0b4a35",
+          "signature": "kemX36G2B3n9GcQBzenceXt1mdpdzVKV7UMbOqBG9IX7BNOjAJZvYwEs-8QWvIIi3-XJ81s9mQCoOnBKbzvAAQ"
+        }
+      ],
+      "independent_verification": [
+        {
+          "cryptography": {
+            "ok": true,
+            "version": "46.0.3"
+          },
+          "pynacl": {
+            "ok": true,
+            "version": "1.6.1"
+          },
+          "node_crypto": {
+            "ok": true,
+            "node": "v24.4.1"
+          },
+          "openssl": {
+            "ok": true,
+            "version": "OpenSSL 3.6.0 1 Oct 2025 (Library: OpenSSL 3.6.0 1 Oct 2025)"
+          },
+          "certification_claim": false
+        },
+        {
+          "skipped_bad_signature": true
+        }
+      ],
+      "expected_envelope_code": "bad_signature"
+    }
+  ]
+}

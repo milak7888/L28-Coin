@@ -195,3 +195,9 @@ State names `authorized`, `settled`, and `completed` are M2M coordination states
 - `completed` means the provider asserted completion after that verification.
 
 No M2M state transition creates, burns, locks, unlocks, or reverses L28 units.
+
+## 9. Offline transcript validation
+
+Foundation 6 provides an offline ordered-transcript validator (`coin/m2m_transcript_validator.py`) that checks already-signed envelope sequences against this state machine, participant roles, chain linkage, and citation consistency.
+
+Offline transcript success means coordination consistency under M2M v0.1. It does NOT create persistent local replay state, query a live ledger, reverse settlement, or assert irreversible finality. See [transcript_validation_v0.1.md](transcript_validation_v0.1.md).

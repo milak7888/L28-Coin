@@ -332,13 +332,12 @@ def _parse_constant(_token: str) -> Any:
     raise M2MVerifyError("float_rejected")
 
 
-def parse_m2m_json(raw: Union[str, bytes]) -> dict:
+def parse_m2m_json_value(raw: Union[str, bytes]) -> Any:
     """
-    Primary untrusted-input parser for M2M envelopes.
+    Strict L28-M2M JSON document parser (any top-level JSON value).
 
     Guarantees duplicate-key detection. Python dicts cannot preserve that evidence
-    after ordinary parsing; callers that already hold a dict must use
-    ``verify_envelope`` knowing duplicate detection already occurred (or was lost).
+    after ordinary parsing.
     """
     if isinstance(raw, bytes):
         try:
@@ -371,10 +370,19 @@ def parse_m2m_json(raw: Union[str, bytes]) -> dict:
         # Some json backends surface issues as ValueError.
         raise M2MVerifyError("invalid_json") from exc
 
+    _scan_value_for_surrogates(value)
+    return value
+
+
+def parse_m2m_json(raw: Union[str, bytes]) -> dict:
+    """
+    Primary untrusted-input parser for a single M2M envelope object.
+
+    Duplicate-key detection is guaranteed only at this raw-JSON boundary.
+    """
+    value = parse_m2m_json_value(raw)
     if not isinstance(value, dict):
         raise M2MVerifyError("top_level_not_object")
-
-    _scan_value_for_surrogates(value)
     return value
 
 
@@ -645,6 +653,7 @@ __all__ = [
     "encode_b64url_unpadded",
     "message_id_for",
     "parse_m2m_json",
+    "parse_m2m_json_value",
     "payload_hash_for",
     "signature_preimage_for",
     "unsigned_envelope",
