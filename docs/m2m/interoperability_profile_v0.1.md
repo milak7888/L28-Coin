@@ -1,19 +1,19 @@
 # L28 M2M Interoperability Profile v0.1
 
 **Document:** L28 M2M Interoperability Profile v0.1
-**Status:** Offline M2M coordination profile (non-operational until an audited signature verifier exists)
+**Status:** Offline M2M coordination profile with Foundation 5 verify-only Ed25519 runtime
 **Normative subordination:** This profile is subordinate to [L28 Protocol v1.0.0](../../PROTOCOL.md). L28 Protocol v1.0.0 prevails on conflict.
-**Related:** [protocol_v0.1.md](protocol_v0.1.md), [message_schema_v0.1.md](message_schema_v0.1.md), [security_model.md](security_model.md), [test_vectors_v0.1.json](test_vectors_v0.1.json)
+**Related:** [protocol_v0.1.md](protocol_v0.1.md), [message_schema_v0.1.md](message_schema_v0.1.md), [security_model.md](security_model.md), [test_vectors_v0.1.json](test_vectors_v0.1.json), [test_vectors_signed_v0.1.json](test_vectors_signed_v0.1.json)
 
 ## 1. Purpose and status
 
-This document defines the L28 M2M Interoperability Profile v0.1: the M2M-layer rules for canonical serialization, domain-separated digests, future Ed25519 signatures, machine-identity binding, and settlement evidence citation.
+This document defines the L28 M2M Interoperability Profile v0.1: the M2M-layer rules for canonical serialization, domain-separated digests, Ed25519 signatures, machine-identity binding, and settlement evidence citation.
 
 This profile:
 
 - MUST be treated as an M2M coordination profile, not as L28 consensus;
 - MUST NOT change L28 Protocol v1.0.0 economics, ledger behavior, transaction validation, mining, wallets, or networking;
-- is offline and non-operational until a later audited signature verifier exists;
+- provides offline verify-only Ed25519 envelope verification via `coin/m2m_verifier.py` (Foundation 5);
 - MUST NOT enable autonomous spending by itself.
 
 Normative language follows RFC 2119 / RFC 8174 uppercase usage.
@@ -52,7 +52,7 @@ Canonical output MUST:
 
 When parsing JSON for this profile, implementations MUST:
 
-- reject duplicate object keys;
+- reject duplicate object keys (guaranteed at the raw-JSON boundary; a Python `dict` cannot retain duplicate-key evidence after ordinary parsing);
 - reject lone Unicode surrogates;
 - reject floats, decimal-looking numbers, `NaN`, and `Infinity`;
 - reject property names that are not lowercase ASCII snake_case matching `^[a-z][a-z0-9_]*$`;
@@ -113,11 +113,11 @@ Let `Canon(x)` be the L28-M2M Canonical JSON v0.1 UTF-8 byte encoding of value `
 - No implementation MAY trust transmitted derived values without recomputation.
 - Modifying any signed field, payload value, or chain reference MUST invalidate verification.
 
-## 4. Signature suite (selected, not implemented here)
+## 4. Signature suite and verifier
 
 ### 4.1 Suite selection
 
-The required future M2M signature suite is **Ed25519** as defined by RFC 8032.
+The required M2M signature suite is **Ed25519** as defined by RFC 8032.
 
 | Item | Value |
 |---|---|
@@ -128,30 +128,33 @@ The required future M2M signature suite is **Ed25519** as defined by RFC 8032.
 | Transport encoding | RFC 4648 base64url **without** `=` padding |
 | Signed bytes | the signature preimage defined in Section 3.3 |
 
-### 4.2 Verification requirements (future milestone)
+### 4.2 Runtime verifier (Foundation 5)
 
-- Malformed sizes, encodings, noncanonical points, or failed verification MUST reject.
-- Signature verification MUST use a maintained cryptographic implementation in a later milestone.
-- Handwritten production cryptography MUST NOT be used.
-- SHA-256 message IDs do NOT replace Ed25519’s internally defined RFC 8032 hashing behavior.
+Operational verification is implemented in `coin/m2m_verifier.py`:
 
-### 4.3 Implementation boundary for this milestone
+- verify-only public API (`verify_envelope`, `verify_envelope_json`, `verify_settlement_citation`);
+- runtime dependency: `cryptography==49.0.0` as declared in `requirements-m2m.txt`;
+- imports `Ed25519PublicKey` only; MUST NOT import or expose `Ed25519PrivateKey`, signing, key generation, or key storage;
+- fails closed with stable reason codes;
+- MUST NOT accept unsigned Foundation 4 digest vectors as operational messages.
 
-This Foundation 4 milestone:
+Successful cryptographic verification proves structural validity, matching digests, identity binding, and Ed25519 signature validity over the profile preimage. It does NOT prove service delivery, L28 transfer acceptance, irreversible finality, or settlement completion.
 
-- MUST NOT implement Ed25519;
-- MUST NOT add a cryptographic dependency;
-- MUST NOT generate or commit a private key or seed;
-- MUST NOT fabricate an Ed25519 signature vector that has not been independently verified;
-- MUST treat unsigned digests as non-operational.
+### 4.3 Implementation boundary
 
-Operational signed-envelope validation is deferred until an audited verifier exists.
+This profile:
+
+- MUST NOT provide a wallet or signing API in-repo;
+- MUST NOT commit private keys or seeds;
+- MUST treat unsigned digest vectors as non-operational;
+- MUST treat signature validity as distinct from L28 settlement finality.
 
 ## 5. Machine identity binding
 
 - Machine identity is the Ed25519 public key.
 - Key identifier format: `ed25519:<base64url-unpadded-raw-public-key>`
 - Envelope field `sender_public_key` / `recipient_public_key` MUST carry the base64url-unpadded raw public key when used.
+- Envelope field `sender_key_id` MUST equal `ed25519:<sender_public_key>`.
 - L28 settlement account remains an explicit opaque existing L28 account string (`sender_identity` / `recipient_identity` / payload payer/payee fields).
 - The signed envelope binds machine identity to the claimed L28 settlement account.
 - This does NOT create a new L28 address format.
@@ -186,6 +189,8 @@ This profile reuses existing M2M envelope field names from [message_schema_v0.1.
 
 For digest and signature construction, the unsigned envelope excludes only `message_id` and `signature`. All other present envelope fields participate in canonicalization.
 
+Operational signed envelopes additionally carry `signature_suite` (`ed25519`) and `sender_key_id`.
+
 ## 8. Remaining unresolved items
 
 Resolved by this profile (M2M-layer only):
@@ -195,14 +200,16 @@ Resolved by this profile (M2M-layer only):
 - Ed25519 suite selection and encodings
 - Machine identity / L28 account binding
 - Settlement citation using Foundation 3 `compute_tx_id`
+- Offline verify-only Ed25519 runtime (`cryptography==49.0.0`)
 
 Still unresolved / deferred:
 
-- Operational Ed25519 verification implementation and dependency choice
 - Optional privacy transport semantics
 - Irreversible finality / confirmation vocabulary beyond L28 acceptance
 - L28 Protocol v1.0.0 address grammar (unchanged; still opaque strings)
+- In-repo signing / wallet APIs (intentionally absent)
 
 ## 9. Test vectors
 
-Deterministic offline vectors are published in [test_vectors_v0.1.json](test_vectors_v0.1.json). They contain no private keys, seeds, live settlement claims, or verified Ed25519 signatures.
+- Unsigned digest vectors: [test_vectors_v0.1.json](test_vectors_v0.1.json) (non-operational)
+- Signed interoperability vectors: [test_vectors_signed_v0.1.json](test_vectors_signed_v0.1.json) (public key + signature + envelope only; independently verified; `accepted_settlement: false`)

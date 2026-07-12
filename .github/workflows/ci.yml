@@ -4,38 +4,33 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: open_source/l28
+    timeout-minutes: 15
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Sanity - compile
+      - name: Install M2M verifier dependency
         run: |
-          python -m compileall -q .
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-m2m.txt
 
-      - name: Smoke - protocol invariants (coinbase, supply cap, ledger ingestion)
+      - name: Compile coin and tests
+        run: python -m compileall -q coin tests
 
-      - name: Invariants - hard checks (cap edge, height mismatch, reserved sender)
-        run: |
-          python -m coin.invariants
-        run: |
-          python -m coin.smoke
+      - name: Protocol invariants
+        run: python -m coin.invariants
 
-      - name: Sanity - import surface
-        run: |
-          python - <<'PY'
-          from coin.tx_validation import validate_transaction, l28_coinbase_reward
-          from coin.ledger import BlocklessLedger
-          from coin.mining import build_coinbase_tx
-          print("ok", validate_transaction, l28_coinbase_reward(0), BlocklessLedger, build_coinbase_tx)
-          PY
+      - name: Unit tests
+        run: python -m unittest discover -s tests -v

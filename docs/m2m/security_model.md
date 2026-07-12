@@ -48,9 +48,12 @@ A `service_receipt` proves a provider asserted completion. It does not independe
 
 - Every operational M2M message MUST carry a non-empty `signature`.
 - Receivers MUST verify the signature before accepting state effects.
-- The required future suite is `ed25519` (PureEd25519 / RFC 8032) per the interoperability profile.
-- If no audited cryptographic verifier is configured, implementations MUST fail closed and reject operational acceptance.
-- Operational signed-envelope validation is deferred until a later audited verifier milestone. This milestone MUST NOT implement Ed25519 or add cryptographic dependencies.
+- The required suite is `ed25519` (PureEd25519 / RFC 8032) per the interoperability profile.
+- Foundation 5 implements offline verify-only validation in `coin/m2m_verifier.py` using PyCA `cryptography==49.0.0` (`Ed25519PublicKey` only).
+- The verifier MUST NOT generate keys, sign messages, import `Ed25519PrivateKey`, or expose wallet/key-storage APIs.
+- If the cryptographic backend is unavailable, verification MUST fail closed (`verification_backend_unavailable`).
+- Unsigned Foundation 4 digest vectors MUST NOT be accepted as operational messages.
+- Successful signature verification proves envelope authenticity under this profile. It does NOT prove service delivery, L28 transfer acceptance, irreversible finality, or settlement completion.
 - Suite selection is an M2M profile decision and MUST NOT be presented as an L28 Protocol v1.0.0 consensus invariant.
 
 ## 5. Domain separation

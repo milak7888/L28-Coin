@@ -2,249 +2,53 @@
 """
 Offline tests for L28 M2M Interoperability Profile v0.1.
 
-TEST-ONLY helpers in this module are:
-- test-only canonicalizers / digest verifiers
-- NOT a runtime signer
-- NOT an Ed25519 implementation
-- NOT L28 consensus code
+Canonicalization and digest helpers are provided by coin.m2m_verifier
+(Foundation 5). This module remains test-only for unsigned Foundation 4
+vectors and MUST NOT generate keys or sign messages.
 """
 from __future__ import annotations
 
-import base64
-import hashlib
 import json
 import re
 import unittest
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
+from coin.m2m_verifier import (
+    DOMAIN_SIGNATURE,
+    M2MVerifyError as M2MCanonicalError,
+    canonical_bytes,
+    canonicalize,
+    decode_public_key as validate_public_key_transport,
+    encode_b64url_unpadded as b64url_unpadded,
+    message_id_for,
+    parse_m2m_json,
+    payload_hash_for,
+    signature_preimage_for,
+    unsigned_envelope,
+)
 from coin.tx_validation import compute_tx_id
 
 ROOT = Path(__file__).resolve().parents[1]
 VECTOR_PATH = ROOT / "docs" / "m2m" / "test_vectors_v0.1.json"
-
-DOMAIN_PAYLOAD = b"L28-M2M-V0.1-PAYLOAD\x00"
-DOMAIN_MESSAGE = b"L28-M2M-V0.1-MESSAGE\x00"
-DOMAIN_SIGNATURE = b"L28-M2M-V0.1-SIGNATURE\x00"
-
-SAFE_INT_MIN = -9007199254740991
-SAFE_INT_MAX = 9007199254740991
-PROP_NAME_RE = re.compile(r"^[a-z][a-z0-9_]*$")
-
-UNSIGNED_EXCLUDED = frozenset({"message_id", "signature"})
-
-
-class M2MCanonicalError(ValueError):
-    """Fail-closed canonicalization / profile validation error (test-only)."""
-
-
-def _require_safe_int(value: Any, *, field: str = "integer") -> int:
-    if isinstance(value, bool) or type(value) is not int:
-        raise M2MCanonicalError(f"{field}_not_exact_int")
-    if value < SAFE_INT_MIN or value > SAFE_INT_MAX:
-        raise M2MCanonicalError(f"{field}_out_of_safe_range")
-    return value
-
-
-def _escape_string(s: str) -> str:
-    out: List[str] = ['"']
-    for ch in s:
-        o = ord(ch)
-        if ch == '"':
-            out.append('\\"')
-        elif ch == "\\":
-            out.append("\\\\")
-        elif o < 0x20:
-            out.append(f"\\u{o:04x}")
-        elif 0xD800 <= o <= 0xDFFF:
-            raise M2MCanonicalError("lone_surrogate")
-        else:
-            # solidus '/' is intentionally not escaped
-            out.append(ch)
-    out.append('"')
-    return "".join(out)
-
-
-def canonicalize(value: Any) -> str:
-    """
-    TEST-ONLY L28-M2M Canonical JSON v0.1 serializer.
-    Restricted RFC 8785-compatible subset for allowed inputs.
-    """
-    if value is None:
-        return "null"
-    if value is True:
-        return "true"
-    if value is False:
-        return "false"
-    if isinstance(value, bool):
-        raise M2MCanonicalError("bool_invalid")
-    if type(value) is int:
-        _require_safe_int(value)
-        return str(value)
-    if isinstance(value, float):
-        raise M2MCanonicalError("float_rejected")
-    if isinstance(value, str):
-        return _escape_string(value)
-    if isinstance(value, list):
-        return "[" + ",".join(canonicalize(v) for v in value) + "]"
-    if isinstance(value, dict):
-        for k in value.keys():
-            if not isinstance(k, str):
-                raise M2MCanonicalError("non_string_property_name")
-            if not PROP_NAME_RE.match(k):
-                raise M2MCanonicalError("invalid_property_name")
-        items = sorted(value.items(), key=lambda kv: kv[0])
-        parts = [f"{_escape_string(k)}:{canonicalize(v)}" for k, v in items]
-        return "{" + ",".join(parts) + "}"
-    raise M2MCanonicalError(f"unsupported_type:{type(value).__name__}")
-
-
-def canonical_bytes(value: Any) -> bytes:
-    text = canonicalize(value)
-    raw = text.encode("utf-8")
-    if raw.startswith(b"\xef\xbb\xbf"):
-        raise M2MCanonicalError("bom_forbidden")
-    return raw
-
-
-def sha256_hex(data: bytes) -> str:
-    return hashlib.sha256(data).hexdigest()
-
-
-def payload_hash_for(payload: Any) -> str:
-    return sha256_hex(DOMAIN_PAYLOAD + canonical_bytes(payload))
-
-
-def unsigned_envelope(envelope: Dict[str, Any]) -> Dict[str, Any]:
-    return {k: v for k, v in envelope.items() if k not in UNSIGNED_EXCLUDED}
-
-
-def message_id_for(envelope: Dict[str, Any]) -> str:
-    return sha256_hex(DOMAIN_MESSAGE + canonical_bytes(unsigned_envelope(envelope)))
-
-
-def signature_preimage_for(envelope: Dict[str, Any]) -> bytes:
-    return DOMAIN_SIGNATURE + canonical_bytes(unsigned_envelope(envelope))
-
-
-def b64url_unpadded(raw: bytes) -> str:
-    return base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
-
-
-def decode_b64url_unpadded(text: str) -> bytes:
-    if "=" in text:
-        raise M2MCanonicalError("padded_base64url")
-    pad = "=" * ((4 - (len(text) % 4)) % 4)
-    try:
-        return base64.urlsafe_b64decode(text + pad)
-    except Exception as e:
-        raise M2MCanonicalError("malformed_base64url") from e
-
-
-def validate_public_key_transport(text: str) -> bytes:
-    raw = decode_b64url_unpadded(text)
-    if len(raw) != 32:
-        raise M2MCanonicalError("malformed_public_key_length")
-    return raw
-
-
-def parse_profile_json(text: str) -> Any:
-    """
-    TEST-ONLY parser checks beyond json.loads for profile fail-closed cases.
-    """
-    if _has_duplicate_keys(text):
-        raise M2MCanonicalError("duplicate_object_key")
-    # Lone Unicode surrogate escapes in JSON text (not paired).
-    if re.search(r"\\u[dD][89aAbB][0-9a-fA-F]{2}(?!\\u[dD][cCdD][0-9a-fA-F]{2})", text):
-        raise M2MCanonicalError("lone_surrogate")
-    if re.search(r"(?<!\\u[dD][89aAbB][0-9a-fA-F]{2})\\u[dD][cCdD][0-9a-fA-F]{2}", text):
-        raise M2MCanonicalError("lone_surrogate")
-    try:
-        return json.loads(
-            text,
-            parse_constant=lambda c: (_ for _ in ()).throw(M2MCanonicalError("nonfinite_number")),
-        )
-    except M2MCanonicalError:
-        raise
-    except json.JSONDecodeError as e:
-        raise M2MCanonicalError(f"json_decode_error:{e.msg}") from e
-
-
-def _has_duplicate_keys(text: str) -> bool:
-    """Scan JSON text for duplicate keys in any object (test-only)."""
-    stack: List[Optional[set]] = []
-    i = 0
-    n = len(text)
-    in_string = False
-    escape = False
-    while i < n:
-        ch = text[i]
-        if in_string:
-            if escape:
-                escape = False
-            elif ch == "\\":
-                escape = True
-            elif ch == '"':
-                in_string = False
-            i += 1
-            continue
-        if ch == '"':
-            # potential key if next non-space is ':' and we are in an object expecting key
-            j = i + 1
-            esc = False
-            while j < n:
-                c2 = text[j]
-                if esc:
-                    esc = False
-                elif c2 == "\\":
-                    esc = True
-                elif c2 == '"':
-                    break
-                j += 1
-            key = text[i + 1 : j]
-            k = j + 1
-            while k < n and text[k].isspace():
-                k += 1
-            if k < n and text[k] == ":" and stack and stack[-1] is not None:
-                if key in stack[-1]:
-                    return True
-                stack[-1].add(key)
-            in_string = True
-            i = j
-            continue
-        if ch == "{":
-            stack.append(set())
-        elif ch == "}":
-            if stack:
-                stack.pop()
-        elif ch == "[":
-            stack.append(None)
-        elif ch == "]":
-            if stack:
-                stack.pop()
-        i += 1
-    return False
 
 
 def build_signed_ready_envelope(base: Dict[str, Any]) -> Dict[str, Any]:
     """Attach recomputed payload_hash and message_id; leave unsigned."""
     env = dict(base)
     if "payload" not in env:
-        raise M2MCanonicalError("missing_payload")
+        raise M2MCanonicalError("missing_field")
     env["payload_hash"] = payload_hash_for(env["payload"])
-    # strip derived fields before computing message id
     env.pop("message_id", None)
     env.pop("signature", None)
-    mid = message_id_for(env)
-    env["message_id"] = mid
+    env["message_id"] = message_id_for(env)
     return env
 
 
 def vector_record_from_envelope(vector_id: str, envelope: Dict[str, Any], *, notes: str) -> Dict[str, Any]:
     env = build_signed_ready_envelope(envelope)
     payload_bytes = canonical_bytes(env["payload"])
-    unsigned = unsigned_envelope(env)
-    unsigned_bytes = canonical_bytes(unsigned)
+    unsigned_bytes = canonical_bytes(unsigned_envelope(env))
     preimage = signature_preimage_for(env)
     return {
         "vector_id": vector_id,
@@ -272,7 +76,6 @@ def generate_vectors() -> Dict[str, Any]:
     pk_b = _demo_pubkey(2)
     kid_a = f"ed25519:{pk_a}"
 
-    # Deterministic test-only L28 transfer material (not live / not accepted).
     l28_tx = {
         "sender": "l28_test_account_alice",
         "receiver": "l28_test_account_bob",
@@ -285,7 +88,6 @@ def generate_vectors() -> Dict[str, Any]:
 
     valid: List[Dict[str, Any]] = []
 
-    # 1. Minimal service_request
     valid.append(
         vector_record_from_envelope(
             "valid_minimal_service_request",
@@ -313,7 +115,6 @@ def generate_vectors() -> Dict[str, Any]:
         )
     )
 
-    # 2. Unicode + nested payload
     valid.append(
         vector_record_from_envelope(
             "valid_unicode_nested_service_request",
@@ -345,7 +146,6 @@ def generate_vectors() -> Dict[str, Any]:
         )
     )
 
-    # 3. Previous-message chaining (quote after request)
     prev_id = valid[0]["expected_message_id"]
     valid.append(
         vector_record_from_envelope(
@@ -369,7 +169,7 @@ def generate_vectors() -> Dict[str, Any]:
                     "amount": 5,
                     "currency": "L28",
                     "quote_expires_at": 1700003000,
-                    "service_terms_hash": sha256_hex(canonical_bytes({"term": "fixed"})),
+                    "service_terms_hash": payload_hash_for({"term": "fixed"}),
                     "service_terms": {"term": "fixed"},
                     "rejectable": True,
                 },
@@ -378,7 +178,6 @@ def generate_vectors() -> Dict[str, Any]:
         )
     )
 
-    # 4. settlement_reference with deterministic L28 tx id
     valid.append(
         vector_record_from_envelope(
             "valid_settlement_reference_l28_txid",
@@ -557,7 +356,6 @@ def generate_vectors() -> Dict[str, Any]:
                 "protocol": "L28-M2M",
                 "protocol_version": "0.1",
                 "message_type": "service_request",
-                # missing transaction_id
                 "sender_public_key": pk_a,
                 "recipient_public_key": pk_b,
                 "created_at": 1700000000,
@@ -615,7 +413,7 @@ def generate_vectors() -> Dict[str, Any]:
         },
     ]
 
-    doc = {
+    return {
         "profile": "L28 M2M Interoperability Profile v0.1",
         "status": "offline_non_operational",
         "subordinate_to": "L28 Protocol v1.0.0",
@@ -638,13 +436,6 @@ def generate_vectors() -> Dict[str, Any]:
         "valid_unsigned_vectors": valid,
         "invalid_vectors": invalid,
     }
-    return doc
-
-
-def write_vectors() -> Path:
-    doc = generate_vectors()
-    VECTOR_PATH.write_text(json.dumps(doc, indent=2, sort_keys=False) + "\n", encoding="utf-8")
-    return VECTOR_PATH
 
 
 def _assert_no_secrets(obj: Any) -> None:
@@ -677,8 +468,11 @@ def _amount_invalid_reason(amount: Any) -> Optional[str]:
         return "null_required_field"
     if type(amount) is int:
         try:
-            _require_safe_int(amount)
-        except M2MCanonicalError:
+            from coin.m2m_verifier import SAFE_INT_MAX, SAFE_INT_MIN
+
+            if amount < SAFE_INT_MIN or amount > SAFE_INT_MAX:
+                return "integer_out_of_safe_range"
+        except Exception:
             return "integer_out_of_safe_range"
         return None
     return "invalid_amount_type"
@@ -687,8 +481,6 @@ def _amount_invalid_reason(amount: Any) -> Optional[str]:
 class TestM2MInteroperabilityProfile(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        if not VECTOR_PATH.exists():
-            write_vectors()
         cls.doc = json.loads(VECTOR_PATH.read_text(encoding="utf-8"))
 
     def test_vector_file_metadata(self):
@@ -747,18 +539,18 @@ class TestM2MInteroperabilityProfile(unittest.TestCase):
                 reason = vec["expected_failure"]
                 if "raw_json" in vec:
                     with self.assertRaises(M2MCanonicalError) as ctx:
-                        parse_profile_json(vec["raw_json"])
-                    self.assertIn(reason.split("_")[0], str(ctx.exception).lower() or reason)
+                        parse_m2m_json(vec["raw_json"])
                     if reason == "duplicate_object_key":
-                        self.assertEqual(str(ctx.exception), "duplicate_object_key")
+                        # Foundation 4 vector name; runtime stable code is duplicate_key.
+                        self.assertEqual(ctx.exception.code, "duplicate_key")
                     if reason == "lone_surrogate":
-                        self.assertEqual(str(ctx.exception), "lone_surrogate")
+                        self.assertEqual(ctx.exception.code, "lone_surrogate")
                     continue
 
                 if "public_key" in vec:
                     with self.assertRaises(M2MCanonicalError) as ctx:
                         validate_public_key_transport(vec["public_key"])
-                    self.assertEqual(str(ctx.exception), reason)
+                    self.assertEqual(ctx.exception.code, reason)
                     continue
 
                 if reason == "unknown_signature_suite":
@@ -787,7 +579,6 @@ class TestM2MInteroperabilityProfile(unittest.TestCase):
                     self.assertNotEqual(payload_hash_for(env["payload"]), env["payload_hash"])
                     continue
                 if reason == "mismatched_message_id":
-                    # compare against recomputation ignoring provided message_id
                     tmp = dict(env)
                     self.assertNotEqual(message_id_for(tmp), env["message_id"])
                     continue
@@ -806,7 +597,7 @@ class TestM2MInteroperabilityProfile(unittest.TestCase):
                 if reason == "invalid_property_name":
                     with self.assertRaises(M2MCanonicalError) as ctx:
                         canonicalize(env)
-                    self.assertEqual(str(ctx.exception), "invalid_property_name")
+                    self.assertEqual(ctx.exception.code, "invalid_property_name")
                     continue
                 self.fail(f"unhandled invalid vector {vec['vector_id']}")
 
@@ -816,6 +607,4 @@ class TestM2MInteroperabilityProfile(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    write_vectors()
-    print(f"wrote {VECTOR_PATH}")
     unittest.main()

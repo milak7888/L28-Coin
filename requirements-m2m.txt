@@ -1,0 +1,4 @@
+# L28 M2M Ed25519 verifier runtime dependency (Foundation 5).
+# Exact pin for deterministic clean-environment installs.
+# Security upgrades MUST be intentional, reviewed dependency changes.
+cryptography==49.0.0
