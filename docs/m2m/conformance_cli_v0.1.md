@@ -15,6 +15,8 @@ Foundation 7 provides a read-only offline CLI that:
 
 It does not sign, spend, query a ledger, operate a network, write report files, or create persistent replay state.
 
+Foundation 8 introduces a separate offline replay registry, but this CLI does **not** integrate persistent replay in that milestone. See [replay_registry_v0.1.md](replay_registry_v0.1.md).
+
 Successful reports mean coordination consistency only. They do not mean L28 settlement acceptance, finality, service delivery, refund, or dispute resolution.
 
 ## 2. Command syntax

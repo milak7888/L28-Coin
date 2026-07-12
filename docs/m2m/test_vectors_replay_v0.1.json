@@ -1,0 +1,297 @@
+{
+  "profile": "L28 M2M Replay Registry Vectors v0.1",
+  "foundation": "8",
+  "test_only": true,
+  "live": false,
+  "accepted_settlement": false,
+  "private_material_committed": false,
+  "contains_private_material": false,
+  "notes": "Operation sequences reference Foundation 6 transcript vector identifiers. No private material.",
+  "replay_vectors": [
+    {
+      "vector_id": "replay_new_transcript",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "operations": [
+        {
+          "op": "check_and_record",
+          "source_transcript_vector_id": "valid_happy_path_completed",
+          "require_terminal": true,
+          "expected_code": "recorded_new",
+          "expected_newly_recorded": true,
+          "expected_new_messages": 5
+        }
+      ],
+      "expected_final_exchange_count": 1,
+      "expected_final_message_count": 5
+    },
+    {
+      "vector_id": "replay_exact_repeat",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "operations": [
+        {
+          "op": "check_and_record",
+          "source_transcript_vector_id": "valid_happy_path_completed",
+          "require_terminal": true,
+          "expected_code": "recorded_new",
+          "expected_newly_recorded": true,
+          "expected_new_messages": 5
+        },
+        {
+          "op": "check_and_record",
+          "source_transcript_vector_id": "valid_happy_path_completed",
+          "require_terminal": true,
+          "expected_code": "already_recorded",
+          "expected_newly_recorded": false,
+          "expected_new_messages": 0
+        }
+      ],
+      "expected_final_exchange_count": 1,
+      "expected_final_message_count": 5
+    },
+    {
+      "vector_id": "replay_partial_then_extension",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "operations": [
+        {
+          "op": "check_and_record",
+          "source_transcript_vector_id": "valid_partial_quoted",
+          "require_terminal": false,
+          "expected_code": "recorded_new",
+          "expected_newly_recorded": true,
+          "expected_new_messages": 2
+        },
+        {
+          "op": "check_and_record",
+          "source_transcript_vector_id": "valid_happy_path_completed",
+          "require_terminal": true,
+          "expected_code": "recorded_extension",
+          "expected_newly_recorded": true,
+          "expected_new_messages": 3
+        }
+      ],
+      "expected_final_exchange_count": 1,
+      "expected_final_message_count": 5
+    },
+    {
+      "vector_id": "replay_complete_then_old_prefix",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "operations": [
+        {
+          "op": "check_and_record",
+          "source_transcript_vector_id": "valid_happy_path_completed",
+          "require_terminal": true,
+          "expected_code": "recorded_new",
+          "expected_newly_recorded": true,
+          "expected_new_messages": 5
+        },
+        {
+          "op": "check_and_record",
+          "source_transcript_vector_id": "valid_partial_quoted",
+          "require_terminal": false,
+          "expected_code": "already_recorded_prefix",
+          "expected_newly_recorded": false,
+          "expected_new_messages": 0
+        }
+      ],
+      "expected_final_exchange_count": 1,
+      "expected_final_message_count": 5
+    },
+    {
+      "vector_id": "replay_fork",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "operations": [
+        {
+          "op": "check_and_record",
+          "source_transcript_vector_id": "valid_terminal_cancelled",
+          "require_terminal": true,
+          "expected_code": "recorded_new",
+          "expected_newly_recorded": true,
+          "expected_new_messages": 2
+        },
+        {
+          "op": "check_and_record",
+          "source_transcript_vector_id": "valid_happy_path_completed",
+          "require_terminal": true,
+          "expected_code": "exchange_fork",
+          "expected_newly_recorded": false,
+          "expected_new_messages": 0
+        }
+      ],
+      "expected_final_exchange_count": 1,
+      "expected_final_message_count": 2
+    },
+    {
+      "vector_id": "replay_cross_exchange_message",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "notes": "After recording a transcript, a foreign exchange_hash binding is injected for one message_id, then re-submit detects message_replay.",
+      "operations": [
+        {
+          "op": "check_and_record",
+          "source_transcript_vector_id": "valid_partial_quoted",
+          "require_terminal": false,
+          "expected_code": "recorded_new",
+          "expected_newly_recorded": true,
+          "expected_new_messages": 2
+        },
+        {
+          "op": "inject_foreign_message_binding",
+          "expected_code": null
+        },
+        {
+          "op": "check_and_record",
+          "source_transcript_vector_id": "valid_partial_quoted",
+          "require_terminal": false,
+          "expected_code": "message_replay",
+          "expected_newly_recorded": false,
+          "expected_new_messages": 0
+        }
+      ],
+      "expected_final_exchange_count": null,
+      "expected_final_message_count": null
+    },
+    {
+      "vector_id": "replay_terminal_exact_repeat",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "operations": [
+        {
+          "op": "check_and_record",
+          "source_transcript_vector_id": "valid_terminal_cancelled",
+          "require_terminal": true,
+          "expected_code": "recorded_new",
+          "expected_newly_recorded": true,
+          "expected_new_messages": 2
+        },
+        {
+          "op": "check_and_record",
+          "source_transcript_vector_id": "valid_terminal_cancelled",
+          "require_terminal": true,
+          "expected_code": "already_recorded",
+          "expected_newly_recorded": false,
+          "expected_new_messages": 0
+        }
+      ],
+      "expected_final_exchange_count": 1,
+      "expected_final_message_count": 2
+    },
+    {
+      "vector_id": "replay_terminal_extension_rejection",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "notes": "Mark a recorded nonterminal prefix as terminal in storage, then reject extension.",
+      "operations": [
+        {
+          "op": "check_and_record",
+          "source_transcript_vector_id": "valid_partial_quoted",
+          "require_terminal": false,
+          "expected_code": "recorded_new",
+          "expected_newly_recorded": true,
+          "expected_new_messages": 2
+        },
+        {
+          "op": "force_stored_state_terminal",
+          "state": "cancelled",
+          "expected_code": null
+        },
+        {
+          "op": "check_and_record",
+          "source_transcript_vector_id": "valid_happy_path_completed",
+          "require_terminal": true,
+          "expected_code": "terminal_exchange_extension",
+          "expected_newly_recorded": false,
+          "expected_new_messages": 0
+        }
+      ],
+      "expected_final_exchange_count": 1,
+      "expected_final_message_count": 2
+    },
+    {
+      "vector_id": "replay_invalid_writes_nothing",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "operations": [
+        {
+          "op": "check_and_record",
+          "source_transcript_vector_id": "invalid_bad_signature",
+          "require_terminal": false,
+          "expected_code": "verification_failed",
+          "expected_newly_recorded": false,
+          "expected_new_messages": 0,
+          "expected_verification_code": "envelope_verification_failed"
+        }
+      ],
+      "expected_final_exchange_count": 0,
+      "expected_final_message_count": 0
+    },
+    {
+      "vector_id": "replay_concurrent_duplicate",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "notes": "Two connections race the same new transcript; exactly one newly_recorded.",
+      "operations": [
+        {
+          "op": "concurrent_duplicate",
+          "source_transcript_vector_id": "valid_happy_path_completed",
+          "require_terminal": true,
+          "expected_codes": ["recorded_new", "already_recorded"],
+          "expected_newly_recorded_sum": 1
+        }
+      ],
+      "expected_final_exchange_count": 1,
+      "expected_final_message_count": 5
+    },
+    {
+      "vector_id": "replay_wrong_schema_version",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "operations": [
+        {
+          "op": "create_then_corrupt_schema_version",
+          "expected_open_code": "schema_version_mismatch"
+        }
+      ]
+    },
+    {
+      "vector_id": "replay_corrupted_state",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "operations": [
+        {
+          "op": "create_record_then_corrupt_count",
+          "source_transcript_vector_id": "valid_partial_quoted",
+          "expected_open_code": "registry_integrity_error"
+        }
+      ]
+    }
+  ]
+}

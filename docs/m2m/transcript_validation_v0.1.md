@@ -124,4 +124,8 @@ All vectors are `test_only`, `live: false`, `accepted_settlement: false`, and `p
 
 ## 10. Conformance CLI
 
-Foundation 7 wraps this validator in an offline CLI (`coin/m2m_conformance_cli.py`) that emits a deterministic JSON report to stdout for one explicitly selected file or stdin transcript. See [conformance_cli_v0.1.md](conformance_cli_v0.1.md). The CLI does not weaken transcript rules, write report files, or claim settlement finality.
+Foundation 7 wraps this validator in an offline CLI (`coin/m2m_conformance_cli.py`) that emits a deterministic JSON report to stdout for one explicitly selected file or stdin transcript. See [conformance_cli_v0.1.md](conformance_cli_v0.1.md). The CLI does not weaken transcript rules, write report files, or claim settlement finality. Foundation 8 does not integrate persistent replay into this CLI.
+
+## 11. Replay registry
+
+Foundation 8 provides a separate local hash-only replay/idempotency registry (`coin/m2m_replay_registry.py`). See [replay_registry_v0.1.md](replay_registry_v0.1.md). It reuses Foundation 6 verification before any write and does not claim settlement finality.
