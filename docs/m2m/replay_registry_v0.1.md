@@ -19,7 +19,7 @@ The registry is:
 - not a wallet;
 - not settlement authority.
 
-Foundation 7 CLI does **not** integrate persistent replay in this milestone.
+Foundation 7 CLI does **not** integrate persistent replay by itself. Foundation 9 adds optional registry flags to `coin/m2m_conformance_cli.py`; see [admission_cli_v0.1.md](admission_cli_v0.1.md).
 
 ## 2. Public API
 

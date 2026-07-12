@@ -15,15 +15,17 @@ Foundation 7 provides a read-only offline CLI that:
 
 It does not sign, spend, query a ledger, operate a network, write report files, or create persistent replay state.
 
-Foundation 8 introduces a separate offline replay registry, but this CLI does **not** integrate persistent replay in that milestone. See [replay_registry_v0.1.md](replay_registry_v0.1.md).
+Foundation 8 introduces a separate offline replay registry. Foundation 9 adds optional registry integration to this CLI; see [admission_cli_v0.1.md](admission_cli_v0.1.md). Without registry flags, Foundation 7 behavior is unchanged.
 
 Successful reports mean coordination consistency only. They do not mean L28 settlement acceptance, finality, service delivery, refund, or dispute resolution.
 
 ## 2. Command syntax
 
 ```
-python -m coin.m2m_conformance_cli --input PATH [--require-terminal] [--pretty]
-python -m coin.m2m_conformance_cli --stdin [--require-terminal] [--pretty]
+python -m coin.m2m_conformance_cli --input PATH [--require-terminal] [--pretty] \
+  [--replay-registry ABSOLUTE_PATH | --create-replay-registry ABSOLUTE_PATH]
+python -m coin.m2m_conformance_cli --stdin [--require-terminal] [--pretty] \
+  [--replay-registry ABSOLUTE_PATH | --create-replay-registry ABSOLUTE_PATH]
 python -m coin.m2m_conformance_cli --version
 ```
 

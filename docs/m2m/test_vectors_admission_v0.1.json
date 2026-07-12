@@ -1,0 +1,587 @@
+{
+  "profile": "L28 M2M Admission CLI Vectors v0.1",
+  "foundation": "9",
+  "cli_version": "l28-m2m-conformance-cli/v0.1",
+  "report_version": "l28-m2m-admission-report/v0.1",
+  "admission_profile": "l28-m2m-replay-admission/v0.1",
+  "test_only": true,
+  "live": false,
+  "accepted_settlement": false,
+  "private_material_committed": false,
+  "contains_private_material": false,
+  "notes": "Deterministic CLI admission-gate operation sequences. Transcript bodies referenced from Foundation 6 vectors; replay semantics aligned with Foundation 8 vectors.",
+  "admission_vectors": [
+    {
+      "vector_id": "admission_create_record_new",
+      "notes": "Create registry and record a new completed transcript",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "source_replay_vector_id": "replay_new_transcript",
+      "operations": [
+        {
+          "op": "cli_invoke",
+          "source_transcript_vector_id": "valid_happy_path_completed",
+          "registry_mode": "create",
+          "flags": ["--require-terminal"],
+          "expected_exit_code": 0,
+          "expected_profile": "l28-m2m-replay-admission/v0.1",
+          "expected_code": "ok",
+          "expected_registry_code": "recorded_new",
+          "expected_admitted": true,
+          "expected_newly_recorded": true,
+          "expected_new_messages": 5,
+          "expected_exchange_count_delta": 1,
+          "expected_message_count_delta": 5
+        }
+      ]
+    },
+    {
+      "vector_id": "admission_exact_repeat",
+      "notes": "Exact repeat after initial record",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "source_replay_vector_id": "replay_exact_repeat",
+      "operations": [
+        {
+          "op": "cli_invoke",
+          "source_transcript_vector_id": "valid_happy_path_completed",
+          "registry_mode": "create",
+          "flags": ["--require-terminal"],
+          "expected_exit_code": 0,
+          "expected_profile": "l28-m2m-replay-admission/v0.1",
+          "expected_code": "ok",
+          "expected_registry_code": "recorded_new",
+          "expected_admitted": true,
+          "expected_newly_recorded": true,
+          "expected_new_messages": 5,
+          "expected_exchange_count_delta": 1,
+          "expected_message_count_delta": 5
+        },
+        {
+          "op": "cli_invoke",
+          "source_transcript_vector_id": "valid_happy_path_completed",
+          "registry_mode": "open",
+          "flags": ["--require-terminal"],
+          "expected_exit_code": 4,
+          "expected_profile": "l28-m2m-replay-admission/v0.1",
+          "expected_code": "ok",
+          "expected_registry_code": "already_recorded",
+          "expected_admitted": false,
+          "expected_newly_recorded": false,
+          "expected_new_messages": 0,
+          "expected_exchange_count_delta": 0,
+          "expected_message_count_delta": 0
+        }
+      ]
+    },
+    {
+      "vector_id": "admission_partial_then_extension",
+      "notes": "Record partial transcript then extend to completed",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "source_replay_vector_id": "replay_partial_then_extension",
+      "operations": [
+        {
+          "op": "cli_invoke",
+          "source_transcript_vector_id": "valid_partial_quoted",
+          "registry_mode": "create",
+          "flags": [],
+          "expected_exit_code": 0,
+          "expected_profile": "l28-m2m-replay-admission/v0.1",
+          "expected_code": "ok",
+          "expected_registry_code": "recorded_new",
+          "expected_admitted": true,
+          "expected_newly_recorded": true,
+          "expected_new_messages": 2,
+          "expected_exchange_count_delta": 1,
+          "expected_message_count_delta": 2
+        },
+        {
+          "op": "cli_invoke",
+          "source_transcript_vector_id": "valid_happy_path_completed",
+          "registry_mode": "open",
+          "flags": ["--require-terminal"],
+          "expected_exit_code": 0,
+          "expected_profile": "l28-m2m-replay-admission/v0.1",
+          "expected_code": "ok",
+          "expected_registry_code": "recorded_extension",
+          "expected_admitted": true,
+          "expected_newly_recorded": true,
+          "expected_new_messages": 3,
+          "expected_exchange_count_delta": 0,
+          "expected_message_count_delta": 3
+        }
+      ]
+    },
+    {
+      "vector_id": "admission_complete_then_old_prefix",
+      "notes": "Completed transcript then previously recorded prefix",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "source_replay_vector_id": "replay_complete_then_old_prefix",
+      "operations": [
+        {
+          "op": "cli_invoke",
+          "source_transcript_vector_id": "valid_happy_path_completed",
+          "registry_mode": "create",
+          "flags": ["--require-terminal"],
+          "expected_exit_code": 0,
+          "expected_profile": "l28-m2m-replay-admission/v0.1",
+          "expected_code": "ok",
+          "expected_registry_code": "recorded_new",
+          "expected_admitted": true,
+          "expected_newly_recorded": true,
+          "expected_new_messages": 5,
+          "expected_exchange_count_delta": 1,
+          "expected_message_count_delta": 5
+        },
+        {
+          "op": "cli_invoke",
+          "source_transcript_vector_id": "valid_partial_quoted",
+          "registry_mode": "open",
+          "flags": [],
+          "expected_exit_code": 4,
+          "expected_profile": "l28-m2m-replay-admission/v0.1",
+          "expected_code": "ok",
+          "expected_registry_code": "already_recorded_prefix",
+          "expected_admitted": false,
+          "expected_newly_recorded": false,
+          "expected_new_messages": 0,
+          "expected_exchange_count_delta": 0,
+          "expected_message_count_delta": 0
+        }
+      ]
+    },
+    {
+      "vector_id": "admission_exchange_fork",
+      "notes": "Exchange fork after terminal cancelled prefix",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "source_replay_vector_id": "replay_fork",
+      "operations": [
+        {
+          "op": "cli_invoke",
+          "source_transcript_vector_id": "valid_terminal_cancelled",
+          "registry_mode": "create",
+          "flags": ["--require-terminal"],
+          "expected_exit_code": 0,
+          "expected_profile": "l28-m2m-replay-admission/v0.1",
+          "expected_code": "ok",
+          "expected_registry_code": "recorded_new",
+          "expected_admitted": true,
+          "expected_newly_recorded": true,
+          "expected_new_messages": 2,
+          "expected_exchange_count_delta": 1,
+          "expected_message_count_delta": 2
+        },
+        {
+          "op": "cli_invoke",
+          "source_transcript_vector_id": "valid_happy_path_completed",
+          "registry_mode": "open",
+          "flags": ["--require-terminal"],
+          "expected_exit_code": 1,
+          "expected_profile": "l28-m2m-replay-admission/v0.1",
+          "expected_code": "ok",
+          "expected_registry_code": "exchange_fork",
+          "expected_admitted": false,
+          "expected_newly_recorded": false,
+          "expected_new_messages": 0,
+          "expected_exchange_count_delta": 0,
+          "expected_message_count_delta": 0
+        }
+      ]
+    },
+    {
+      "vector_id": "admission_cross_exchange_corrupt_open",
+      "notes": "Foundation 8 cross-exchange injection breaks registry integrity on reopen; CLI fails closed on open (exit 3), not message_replay exit 1",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "source_replay_vector_id": "replay_cross_exchange_message",
+      "operations": [
+        {
+          "op": "cli_invoke",
+          "source_transcript_vector_id": "valid_partial_quoted",
+          "registry_mode": "create",
+          "flags": [],
+          "expected_exit_code": 0,
+          "expected_profile": "l28-m2m-replay-admission/v0.1",
+          "expected_code": "ok",
+          "expected_registry_code": "recorded_new",
+          "expected_admitted": true,
+          "expected_newly_recorded": true,
+          "expected_new_messages": 2,
+          "expected_exchange_count_delta": 1,
+          "expected_message_count_delta": 2
+        },
+        {
+          "op": "inject_foreign_message_binding",
+          "expected_code": null
+        },
+        {
+          "op": "cli_invoke",
+          "source_transcript_vector_id": "valid_partial_quoted",
+          "registry_mode": "open",
+          "flags": [],
+          "expected_exit_code": 3,
+          "expected_profile": "l28-m2m-replay-admission/v0.1",
+          "expected_code": "ok",
+          "expected_registry_code": "registry_integrity_error",
+          "expected_admitted": false,
+          "expected_newly_recorded": false,
+          "expected_new_messages": 0,
+          "expected_exchange_count_delta": 0,
+          "expected_message_count_delta": 0
+        }
+      ]
+    },
+    {
+      "vector_id": "admission_terminal_exact_repeat",
+      "notes": "Terminal cancelled transcript exact repeat",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "source_replay_vector_id": "replay_terminal_exact_repeat",
+      "operations": [
+        {
+          "op": "cli_invoke",
+          "source_transcript_vector_id": "valid_terminal_cancelled",
+          "registry_mode": "create",
+          "flags": ["--require-terminal"],
+          "expected_exit_code": 0,
+          "expected_profile": "l28-m2m-replay-admission/v0.1",
+          "expected_code": "ok",
+          "expected_registry_code": "recorded_new",
+          "expected_admitted": true,
+          "expected_newly_recorded": true,
+          "expected_new_messages": 2,
+          "expected_exchange_count_delta": 1,
+          "expected_message_count_delta": 2
+        },
+        {
+          "op": "cli_invoke",
+          "source_transcript_vector_id": "valid_terminal_cancelled",
+          "registry_mode": "open",
+          "flags": ["--require-terminal"],
+          "expected_exit_code": 4,
+          "expected_profile": "l28-m2m-replay-admission/v0.1",
+          "expected_code": "ok",
+          "expected_registry_code": "already_recorded",
+          "expected_admitted": false,
+          "expected_newly_recorded": false,
+          "expected_new_messages": 0,
+          "expected_exchange_count_delta": 0,
+          "expected_message_count_delta": 0
+        }
+      ]
+    },
+    {
+      "vector_id": "admission_terminal_extension_rejection",
+      "notes": "Stored terminal state rejects extension",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "source_replay_vector_id": "replay_terminal_extension_rejection",
+      "operations": [
+        {
+          "op": "cli_invoke",
+          "source_transcript_vector_id": "valid_partial_quoted",
+          "registry_mode": "create",
+          "flags": [],
+          "expected_exit_code": 0,
+          "expected_profile": "l28-m2m-replay-admission/v0.1",
+          "expected_code": "ok",
+          "expected_registry_code": "recorded_new",
+          "expected_admitted": true,
+          "expected_newly_recorded": true,
+          "expected_new_messages": 2,
+          "expected_exchange_count_delta": 1,
+          "expected_message_count_delta": 2
+        },
+        {
+          "op": "force_stored_state_terminal",
+          "state": "cancelled",
+          "expected_code": null
+        },
+        {
+          "op": "cli_invoke",
+          "source_transcript_vector_id": "valid_happy_path_completed",
+          "registry_mode": "open",
+          "flags": ["--require-terminal"],
+          "expected_exit_code": 1,
+          "expected_profile": "l28-m2m-replay-admission/v0.1",
+          "expected_code": "ok",
+          "expected_registry_code": "terminal_exchange_extension",
+          "expected_admitted": false,
+          "expected_newly_recorded": false,
+          "expected_new_messages": 0,
+          "expected_exchange_count_delta": 0,
+          "expected_message_count_delta": 0
+        }
+      ]
+    },
+    {
+      "vector_id": "admission_invalid_no_create",
+      "notes": "Invalid transcript does not create requested new registry",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "source_replay_vector_id": "replay_invalid_writes_nothing",
+      "operations": [
+        {
+          "op": "cli_invoke",
+          "source_transcript_vector_id": "invalid_bad_signature",
+          "registry_mode": "create",
+          "flags": [],
+          "expected_exit_code": 1,
+          "expected_profile": "l28-m2m-replay-admission/v0.1",
+          "expected_code": "envelope_verification_failed",
+          "expected_registry_code": null,
+          "expected_admitted": false,
+          "expected_newly_recorded": false,
+          "expected_new_messages": 0,
+          "expected_exchange_count_delta": 0,
+          "expected_message_count_delta": 0,
+          "expected_registry_file_exists": false
+        }
+      ]
+    },
+    {
+      "vector_id": "admission_invalid_no_mutate",
+      "notes": "Invalid transcript does not open or mutate existing registry",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "operations": [
+        {
+          "op": "cli_invoke",
+          "source_transcript_vector_id": "valid_partial_quoted",
+          "registry_mode": "create",
+          "flags": [],
+          "expected_exit_code": 0,
+          "expected_profile": "l28-m2m-replay-admission/v0.1",
+          "expected_code": "ok",
+          "expected_registry_code": "recorded_new",
+          "expected_admitted": true,
+          "expected_newly_recorded": true,
+          "expected_new_messages": 2,
+          "expected_exchange_count_delta": 1,
+          "expected_message_count_delta": 2
+        },
+        {
+          "op": "cli_invoke",
+          "source_transcript_vector_id": "invalid_bad_signature",
+          "registry_mode": "open",
+          "flags": [],
+          "expected_exit_code": 1,
+          "expected_profile": "l28-m2m-replay-admission/v0.1",
+          "expected_code": "envelope_verification_failed",
+          "expected_registry_code": null,
+          "expected_admitted": false,
+          "expected_newly_recorded": false,
+          "expected_new_messages": 0,
+          "expected_exchange_count_delta": 0,
+          "expected_message_count_delta": 0,
+          "expected_registry_bytes_unchanged": true
+        }
+      ]
+    },
+    {
+      "vector_id": "admission_missing_existing_registry",
+      "notes": "Missing existing-registry path after successful conformance",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "operations": [
+        {
+          "op": "cli_invoke",
+          "source_transcript_vector_id": "valid_partial_quoted",
+          "registry_mode": "open",
+          "registry_path_suffix": "missing.sqlite3",
+          "flags": [],
+          "expected_exit_code": 2,
+          "expected_profile": "l28-m2m-replay-admission/v0.1",
+          "expected_code": "ok",
+          "expected_registry_code": "registry_not_found",
+          "expected_admitted": false,
+          "expected_newly_recorded": false,
+          "expected_new_messages": 0,
+          "expected_exchange_count_delta": 0,
+          "expected_message_count_delta": 0
+        }
+      ]
+    },
+    {
+      "vector_id": "admission_create_path_exists",
+      "notes": "Create mode rejects an existing registry path",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "operations": [
+        {
+          "op": "cli_invoke",
+          "source_transcript_vector_id": "valid_partial_quoted",
+          "registry_mode": "create",
+          "flags": [],
+          "expected_exit_code": 0,
+          "expected_profile": "l28-m2m-replay-admission/v0.1",
+          "expected_code": "ok",
+          "expected_registry_code": "recorded_new",
+          "expected_admitted": true,
+          "expected_newly_recorded": true,
+          "expected_new_messages": 2,
+          "expected_exchange_count_delta": 1,
+          "expected_message_count_delta": 2
+        },
+        {
+          "op": "cli_invoke",
+          "source_transcript_vector_id": "valid_partial_quoted",
+          "registry_mode": "create",
+          "flags": [],
+          "expected_exit_code": 2,
+          "expected_profile": "l28-m2m-replay-admission/v0.1",
+          "expected_code": "ok",
+          "expected_registry_code": "registry_already_exists",
+          "expected_admitted": false,
+          "expected_newly_recorded": false,
+          "expected_new_messages": 0,
+          "expected_exchange_count_delta": 0,
+          "expected_message_count_delta": 0
+        }
+      ]
+    },
+    {
+      "vector_id": "admission_schema_mismatch",
+      "notes": "Schema mismatch on open after conformance",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "source_replay_vector_id": "replay_wrong_schema_version",
+      "operations": [
+        {
+          "op": "cli_invoke",
+          "source_transcript_vector_id": "valid_partial_quoted",
+          "registry_mode": "create",
+          "flags": [],
+          "expected_exit_code": 0,
+          "expected_profile": "l28-m2m-replay-admission/v0.1",
+          "expected_code": "ok",
+          "expected_registry_code": "recorded_new",
+          "expected_admitted": true,
+          "expected_newly_recorded": true,
+          "expected_new_messages": 2,
+          "expected_exchange_count_delta": 1,
+          "expected_message_count_delta": 2
+        },
+        {
+          "op": "corrupt_schema_version",
+          "expected_code": null
+        },
+        {
+          "op": "cli_invoke",
+          "source_transcript_vector_id": "valid_partial_quoted",
+          "registry_mode": "open",
+          "flags": [],
+          "expected_exit_code": 3,
+          "expected_profile": "l28-m2m-replay-admission/v0.1",
+          "expected_code": "ok",
+          "expected_registry_code": "schema_version_mismatch",
+          "expected_admitted": false,
+          "expected_newly_recorded": false,
+          "expected_new_messages": 0,
+          "expected_exchange_count_delta": 0,
+          "expected_message_count_delta": 0
+        }
+      ]
+    },
+    {
+      "vector_id": "admission_corrupted_registry",
+      "notes": "Registry corruption detected on open",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "source_replay_vector_id": "replay_corrupted_state",
+      "operations": [
+        {
+          "op": "cli_invoke",
+          "source_transcript_vector_id": "valid_partial_quoted",
+          "registry_mode": "create",
+          "flags": [],
+          "expected_exit_code": 0,
+          "expected_profile": "l28-m2m-replay-admission/v0.1",
+          "expected_code": "ok",
+          "expected_registry_code": "recorded_new",
+          "expected_admitted": true,
+          "expected_newly_recorded": true,
+          "expected_new_messages": 2,
+          "expected_exchange_count_delta": 1,
+          "expected_message_count_delta": 2
+        },
+        {
+          "op": "corrupt_message_count",
+          "expected_code": null
+        },
+        {
+          "op": "cli_invoke",
+          "source_transcript_vector_id": "valid_partial_quoted",
+          "registry_mode": "open",
+          "flags": [],
+          "expected_exit_code": 3,
+          "expected_profile": "l28-m2m-replay-admission/v0.1",
+          "expected_code": "ok",
+          "expected_registry_code": "registry_integrity_error",
+          "expected_admitted": false,
+          "expected_newly_recorded": false,
+          "expected_new_messages": 0,
+          "expected_exchange_count_delta": 0,
+          "expected_message_count_delta": 0
+        }
+      ]
+    },
+    {
+      "vector_id": "admission_no_registry_backward_compat",
+      "notes": "No registry mode preserves Foundation 7 conformance report byte-for-byte",
+      "test_only": true,
+      "live": false,
+      "accepted_settlement": false,
+      "private_material_committed": false,
+      "source_report_vector_id": "report_valid_completed_file",
+      "operations": [
+        {
+          "op": "cli_invoke",
+          "source_transcript_vector_id": "valid_happy_path_completed",
+          "registry_mode": null,
+          "flags": ["--require-terminal"],
+          "expected_exit_code": 0,
+          "expected_profile": "l28-m2m-transcript/v0.1",
+          "expected_report_version": "l28-m2m-conformance-report/v0.1",
+          "expected_code": "ok",
+          "expected_admitted": null,
+          "expected_newly_recorded": null,
+          "expected_new_messages": null,
+          "expected_exchange_count_delta": 0,
+          "expected_message_count_delta": 0
+        }
+      ]
+    }
+  ]
+}
