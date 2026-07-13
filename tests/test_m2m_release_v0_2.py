@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 """
-Offline tests for Foundation 13 L28 M2M v0.2.0 release candidate manifest.
+Offline tests for Foundation 13 L28 M2M v0.2.0 historical release manifest.
 
-Independently verifies dual-manifest anchoring, artifact inventory, contracts,
-and manifest_id determinism.
+Verifies frozen manifest byte identity, manifest ID, internal schema, roles,
+prior-release anchoring, and self-exclusion. The Git tag l28-m2m-v0.2.0 is the
+canonical snapshot for recomputing v0.2 artifact hashes.
 """
 from __future__ import annotations
 
@@ -87,14 +88,23 @@ DOMAIN_MANIFEST_V01 = b"L28-M2M-V0.1-RELEASE-MANIFEST\x00"
 DOMAIN_MANIFEST = b"L28-M2M-V0.2-RELEASE-MANIFEST\x00"
 
 HISTORICAL_MANIFEST_SHA256 = (
-    "fc721c1c188b2f0a0ba28fe7e06fcb1f1812363c9d611bd42ebc93d34362ca6c"
+    "08c78b80c97557f82905b7df585ae4ec4643dc84f3c7304c00328d532241e04d"
 )
 HISTORICAL_MANIFEST_ID = (
+    "ffb5eb9eccd645e08877347dd2b5324c23dba7962d75e3f2aa40dbb509caa16d"
+)
+HISTORICAL_TAG = "l28-m2m-v0.2.0"
+HISTORICAL_ARTIFACT_COUNT = 49
+
+HISTORICAL_V01_MANIFEST_SHA256 = (
+    "fc721c1c188b2f0a0ba28fe7e06fcb1f1812363c9d611bd42ebc93d34362ca6c"
+)
+HISTORICAL_V01_MANIFEST_ID = (
     "8e2b21b55306b3e0dedc2a87a7c607d4440ff6ac92f0b6a4653f9be0ef392366"
 )
-HISTORICAL_TAG = "l28-m2m-v0.1.0"
-HISTORICAL_COMMIT = "7215d585a38155b5a36e7ebe077dcad43e810388"
-HISTORICAL_MANIFEST_PATH = "docs/m2m/release_manifest_v0.1.json"
+HISTORICAL_V01_TAG = "l28-m2m-v0.1.0"
+HISTORICAL_V01_COMMIT = "7215d585a38155b5a36e7ebe077dcad43e810388"
+HISTORICAL_V01_MANIFEST_PATH = "docs/m2m/release_manifest_v0.1.json"
 
 MANIFEST_EXCLUDE_ONLY = "docs/m2m/release_manifest_v0.2.json"
 
@@ -184,7 +194,7 @@ def _collect_expected_artifact_paths() -> List[str]:
     paths.extend(sorted((ROOT / "docs" / "m2m").glob("*.md")))
     paths.extend(sorted((ROOT / "docs" / "m2m").glob("test_vectors*.json")))
     paths.extend(sorted((ROOT / "tests").glob("test_m2m_*.py")))
-    paths.append(ROOT / HISTORICAL_MANIFEST_PATH)
+    paths.append(ROOT / HISTORICAL_V01_MANIFEST_PATH)
     for rel in EXPLICIT_DEPENDENCY_PATHS:
         paths.append(ROOT / rel)
     out: List[str] = []
@@ -221,7 +231,7 @@ def _collect_keys(obj: Any, out: Set[str]) -> None:
 
 
 def _expected_role(path: str) -> str:
-    if path == HISTORICAL_MANIFEST_PATH:
+    if path == HISTORICAL_V01_MANIFEST_PATH:
         return "historical_release_manifest"
     if path in {
         RELEASE_NOTES_V01,
@@ -311,11 +321,11 @@ class ReleaseV02ManifestStructureTests(unittest.TestCase):
 
     def test_prior_release_anchor(self) -> None:
         prior = _load_manifest()["prior_release"]
-        self.assertEqual(prior["tag"], HISTORICAL_TAG)
-        self.assertEqual(prior["commit"], HISTORICAL_COMMIT)
-        self.assertEqual(prior["manifest_id"], HISTORICAL_MANIFEST_ID)
-        self.assertEqual(prior["manifest_sha256"], HISTORICAL_MANIFEST_SHA256)
-        self.assertEqual(prior["manifest_path"], HISTORICAL_MANIFEST_PATH)
+        self.assertEqual(prior["tag"], HISTORICAL_V01_TAG)
+        self.assertEqual(prior["commit"], HISTORICAL_V01_COMMIT)
+        self.assertEqual(prior["manifest_id"], HISTORICAL_V01_MANIFEST_ID)
+        self.assertEqual(prior["manifest_sha256"], HISTORICAL_V01_MANIFEST_SHA256)
+        self.assertEqual(prior["manifest_path"], HISTORICAL_V01_MANIFEST_PATH)
 
     def test_tested_python(self) -> None:
         tested = _load_manifest()["tested_python"]
@@ -340,7 +350,7 @@ class ReleaseV02ManifestStructureTests(unittest.TestCase):
             set(prior.keys()),
             {"tag", "commit", "manifest_path", "manifest_id", "manifest_sha256"},
         )
-        self.assertEqual(prior["commit"], HISTORICAL_COMMIT)
+        self.assertEqual(prior["commit"], HISTORICAL_V01_COMMIT)
 
     def test_no_forbidden_value_markers(self) -> None:
         text = MANIFEST_PATH.read_text(encoding="utf-8")
@@ -367,7 +377,7 @@ class ReleaseV02ManifestStructureTests(unittest.TestCase):
 class ReleaseV02HistoricalManifestTests(unittest.TestCase):
     def test_v01_manifest_byte_identity(self) -> None:
         digest = hashlib.sha256(MANIFEST_V01_PATH.read_bytes()).hexdigest()
-        self.assertEqual(digest, HISTORICAL_MANIFEST_SHA256)
+        self.assertEqual(digest, HISTORICAL_V01_MANIFEST_SHA256)
 
     def test_v01_manifest_id_unchanged(self) -> None:
         manifest = _load_manifest_v01()
@@ -375,16 +385,33 @@ class ReleaseV02HistoricalManifestTests(unittest.TestCase):
         expected = hashlib.sha256(
             DOMAIN_MANIFEST_V01 + canonical_bytes(without_id)
         ).hexdigest()
+        self.assertEqual(manifest["manifest_id"], HISTORICAL_V01_MANIFEST_ID)
+        self.assertEqual(expected, HISTORICAL_V01_MANIFEST_ID)
+
+    def test_v02_historical_manifest_byte_identity(self) -> None:
+        digest = hashlib.sha256(MANIFEST_PATH.read_bytes()).hexdigest()
+        self.assertEqual(digest, HISTORICAL_MANIFEST_SHA256)
+
+    def test_v02_historical_manifest_id(self) -> None:
+        manifest = _load_manifest()
         self.assertEqual(manifest["manifest_id"], HISTORICAL_MANIFEST_ID)
-        self.assertEqual(expected, HISTORICAL_MANIFEST_ID)
+        self.assertEqual(_compute_manifest_id(manifest), HISTORICAL_MANIFEST_ID)
+
+    def test_v02_historical_manifest_self_exclusion(self) -> None:
+        paths = {entry["path"] for entry in _load_manifest()["artifacts"]}
+        self.assertNotIn(MANIFEST_EXCLUDE_ONLY, paths)
+
+    def test_v02_historical_artifact_count(self) -> None:
+        self.assertEqual(len(_load_manifest()["artifacts"]), HISTORICAL_ARTIFACT_COUNT)
+
+    def test_v02_historical_intended_tag(self) -> None:
+        self.assertEqual(_load_manifest()["intended_tag"], HISTORICAL_TAG)
 
     def test_v01_manifest_included_as_historical(self) -> None:
         index = _artifact_index(_load_manifest())
-        self.assertIn(HISTORICAL_MANIFEST_PATH, index)
-        self.assertEqual(index[HISTORICAL_MANIFEST_PATH]["role"], "historical_release_manifest")
-        digest, size = _sha256_file(HISTORICAL_MANIFEST_PATH)
-        self.assertEqual(index[HISTORICAL_MANIFEST_PATH]["sha256"], digest)
-        self.assertEqual(index[HISTORICAL_MANIFEST_PATH]["size_bytes"], size)
+        self.assertIn(HISTORICAL_V01_MANIFEST_PATH, index)
+        self.assertEqual(index[HISTORICAL_V01_MANIFEST_PATH]["role"], "historical_release_manifest")
+        self.assertEqual(index[HISTORICAL_V01_MANIFEST_PATH]["sha256"], HISTORICAL_V01_MANIFEST_SHA256)
 
 
 class ReleaseV02ManifestIdTests(unittest.TestCase):
@@ -403,15 +430,10 @@ class ReleaseV02ManifestIdTests(unittest.TestCase):
     def test_manifest_excludes_only_itself(self) -> None:
         paths = {entry["path"] for entry in _load_manifest()["artifacts"]}
         self.assertNotIn(MANIFEST_EXCLUDE_ONLY, paths)
-        self.assertIn(HISTORICAL_MANIFEST_PATH, paths)
+        self.assertIn(HISTORICAL_V01_MANIFEST_PATH, paths)
 
 
 class ReleaseV02ArtifactInventoryTests(unittest.TestCase):
-    def test_independent_inventory_matches_manifest(self) -> None:
-        expected_paths = _collect_expected_artifact_paths()
-        manifest_paths = [entry["path"] for entry in _load_manifest()["artifacts"]]
-        self.assertEqual(manifest_paths, expected_paths)
-
     def test_artifacts_sorted_lexicographically(self) -> None:
         paths = [entry["path"] for entry in _load_manifest()["artifacts"]]
         self.assertEqual(paths, sorted(paths))
@@ -424,26 +446,18 @@ class ReleaseV02ArtifactInventoryTests(unittest.TestCase):
         for entry in _load_manifest()["artifacts"]:
             self.assertEqual(set(entry.keys()), ARTIFACT_FIELDS, entry["path"])
 
-    def test_all_roles_expected_and_non_empty(self) -> None:
+    def test_all_roles_non_empty_in_frozen_manifest(self) -> None:
         for entry in _load_manifest()["artifacts"]:
             role = entry["role"]
             self.assertIsInstance(role, str, entry["path"])
             self.assertTrue(role.strip(), entry["path"])
             self.assertIn(role, APPROVED_ROLES, entry["path"])
-            self.assertEqual(role, _expected_role(entry["path"]), entry["path"])
 
-    def test_role_counts_sum_to_artifact_total(self) -> None:
+    def test_role_counts_sum_to_frozen_artifact_total(self) -> None:
         manifest = _load_manifest()
         counts = _role_counts(manifest)
         self.assertEqual(sum(counts.values()), len(manifest["artifacts"]))
-        self.assertEqual(len(manifest["artifacts"]), len(_collect_expected_artifact_paths()))
-
-    def test_every_digest_and_size_recomputes(self) -> None:
-        for entry in _load_manifest()["artifacts"]:
-            digest, size = _sha256_file(entry["path"])
-            self.assertEqual(entry["sha256"], digest, entry["path"])
-            self.assertEqual(entry["size_bytes"], size, entry["path"])
-            self.assertRegex(entry["sha256"], r"^[0-9a-f]{64}$")
+        self.assertEqual(len(manifest["artifacts"]), HISTORICAL_ARTIFACT_COUNT)
 
     def test_no_traversal_absolute_paths_symlinks_or_directories(self) -> None:
         for entry in _load_manifest()["artifacts"]:
@@ -639,7 +653,7 @@ class ReleaseV02DocumentTests(unittest.TestCase):
         self.assertIn("l28-m2m-replay-registry-backup/v0.1", text)
         self.assertIn("os.link", text)
         self.assertIn("quiescent", text.lower())
-        self.assertIn(HISTORICAL_TAG, text)
+        self.assertIn(HISTORICAL_V01_TAG, text)
         self.assertIn("l28-m2m-v0.2.0", text)
         self.assertNotIn("tag has been created", text.lower())
         self.assertNotIn(_load_manifest()["manifest_id"], text)
@@ -649,7 +663,7 @@ class ReleaseV02DocumentTests(unittest.TestCase):
         self.assertIn("l28-m2m-release-compatibility/v0.2", text)
         self.assertIn("l28-m2m/v0.1", text)
         self.assertIn("l28-m2m-replay-registry-backup/v0.1", text)
-        self.assertIn(HISTORICAL_TAG, text)
+        self.assertIn(HISTORICAL_V01_TAG, text)
         self.assertIn("unencrypted", text.lower())
         self.assertIn("quiescent", text.lower())
         self.assertIn("os.link", text)
@@ -660,7 +674,8 @@ class ReleaseV02DocumentTests(unittest.TestCase):
         self.assertIn("release_notes_v0.2.md", text)
         self.assertIn("release_compatibility_v0.2.md", text)
         self.assertIn(HISTORICAL_TAG, text)
-        self.assertIn("release candidate", text.lower())
+        self.assertIn("l28-m2m-v0.2.0", text)
+        self.assertIn("published", text.lower())
         self.assertIn("l28-m2m/v0.1", text)
         self.assertIn("l28-m2m-replay-registry-backup/v0.1", text)
         for claim in TAG_EXISTS_CLAIMS:

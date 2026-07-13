@@ -36,9 +36,10 @@ M2M v0.1 is a coordination and evidence-exchange layer. It is not a second ledge
 | [release_notes_v0.1.md](release_notes_v0.1.md) | L28 M2M v0.1.0 published release notes (Foundation 11) |
 | [compatibility_policy_v0.1.md](compatibility_policy_v0.1.md) | Frozen public compatibility policy for v0.1.0 (Foundation 11) |
 | [release_manifest_v0.1.json](release_manifest_v0.1.json) | Immutable v0.1.0 release manifest (Foundation 11) |
-| [release_notes_v0.2.md](release_notes_v0.2.md) | L28 M2M v0.2.0 release candidate notes (Foundation 13) |
+| [release_notes_v0.2.md](release_notes_v0.2.md) | L28 M2M v0.2.0 published release notes (Foundation 13) |
 | [release_compatibility_v0.2.md](release_compatibility_v0.2.md) | Frozen release compatibility policy for v0.2.0 (Foundation 13) |
-| [release_manifest_v0.2.json](release_manifest_v0.2.json) | Deterministic v0.2.0 release candidate manifest (Foundation 13) |
+| [release_manifest_v0.2.json](release_manifest_v0.2.json) | Immutable v0.2.0 published release manifest (Foundation 13) |
+| [reference_workflow_v0.1.md](reference_workflow_v0.1.md) | Offline end-to-end reference workflow (Foundation 14) |
 | [test_vectors_v0.1.json](test_vectors_v0.1.json) | Deterministic offline unsigned digest vectors (non-operational) |
 | [test_vectors_signed_v0.1.json](test_vectors_signed_v0.1.json) | Independently verified signed public fixtures (test-only; not settlement) |
 | [test_vectors_transcript_v0.1.json](test_vectors_transcript_v0.1.json) | Independently verified signed transcript fixtures (test-only; not settlement) |
@@ -47,6 +48,7 @@ M2M v0.1 is a coordination and evidence-exchange layer. It is not a second ledge
 | [test_vectors_admission_v0.1.json](test_vectors_admission_v0.1.json) | CLI replay admission operation sequences (test-only; not settlement) |
 | [test_vectors_registry_audit_v0.1.json](test_vectors_registry_audit_v0.1.json) | Replay registry audit scenarios (test-only; not settlement) |
 | [test_vectors_registry_backup_v0.1.json](test_vectors_registry_backup_v0.1.json) | Replay registry backup/recovery scenarios (test-only; not settlement) |
+| [test_vectors_reference_workflow_v0.1.json](test_vectors_reference_workflow_v0.1.json) | Reference workflow scenarios (test-only; not settlement) |
 
 ## Normative language
 
@@ -106,4 +108,6 @@ Foundation 11 freezes the L28 M2M v0.1.0 public surface. Tag `l28-m2m-v0.1.0` is
 
 Foundation 12 provides offline replay-registry backup and verified recovery in `coin/m2m_registry_backup.py` and `coin/m2m_registry_backup_cli.py` under backup/recovery profile `l28-m2m-replay-registry-backup/v0.1`. It copies audited registries to new destinations without modifying sources, activating restored registries, or providing online snapshot service. See [registry_backup_recovery_v0.1.md](registry_backup_recovery_v0.1.md).
 
-Foundation 13 freezes the L28 M2M v0.2.0 release candidate at protocol profile `l28-m2m/v0.1`. Intended tag `l28-m2m-v0.2.0` is not created by this milestone. See [release_manifest_v0.2.json](release_manifest_v0.2.json), [release_notes_v0.2.md](release_notes_v0.2.md), and [release_compatibility_v0.2.md](release_compatibility_v0.2.md).
+Foundation 13 freezes the L28 M2M v0.2.0 public surface at protocol profile `l28-m2m/v0.1`. Tag `l28-m2m-v0.2.0` is the canonical immutable published release. See [release_manifest_v0.2.json](release_manifest_v0.2.json), [release_notes_v0.2.md](release_notes_v0.2.md), and [release_compatibility_v0.2.md](release_compatibility_v0.2.md).
+
+Foundation 14 provides the offline end-to-end reference workflow in `coin/m2m_reference_workflow.py`. It validates a signed transcript, admits it to a disposable replay registry, audits it, backs it up, restores it, and compares logical replay state inside one temporary directory with no operational persistence. See [reference_workflow_v0.1.md](reference_workflow_v0.1.md).

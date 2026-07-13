@@ -1,0 +1,289 @@
+{
+  "accepted_settlement": false,
+  "contains_private_material": false,
+  "foundation": "14",
+  "input_mode_note": "file and stdin modes affect only the input_mode report field for the same raw bytes; report_id remains identical.",
+  "live": false,
+  "notes": "Declarative reference-workflow vectors only. References existing signed transcript vector IDs. No new signatures, keys, SQLite files, or backups are committed.",
+  "private_material_committed": false,
+  "profile": "L28 M2M Reference Workflow v0.1",
+  "reference_transcript_vectors": "docs/m2m/test_vectors_transcript_v0.1.json",
+  "status": "reference_workflow_vectors_offline",
+  "subordinate_to": "L28 Protocol v1.0.0",
+  "test_only": true,
+  "workflow_vectors": [
+    {
+      "expected_code": "workflow_verified",
+      "expected_failed_stage": null,
+      "expected_stage_codes": {
+        "backup": "backup_created",
+        "initial_admission": "recorded_new",
+        "logical_state_comparison": "ok",
+        "restored_audit": "registry_healthy",
+        "restored_idempotency": "already_recorded",
+        "restore": "restore_created",
+        "source_audit": "registry_healthy",
+        "source_idempotency": "already_recorded",
+        "transcript_validation": "ok"
+      },
+      "input_mode": "api",
+      "notes": "Completed happy-path workflow.",
+      "require_terminal": true,
+      "transcript_vector_id": "valid_happy_path_completed",
+      "vector_id": "happy_path_completed"
+    },
+    {
+      "expected_code": "workflow_verified",
+      "expected_failed_stage": null,
+      "expected_stage_codes": {
+        "backup": "backup_created",
+        "initial_admission": "recorded_new",
+        "logical_state_comparison": "ok",
+        "restored_audit": "registry_healthy",
+        "restored_idempotency": "already_recorded",
+        "restore": "restore_created",
+        "source_audit": "registry_healthy",
+        "source_idempotency": "already_recorded",
+        "transcript_validation": "ok"
+      },
+      "input_mode": "api",
+      "notes": "Partial transcript accepted without terminal requirement.",
+      "require_terminal": false,
+      "transcript_vector_id": "valid_partial_quoted",
+      "vector_id": "partial_accepted_without_terminal"
+    },
+    {
+      "expected_code": "terminal_required",
+      "expected_component_code": "incomplete_transcript",
+      "expected_failed_stage": "transcript_validation",
+      "expected_stage_codes": {
+        "backup": null,
+        "initial_admission": null,
+        "logical_state_comparison": null,
+        "restored_audit": null,
+        "restored_idempotency": null,
+        "restore": null,
+        "source_audit": null,
+        "source_idempotency": null,
+        "transcript_validation": "incomplete_transcript"
+      },
+      "input_mode": "api",
+      "notes": "Partial transcript rejected when terminal is required.",
+      "require_terminal": true,
+      "transcript_vector_id": "valid_partial_quoted",
+      "vector_id": "partial_rejected_with_terminal"
+    },
+    {
+      "expected_code": "workflow_verified",
+      "expected_failed_stage": null,
+      "expected_stage_codes": {
+        "backup": "backup_created",
+        "initial_admission": "recorded_new",
+        "logical_state_comparison": "ok",
+        "restored_audit": "registry_healthy",
+        "restored_idempotency": "already_recorded",
+        "restore": "restore_created",
+        "source_audit": "registry_healthy",
+        "source_idempotency": "already_recorded",
+        "transcript_validation": "ok"
+      },
+      "input_mode": "api",
+      "notes": "Terminal cancelled transcript completes the workflow when terminal is required.",
+      "require_terminal": true,
+      "transcript_vector_id": "valid_terminal_cancelled",
+      "vector_id": "terminal_cancelled_completed"
+    },
+    {
+      "expected_code": "conformance_failed",
+      "expected_component_code": "invalid_json",
+      "expected_failed_stage": "transcript_validation",
+      "input_mode": "api",
+      "notes": "Malformed JSON input.",
+      "raw_text": "{not-json",
+      "require_terminal": false,
+      "vector_id": "malformed_json"
+    },
+    {
+      "expected_code": "conformance_failed",
+      "expected_component_code": "invalid_json",
+      "expected_failed_stage": "transcript_validation",
+      "input_mode": "api",
+      "notes": "Malformed UTF-8 input.",
+      "raw_hex": "c328",
+      "require_terminal": false,
+      "vector_id": "malformed_utf8"
+    },
+    {
+      "expected_code": "conformance_failed",
+      "expected_component_code": "bad_signature",
+      "expected_failed_stage": "transcript_validation",
+      "input_mode": "api",
+      "notes": "Invalid signature transcript.",
+      "require_terminal": false,
+      "transcript_vector_id": "invalid_bad_signature",
+      "vector_id": "invalid_signature"
+    },
+    {
+      "expected_code": "conformance_failed",
+      "expected_component_code": "exchange_id_mismatch",
+      "expected_failed_stage": "transcript_validation",
+      "input_mode": "api",
+      "notes": "Mixed exchange transcript.",
+      "require_terminal": false,
+      "transcript_vector_id": "invalid_mixed_exchange_id",
+      "vector_id": "mixed_exchange"
+    },
+    {
+      "expected_code": "initial_admission_failed",
+      "expected_component_code": "recorded_extension",
+      "expected_failed_stage": "initial_admission",
+      "injection": {
+        "force_initial_admission_code": "recorded_extension"
+      },
+      "input_mode": "api",
+      "notes": "Injected initial admission failure for regression testing.",
+      "require_terminal": true,
+      "transcript_vector_id": "valid_happy_path_completed",
+      "vector_id": "failed_initial_admission"
+    },
+    {
+      "expected_code": "source_idempotency_failed",
+      "expected_component_code": "already_recorded_prefix",
+      "expected_failed_stage": "source_idempotency",
+      "injection": {
+        "force_source_idempotency_code": "already_recorded_prefix"
+      },
+      "input_mode": "api",
+      "notes": "Prefix idempotency must not count as exact replay success.",
+      "require_terminal": true,
+      "transcript_vector_id": "valid_happy_path_completed",
+      "vector_id": "failed_exact_idempotency"
+    },
+    {
+      "expected_code": "source_audit_failed",
+      "expected_component_code": "registry_integrity_error",
+      "expected_failed_stage": "source_audit",
+      "injection": {
+        "force_source_audit_code": "registry_integrity_error"
+      },
+      "input_mode": "api",
+      "notes": "Injected source audit failure.",
+      "require_terminal": true,
+      "transcript_vector_id": "valid_happy_path_completed",
+      "vector_id": "failed_source_audit"
+    },
+    {
+      "expected_code": "backup_failed",
+      "expected_component_code": "backup_failed",
+      "expected_failed_stage": "backup",
+      "injection": {
+        "force_backup_code": "backup_failed"
+      },
+      "input_mode": "api",
+      "notes": "Injected backup failure.",
+      "require_terminal": true,
+      "transcript_vector_id": "valid_happy_path_completed",
+      "vector_id": "failed_backup"
+    },
+    {
+      "expected_code": "restore_failed",
+      "expected_component_code": "restore_failed",
+      "expected_failed_stage": "restore",
+      "injection": {
+        "force_restore_code": "restore_failed"
+      },
+      "input_mode": "api",
+      "notes": "Injected restore failure.",
+      "require_terminal": true,
+      "transcript_vector_id": "valid_happy_path_completed",
+      "vector_id": "failed_restore"
+    },
+    {
+      "expected_code": "restored_audit_failed",
+      "expected_component_code": "registry_integrity_error",
+      "expected_failed_stage": "restored_audit",
+      "injection": {
+        "force_restored_audit_code": "registry_integrity_error"
+      },
+      "input_mode": "api",
+      "notes": "Injected restored audit failure.",
+      "require_terminal": true,
+      "transcript_vector_id": "valid_happy_path_completed",
+      "vector_id": "failed_restored_audit"
+    },
+    {
+      "expected_code": "restored_idempotency_failed",
+      "expected_component_code": "already_recorded_prefix",
+      "expected_failed_stage": "restored_idempotency",
+      "injection": {
+        "force_restored_idempotency_code": "already_recorded_prefix"
+      },
+      "input_mode": "api",
+      "notes": "Injected restored idempotency failure.",
+      "require_terminal": true,
+      "transcript_vector_id": "valid_happy_path_completed",
+      "vector_id": "failed_restored_idempotency"
+    },
+    {
+      "expected_code": "logical_state_mismatch",
+      "expected_component_code": "logical_state_mismatch",
+      "expected_failed_stage": "logical_state_comparison",
+      "injection": {
+        "force_logical_state_mismatch": true
+      },
+      "input_mode": "api",
+      "notes": "Injected logical-state mismatch after otherwise successful stages.",
+      "require_terminal": true,
+      "transcript_vector_id": "valid_happy_path_completed",
+      "vector_id": "logical_state_mismatch"
+    },
+    {
+      "expected_code": "unsafe_temporary_directory",
+      "expected_component_code": "unsafe_temporary_directory",
+      "expected_failed_stage": "initial_admission",
+      "injection": {
+        "force_unsafe_temporary_directory": true
+      },
+      "input_mode": "api",
+      "notes": "Injected unsafe temporary directory rejection.",
+      "require_terminal": true,
+      "transcript_vector_id": "valid_happy_path_completed",
+      "vector_id": "unsafe_temporary_directory"
+    },
+    {
+      "expected_code": "verification_backend_unavailable",
+      "expected_component_code": "verification_backend_unavailable",
+      "expected_failed_stage": "transcript_validation",
+      "injection": {
+        "force_transcript_envelope_code": "verification_backend_unavailable"
+      },
+      "input_mode": "api",
+      "notes": "Injected backend-unavailable transcript failure.",
+      "require_terminal": false,
+      "transcript_vector_id": "valid_happy_path_completed",
+      "vector_id": "backend_unavailable"
+    },
+    {
+      "deterministic_repeat": true,
+      "expected_code": "workflow_verified",
+      "input_mode": "api",
+      "notes": "Repeated execution with identical input must yield identical report_id.",
+      "require_terminal": true,
+      "transcript_vector_id": "valid_happy_path_completed",
+      "vector_id": "deterministic_repeated_report"
+    },
+    {
+      "documented_input_modes": [
+        "api",
+        "file",
+        "stdin"
+      ],
+      "expected_code": "workflow_verified",
+      "input_mode": "file",
+      "notes": "File and stdin modes differ only in input_mode; same raw bytes preserve report_id.",
+      "require_terminal": true,
+      "transcript_vector_id": "valid_happy_path_completed",
+      "vector_id": "file_stdin_input_mode_difference"
+    }
+  ]
+}
