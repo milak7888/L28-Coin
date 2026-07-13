@@ -31,12 +31,14 @@ M2M v0.1 is a coordination and evidence-exchange layer. It is not a second ledge
 | [conformance_cli_v0.1.md](conformance_cli_v0.1.md) | Offline conformance CLI and deterministic report (Foundation 7) |
 | [replay_registry_v0.1.md](replay_registry_v0.1.md) | Offline local replay/idempotency registry (Foundation 8) |
 | [admission_cli_v0.1.md](admission_cli_v0.1.md) | Offline CLI replay admission gate and admission report (Foundation 9) |
+| [registry_audit_v0.1.md](registry_audit_v0.1.md) | Offline read-only replay registry audit and integrity report (Foundation 10) |
 | [test_vectors_v0.1.json](test_vectors_v0.1.json) | Deterministic offline unsigned digest vectors (non-operational) |
 | [test_vectors_signed_v0.1.json](test_vectors_signed_v0.1.json) | Independently verified signed public fixtures (test-only; not settlement) |
 | [test_vectors_transcript_v0.1.json](test_vectors_transcript_v0.1.json) | Independently verified signed transcript fixtures (test-only; not settlement) |
 | [test_vectors_report_v0.1.json](test_vectors_report_v0.1.json) | Deterministic conformance-report fixtures (test-only; not settlement) |
 | [test_vectors_replay_v0.1.json](test_vectors_replay_v0.1.json) | Replay/idempotency operation sequences (test-only; not settlement) |
 | [test_vectors_admission_v0.1.json](test_vectors_admission_v0.1.json) | CLI replay admission operation sequences (test-only; not settlement) |
+| [test_vectors_registry_audit_v0.1.json](test_vectors_registry_audit_v0.1.json) | Replay registry audit scenarios (test-only; not settlement) |
 
 ## Normative language
 
@@ -89,3 +91,5 @@ Foundation 7 provides an offline conformance CLI in `coin/m2m_conformance_cli.py
 Foundation 8 provides a local offline replay/idempotency registry in `coin/m2m_replay_registry.py` (explicit path, hash-only SQLite). It is not an L28 ledger, consensus system, wallet, or settlement authority.
 
 Foundation 9 optionally integrates Foundation 8 into the Foundation 7 CLI via explicit registry flags, emitting a deterministic admission report after verify-before-registry ordering. Without registry flags, Foundation 7 stdout bytes and exit codes remain unchanged.
+
+Foundation 10 provides a strictly read-only replay-registry auditor in `coin/m2m_registry_audit.py` and `coin/m2m_registry_audit_cli.py`. It inspects existing registries without creating, modifying, repairing, or admitting state.

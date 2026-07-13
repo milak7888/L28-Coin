@@ -105,3 +105,5 @@ SQLite settings: foreign keys on, `journal_mode=DELETE`, durable `synchronous=FU
 ## 10. Test vectors
 
 Deterministic operation sequences: [test_vectors_replay_v0.1.json](test_vectors_replay_v0.1.json).
+
+Foundation 10 adds a strictly read-only offline auditor. See [registry_audit_v0.1.md](registry_audit_v0.1.md).
