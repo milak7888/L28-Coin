@@ -39,6 +39,9 @@ M2M v0.1 is a coordination and evidence-exchange layer. It is not a second ledge
 | [release_notes_v0.2.md](release_notes_v0.2.md) | L28 M2M v0.2.0 published release notes (Foundation 13) |
 | [release_compatibility_v0.2.md](release_compatibility_v0.2.md) | Frozen release compatibility policy for v0.2.0 (Foundation 13) |
 | [release_manifest_v0.2.json](release_manifest_v0.2.json) | Immutable v0.2.0 published release manifest (Foundation 13) |
+| [release_notes_v0.3.md](release_notes_v0.3.md) | L28 M2M v0.3.0 release candidate notes (Foundation 15) |
+| [release_compatibility_v0.3.md](release_compatibility_v0.3.md) | Frozen release compatibility policy for v0.3.0 (Foundation 15) |
+| [release_manifest_v0.3.json](release_manifest_v0.3.json) | Deterministic v0.3.0 release candidate manifest (Foundation 15) |
 | [reference_workflow_v0.1.md](reference_workflow_v0.1.md) | Offline end-to-end reference workflow (Foundation 14) |
 | [test_vectors_v0.1.json](test_vectors_v0.1.json) | Deterministic offline unsigned digest vectors (non-operational) |
 | [test_vectors_signed_v0.1.json](test_vectors_signed_v0.1.json) | Independently verified signed public fixtures (test-only; not settlement) |
@@ -110,4 +113,6 @@ Foundation 12 provides offline replay-registry backup and verified recovery in `
 
 Foundation 13 freezes the L28 M2M v0.2.0 public surface at protocol profile `l28-m2m/v0.1`. Tag `l28-m2m-v0.2.0` is the canonical immutable published release. See [release_manifest_v0.2.json](release_manifest_v0.2.json), [release_notes_v0.2.md](release_notes_v0.2.md), and [release_compatibility_v0.2.md](release_compatibility_v0.2.md).
 
-Foundation 14 provides the offline end-to-end reference workflow in `coin/m2m_reference_workflow.py`. It validates a signed transcript, admits it to a disposable replay registry, audits it, backs it up, restores it, and compares logical replay state inside one temporary directory with no operational persistence. See [reference_workflow_v0.1.md](reference_workflow_v0.1.md).
+Foundation 14 provides the offline end-to-end reference workflow in `coin/m2m_reference_workflow.py` under profile `l28-m2m-reference-workflow/v0.1`. It validates a signed transcript, admits it to a disposable replay registry, audits it, backs it up, restores it, and compares logical replay state inside one temporary directory with no operational persistence. See [reference_workflow_v0.1.md](reference_workflow_v0.1.md).
+
+Foundation 15 freezes the L28 M2M v0.3.0 release candidate at protocol profile `l28-m2m/v0.1`. Intended tag `l28-m2m-v0.3.0` is not created by this milestone. See [release_manifest_v0.3.json](release_manifest_v0.3.json), [release_notes_v0.3.md](release_notes_v0.3.md), and [release_compatibility_v0.3.md](release_compatibility_v0.3.md).
