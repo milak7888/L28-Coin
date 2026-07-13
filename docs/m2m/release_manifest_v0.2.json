@@ -1,0 +1,608 @@
+{
+  "artifacts": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "role": "ci",
+      "sha256": "726200b943d516f18ceaf2a9d4294438a70a7fa6d1bfeb68bfed82ce33b75b16",
+      "size_bytes": 730
+    },
+    {
+      "path": "LICENSE",
+      "role": "legal",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "size_bytes": 11358
+    },
+    {
+      "path": "NOTICE",
+      "role": "legal",
+      "sha256": "710062472c64d02dd8230135010f1dcf1229961311afdf49802bf627d5cc9653",
+      "size_bytes": 282
+    },
+    {
+      "path": "PROTOCOL.md",
+      "role": "protocol_dependency",
+      "sha256": "eabd5f2a11916781e6a047e5b2c2188fe4e0f1eae2fdcdc2f68e4c19193c397d",
+      "size_bytes": 5275
+    },
+    {
+      "path": "coin/m2m_conformance_cli.py",
+      "role": "runtime",
+      "sha256": "d1c931ea8beb679d02f2c754795061abdbceb147f4ed1f4f33b144a0910577b4",
+      "size_bytes": 24721
+    },
+    {
+      "path": "coin/m2m_registry_audit.py",
+      "role": "runtime",
+      "sha256": "01da9acaa1e4e68278618b17f3cabafbe9ddd0950ad5e8d59096f17faf5ace33",
+      "size_bytes": 22565
+    },
+    {
+      "path": "coin/m2m_registry_audit_cli.py",
+      "role": "runtime",
+      "sha256": "bb4d9bd366589993bf4a53413207d3cd9b1956da406bd0f8d0a8b67886834113",
+      "size_bytes": 4432
+    },
+    {
+      "path": "coin/m2m_registry_backup.py",
+      "role": "runtime",
+      "sha256": "1cf460e239a9fd75212fe11c26e3559bcb38f68875b1a243d3c157fa8bd4c1ee",
+      "size_bytes": 26500
+    },
+    {
+      "path": "coin/m2m_registry_backup_cli.py",
+      "role": "runtime",
+      "sha256": "0600baaba494e274aec0316c2d1d99d6306d7614aa8a917f4167d18a625ba73c",
+      "size_bytes": 6516
+    },
+    {
+      "path": "coin/m2m_replay_registry.py",
+      "role": "runtime",
+      "sha256": "57a6f91ca9ef3207ca1d2975584579a6cb4425d22efe96b73ae760e6e31288f6",
+      "size_bytes": 27728
+    },
+    {
+      "path": "coin/m2m_transcript_validator.py",
+      "role": "runtime",
+      "sha256": "46ae486962db595475056c86d99c378b69fa70ad109000dceff73fcfb346c7d7",
+      "size_bytes": 36800
+    },
+    {
+      "path": "coin/m2m_verifier.py",
+      "role": "runtime",
+      "sha256": "917f465eb04849e45489f1a8e80ba5fe7c9b36be0bff4073ab9005b11df497d0",
+      "size_bytes": 21933
+    },
+    {
+      "path": "coin/tx_validation.py",
+      "role": "protocol_dependency",
+      "sha256": "ac36bd95c932733a60ffc3acbb10b8a9f57e09c9533d0b64ff83affa876f3004",
+      "size_bytes": 11723
+    },
+    {
+      "path": "docs/m2m/README.md",
+      "role": "normative_document",
+      "sha256": "44b2593ace2927cd2963aa0988da9face2aff9818793615d6ea331c3a8cd8d19",
+      "size_bytes": 9263
+    },
+    {
+      "path": "docs/m2m/admission_cli_v0.1.md",
+      "role": "normative_document",
+      "sha256": "f71fda9795400fd2e229d8efbbb01cc4a2c9385f6fba61b8b90dfe229d901596",
+      "size_bytes": 7761
+    },
+    {
+      "path": "docs/m2m/compatibility_policy_v0.1.md",
+      "role": "release_document",
+      "sha256": "623cc5cf4348793ff9b212f765819ec0cd6d008c566950bde1d53d09b1881292",
+      "size_bytes": 4876
+    },
+    {
+      "path": "docs/m2m/conformance_cli_v0.1.md",
+      "role": "normative_document",
+      "sha256": "8c237070fd75698ebd5b3a94db273b539ffc29e7f60b3dbd0b9758308a925605",
+      "size_bytes": 4979
+    },
+    {
+      "path": "docs/m2m/interoperability_profile_v0.1.md",
+      "role": "normative_document",
+      "sha256": "517d54f6593a40e3020e3f71860e40f82f065a1160f3a0ae997efd393d505c42",
+      "size_bytes": 9691
+    },
+    {
+      "path": "docs/m2m/message_schema_v0.1.md",
+      "role": "normative_document",
+      "sha256": "3f054dde1cc5e7916b4ec7753e73b553d56384c1d41bd06c96e08602b018124d",
+      "size_bytes": 17306
+    },
+    {
+      "path": "docs/m2m/protocol_v0.1.md",
+      "role": "normative_document",
+      "sha256": "e4fbe0a3e748ac759666a734ca6a885856715b05133b2ab4a2be1021968d08de",
+      "size_bytes": 13279
+    },
+    {
+      "path": "docs/m2m/registry_audit_v0.1.md",
+      "role": "normative_document",
+      "sha256": "e3499f782eb85b3ecf3059e02098181cd1bc303f9ee32a665293435a028db4c6",
+      "size_bytes": 8710
+    },
+    {
+      "path": "docs/m2m/registry_backup_recovery_v0.1.md",
+      "role": "normative_document",
+      "sha256": "0df6767cf460900c4638ac72aec678c23f6cd3df9bbb9c79722342b362cb99bd",
+      "size_bytes": 5573
+    },
+    {
+      "path": "docs/m2m/release_compatibility_v0.2.md",
+      "role": "release_document",
+      "sha256": "6c0a5ed2099237226d4611d7f8234e27978fa1b0165fe670921afe810f4d8f06",
+      "size_bytes": 3491
+    },
+    {
+      "path": "docs/m2m/release_manifest_v0.1.json",
+      "role": "historical_release_manifest",
+      "sha256": "fc721c1c188b2f0a0ba28fe7e06fcb1f1812363c9d611bd42ebc93d34362ca6c",
+      "size_bytes": 15257
+    },
+    {
+      "path": "docs/m2m/release_notes_v0.1.md",
+      "role": "release_document",
+      "sha256": "3f9a4845e0a4992ffd166516aa8ca556265381116a1ef1906de791a6e9608961",
+      "size_bytes": 3117
+    },
+    {
+      "path": "docs/m2m/release_notes_v0.2.md",
+      "role": "release_document",
+      "sha256": "195e58f9a71c437694062bcb980ce27efe5d96f71cf4794156a86a0262cc1fcb",
+      "size_bytes": 2455
+    },
+    {
+      "path": "docs/m2m/replay_registry_v0.1.md",
+      "role": "normative_document",
+      "sha256": "d1660841ac523bb064ae160cc86637b323d3c628181b002996adcbc984e01284",
+      "size_bytes": 4976
+    },
+    {
+      "path": "docs/m2m/security_model.md",
+      "role": "normative_document",
+      "sha256": "2944855873eb722f8c5745411791f17873e3126529598ddefd3c40b0e526ce2c",
+      "size_bytes": 12603
+    },
+    {
+      "path": "docs/m2m/state_machine.md",
+      "role": "normative_document",
+      "sha256": "2970ecc12503bd92c571b74d8908e01677c55d966aa533fdca2cbbd3acf18624",
+      "size_bytes": 10003
+    },
+    {
+      "path": "docs/m2m/test_vectors_admission_v0.1.json",
+      "role": "test_vector",
+      "sha256": "36eca0a99e47df6d001139386be363d886ab027257ff001cb8f84464bc286f49",
+      "size_bytes": 21486
+    },
+    {
+      "path": "docs/m2m/test_vectors_registry_audit_v0.1.json",
+      "role": "test_vector",
+      "sha256": "7015d82ae33599a99f5b4da07e5c50e43485376c263c8b7e093134cda10709e6",
+      "size_bytes": 8212
+    },
+    {
+      "path": "docs/m2m/test_vectors_registry_backup_v0.1.json",
+      "role": "test_vector",
+      "sha256": "9f2c95330846c38882b7431e39211b294347a6a2569f1263b15d61ade4ba2f02",
+      "size_bytes": 16677
+    },
+    {
+      "path": "docs/m2m/test_vectors_replay_v0.1.json",
+      "role": "test_vector",
+      "sha256": "cb0c5fd8418b5f164ac6b0432416a5eae7938f87ee969d1031c209373bdbfbe2",
+      "size_bytes": 9654
+    },
+    {
+      "path": "docs/m2m/test_vectors_report_v0.1.json",
+      "role": "test_vector",
+      "sha256": "c49cbc8e2b9fa292b94c931819e44a7721d0b4be5a35c7d0abca6927da525f2a",
+      "size_bytes": 10129
+    },
+    {
+      "path": "docs/m2m/test_vectors_signed_v0.1.json",
+      "role": "test_vector",
+      "sha256": "39f1b2bb0c24ab822f958fe5681cde70a0445ee2efb2ceb21c1a25fdf1b7cc97",
+      "size_bytes": 22690
+    },
+    {
+      "path": "docs/m2m/test_vectors_transcript_v0.1.json",
+      "role": "test_vector",
+      "sha256": "c69a3d8839bd0012344ee34b909913b9f17dc1bbde48bc6d241a11bed8c5af09",
+      "size_bytes": 144192
+    },
+    {
+      "path": "docs/m2m/test_vectors_v0.1.json",
+      "role": "test_vector",
+      "sha256": "bbbfec44c790748cc657006f3877389adb87e8c7baa4d56bad5c4707a8d04c84",
+      "size_bytes": 31777
+    },
+    {
+      "path": "docs/m2m/transcript_validation_v0.1.md",
+      "role": "normative_document",
+      "sha256": "c1bd19a875d1fafe9defe23a88c60f9b38d9f55ab17fdff5ea72d70b69df8021",
+      "size_bytes": 6333
+    },
+    {
+      "path": "requirements-m2m.txt",
+      "role": "dependency_lock",
+      "sha256": "cf3b2565fee2bc3052dc2e22f07b47e05ae7507ae90558721918092fa298394f",
+      "size_bytes": 211
+    },
+    {
+      "path": "tests/test_m2m_cli_replay_gate.py",
+      "role": "conformance_test",
+      "sha256": "6a12b8a6a16775bd236728279744bc62d2f3f5837e0c6d04ae452179b97f24e1",
+      "size_bytes": 31082
+    },
+    {
+      "path": "tests/test_m2m_conformance_cli.py",
+      "role": "conformance_test",
+      "sha256": "c9b75a67298a91a0ed82cf5c4ebcaf4fd7b7b1176417258684402a359e63e23a",
+      "size_bytes": 16946
+    },
+    {
+      "path": "tests/test_m2m_ed25519_verifier.py",
+      "role": "conformance_test",
+      "sha256": "77a0313dc38c550e74789a1fbc55d63b937cc61b56d382150892302e5ecda375",
+      "size_bytes": 18163
+    },
+    {
+      "path": "tests/test_m2m_interoperability_profile.py",
+      "role": "conformance_test",
+      "sha256": "b18ff61278532916539006bfbb08563ba4d8e34fc2203ea67bb6df90341b397d",
+      "size_bytes": 23285
+    },
+    {
+      "path": "tests/test_m2m_registry_audit.py",
+      "role": "conformance_test",
+      "sha256": "a439f003915bd43758f7076c13ffec9aab1e276e24f7f930baf1620ca011263d",
+      "size_bytes": 27769
+    },
+    {
+      "path": "tests/test_m2m_registry_backup.py",
+      "role": "conformance_test",
+      "sha256": "32dce5b6fbbab11f88b5106a61bd3da00d14dd74dc685025916520371c55ba25",
+      "size_bytes": 42440
+    },
+    {
+      "path": "tests/test_m2m_release_candidate.py",
+      "role": "conformance_test",
+      "sha256": "9794fcfb0524d0232fda1e75262be40914abf2a3a43b90e2453d4f1f0b353dfa",
+      "size_bytes": 17270
+    },
+    {
+      "path": "tests/test_m2m_release_v0_2.py",
+      "role": "conformance_test",
+      "sha256": "0ad32ab2b9423b43bea1c2bb7cb5fee15c7019eafdeafa9a989e5d0e483383ad",
+      "size_bytes": 28631
+    },
+    {
+      "path": "tests/test_m2m_replay_registry.py",
+      "role": "conformance_test",
+      "sha256": "cec28ab04014def8d2e77369d54964f2eda16d93bde110f7deeef11d0648be47",
+      "size_bytes": 18252
+    },
+    {
+      "path": "tests/test_m2m_transcript_validator.py",
+      "role": "conformance_test",
+      "sha256": "fa6195dc1c58ad3ec3c592a8476f109c8c331eca0719436a1d0556bccee3d5cd",
+      "size_bytes": 9303
+    }
+  ],
+  "dependency_requirements": {
+    "ci_workflow": ".github/workflows/ci.yml",
+    "cryptography": "cryptography==49.0.0",
+    "l28_protocol": "PROTOCOL.md",
+    "requirements_m2m": "requirements-m2m.txt",
+    "settlement_tx_id": {
+      "function": "compute_tx_id",
+      "module": "coin.tx_validation"
+    }
+  },
+  "hash_algorithm": "sha256_hex",
+  "intended_tag": "l28-m2m-v0.2.0",
+  "manifest_id": "ffb5eb9eccd645e08877347dd2b5324c23dba7962d75e3f2aa40dbb509caa16d",
+  "manifest_id_domain": "L28-M2M-V0.2-RELEASE-MANIFEST\\x00",
+  "manifest_version": "l28-m2m-release-manifest/v0.2",
+  "prior_release": {
+    "commit": "7215d585a38155b5a36e7ebe077dcad43e810388",
+    "manifest_id": "8e2b21b55306b3e0dedc2a87a7c607d4440ff6ac92f0b6a4653f9be0ef392366",
+    "manifest_path": "docs/m2m/release_manifest_v0.1.json",
+    "manifest_sha256": "fc721c1c188b2f0a0ba28fe7e06fcb1f1812363c9d611bd42ebc93d34362ca6c",
+    "tag": "l28-m2m-v0.1.0"
+  },
+  "protocol_profile": "l28-m2m/v0.1",
+  "public_contracts": {
+    "canonical_json": "L28-M2M Canonical JSON v0.1",
+    "cli": {
+      "conformance": {
+        "exit_codes": {
+          "fail": 1,
+          "idempotent": 4,
+          "internal": 3,
+          "pass": 0,
+          "usage": 2
+        },
+        "registry_exit_codes": {
+          "fail": [
+            "exchange_fork",
+            "message_replay",
+            "terminal_exchange_extension",
+            "verification_failed"
+          ],
+          "idempotent": [
+            "already_recorded",
+            "already_recorded_prefix"
+          ],
+          "pass": [
+            "recorded_extension",
+            "recorded_new"
+          ],
+          "usage": [
+            "invalid_registry_path",
+            "registry_already_exists",
+            "registry_inside_repository",
+            "registry_io_error",
+            "registry_locked",
+            "registry_not_found",
+            "registry_not_regular_file",
+            "registry_path_not_absolute",
+            "registry_symlink_rejected"
+          ]
+        },
+        "version": "l28-m2m-conformance-cli/v0.1"
+      },
+      "registry_audit": {
+        "exit_codes": {
+          "failure": 3,
+          "pass": 0,
+          "usage": 2
+        },
+        "usage_codes": [
+          "invalid_registry_path",
+          "registry_not_found",
+          "unsafe_registry_path"
+        ],
+        "version": "l28-m2m-registry-audit-cli/v0.1"
+      },
+      "registry_backup": {
+        "exit_codes": {
+          "failure": 3,
+          "pass": 0,
+          "usage": 2
+        },
+        "usage_codes": [
+          "backup_not_found",
+          "destination_exists",
+          "invalid_backup_path",
+          "invalid_destination_path",
+          "invalid_source_path",
+          "same_file",
+          "source_not_found",
+          "unsafe_path"
+        ],
+        "version": "l28-m2m-registry-backup-cli/v0.1"
+      }
+    },
+    "conformance_max_input_bytes": 1048576,
+    "domain_separators": {
+      "admission_report": "L28-M2M-V0.1-ADMISSION-REPORT\\x00",
+      "conformance_report": "L28-M2M-V0.1-REPORT\\x00",
+      "message": "L28-M2M-V0.1-MESSAGE\\x00",
+      "payload": "L28-M2M-V0.1-PAYLOAD\\x00",
+      "registry_audit_report": "L28-M2M-V0.1-REGISTRY-AUDIT-REPORT\\x00",
+      "registry_backup_report": "L28-M2M-V0.1-REGISTRY-BACKUP-REPORT\\x00",
+      "registry_logical": "L28-M2M-V0.1-REGISTRY-LOGICAL\\x00",
+      "release_manifest_v0_1": "L28-M2M-V0.1-RELEASE-MANIFEST\\x00",
+      "release_manifest_v0_2": "L28-M2M-V0.2-RELEASE-MANIFEST\\x00",
+      "replay_exchange": "L28-M2M-V0.1-REPLAY-EXCHANGE\\x00",
+      "replay_transcript": "L28-M2M-V0.1-REPLAY-TRANSCRIPT\\x00",
+      "signature": "L28-M2M-V0.1-SIGNATURE\\x00"
+    },
+    "envelope_protocol_version": "0.1",
+    "message_types": [
+      "failure_notice",
+      "payment_authorization",
+      "service_quote",
+      "service_receipt",
+      "service_request",
+      "settlement_reference"
+    ],
+    "registry_backup": {
+      "backup_equality": "logical_registry_state",
+      "output_permission_mode": "0600",
+      "profile": "l28-m2m-replay-registry-backup/v0.1",
+      "publication": {
+        "follow_symlinks_false": true,
+        "primitive": "os.link",
+        "uses_os_rename": false,
+        "uses_os_replace": false
+      },
+      "quiescence_required": true,
+      "report_id_domain": "L28-M2M-V0.1-REGISTRY-BACKUP-REPORT\\x00",
+      "report_version": "l28-m2m-registry-backup-report/v0.1",
+      "restore_equality": "raw_byte_identity"
+    },
+    "registry_bounds": {
+      "max_exchanges": 4096,
+      "max_file_bytes": 8388608,
+      "max_messages": 262144
+    },
+    "registry_schema_version": 1,
+    "report_profiles": {
+      "admission": {
+        "domain_separator": "L28-M2M-V0.1-ADMISSION-REPORT\\x00",
+        "profile": "l28-m2m-replay-admission/v0.1",
+        "report_version": "l28-m2m-admission-report/v0.1"
+      },
+      "conformance": {
+        "domain_separator": "L28-M2M-V0.1-REPORT\\x00",
+        "profile": "l28-m2m-transcript/v0.1",
+        "report_version": "l28-m2m-conformance-report/v0.1"
+      },
+      "registry_audit": {
+        "domain_separator": "L28-M2M-V0.1-REGISTRY-AUDIT-REPORT\\x00",
+        "profile": "l28-m2m-replay-registry-audit/v0.1",
+        "report_version": "l28-m2m-registry-audit-report/v0.1"
+      },
+      "registry_backup": {
+        "domain_separator": "L28-M2M-V0.1-REGISTRY-BACKUP-REPORT\\x00",
+        "profile": "l28-m2m-replay-registry-backup/v0.1",
+        "report_version": "l28-m2m-registry-backup-report/v0.1"
+      }
+    },
+    "settlement_binding": {
+      "function": "compute_tx_id",
+      "module": "coin.tx_validation"
+    },
+    "signature_suite": "ed25519",
+    "stable_result_codes": {
+      "conformance_cli": [
+        "input_not_found",
+        "input_not_regular_file",
+        "input_read_error",
+        "input_symlink_rejected",
+        "input_too_large",
+        "internal_error",
+        "stdin_is_tty",
+        "usage_error"
+      ],
+      "registry_audit": [
+        "internal_error",
+        "invalid_registry_path",
+        "registry_foreign_key_error",
+        "registry_healthy",
+        "registry_integrity_error",
+        "registry_invariant_error",
+        "registry_not_found",
+        "registry_schema_mismatch",
+        "registry_unreadable",
+        "unsafe_registry_path"
+      ],
+      "registry_backup": [
+        "artifact_hash_mismatch",
+        "backup_audit_failed",
+        "backup_changed",
+        "backup_created",
+        "backup_failed",
+        "backup_not_found",
+        "destination_exists",
+        "internal_error",
+        "invalid_backup_path",
+        "invalid_destination_path",
+        "invalid_source_path",
+        "logical_registry_mismatch",
+        "publish_failed",
+        "registry_resource_limit",
+        "restore_audit_failed",
+        "restore_created",
+        "restore_failed",
+        "same_file",
+        "source_audit_failed",
+        "source_changed",
+        "source_not_found",
+        "unsafe_path",
+        "unsupported_registry_schema"
+      ],
+      "replay_registry": [
+        "already_recorded",
+        "already_recorded_prefix",
+        "exchange_fork",
+        "internal_error",
+        "invalid_registry_path",
+        "message_replay",
+        "recorded_extension",
+        "recorded_new",
+        "registry_already_exists",
+        "registry_corrupt",
+        "registry_inside_repository",
+        "registry_integrity_error",
+        "registry_io_error",
+        "registry_locked",
+        "registry_not_found",
+        "registry_not_regular_file",
+        "registry_path_not_absolute",
+        "registry_symlink_rejected",
+        "schema_version_mismatch",
+        "terminal_exchange_extension",
+        "verification_failed"
+      ],
+      "transcript_validator": [
+        "amount_mismatch",
+        "duplicate_key",
+        "duplicate_message_id",
+        "duplicate_nonce",
+        "empty_transcript",
+        "envelope_verification_failed",
+        "exchange_id_mismatch",
+        "first_message_not_request",
+        "incomplete_transcript",
+        "invalid_first_previous_message",
+        "invalid_json",
+        "invalid_terminal_state",
+        "invalid_transition",
+        "message_after_terminal",
+        "message_chain_broken",
+        "ok",
+        "participant_mismatch",
+        "prior_message_expired",
+        "quote_reference_mismatch",
+        "receipt_reference_mismatch",
+        "role_mismatch",
+        "service_terms_mismatch",
+        "settlement_citation_invalid",
+        "settlement_participant_mismatch",
+        "timestamp_regression",
+        "transcript_element_not_object",
+        "transcript_not_array",
+        "transcript_too_large",
+        "unauthorized_terminal_transition"
+      ],
+      "verifier": [
+        "altered_settlement_material",
+        "bad_signature",
+        "duplicate_key",
+        "float_rejected",
+        "identity_binding_mismatch",
+        "integer_out_of_safe_range",
+        "invalid_field_type",
+        "invalid_json",
+        "invalid_property_name",
+        "invalid_time_order",
+        "lone_surrogate",
+        "malformed_base64url",
+        "malformed_l28_transaction_id",
+        "malformed_public_key_length",
+        "malformed_signature_length",
+        "mismatched_message_id",
+        "mismatched_payload_hash",
+        "missing_field",
+        "null_required_field",
+        "ok",
+        "padded_base64url",
+        "reserved_identity",
+        "settlement_citation_valid",
+        "top_level_not_object",
+        "unknown_message_type",
+        "unknown_suite",
+        "unsigned_envelope",
+        "verification_backend_unavailable"
+      ]
+    },
+    "transcript_max_messages": 64
+  },
+  "release_compatibility_profile": "l28-m2m-release-compatibility/v0.2",
+  "release_name": "L28 M2M v0.2.0",
+  "release_version": "0.2.0",
+  "status": "frozen",
+  "tested_python": {
+    "implementation": "CPython",
+    "python_release_line": "3.11"
+  }
+}
