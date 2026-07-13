@@ -32,6 +32,9 @@ M2M v0.1 is a coordination and evidence-exchange layer. It is not a second ledge
 | [replay_registry_v0.1.md](replay_registry_v0.1.md) | Offline local replay/idempotency registry (Foundation 8) |
 | [admission_cli_v0.1.md](admission_cli_v0.1.md) | Offline CLI replay admission gate and admission report (Foundation 9) |
 | [registry_audit_v0.1.md](registry_audit_v0.1.md) | Offline read-only replay registry audit and integrity report (Foundation 10) |
+| [release_notes_v0.1.md](release_notes_v0.1.md) | L28 M2M v0.1.0 release candidate notes (Foundation 11) |
+| [compatibility_policy_v0.1.md](compatibility_policy_v0.1.md) | Frozen public compatibility policy for v0.1.0 (Foundation 11) |
+| [release_manifest_v0.1.json](release_manifest_v0.1.json) | Deterministic machine-verifiable release manifest (Foundation 11) |
 | [test_vectors_v0.1.json](test_vectors_v0.1.json) | Deterministic offline unsigned digest vectors (non-operational) |
 | [test_vectors_signed_v0.1.json](test_vectors_signed_v0.1.json) | Independently verified signed public fixtures (test-only; not settlement) |
 | [test_vectors_transcript_v0.1.json](test_vectors_transcript_v0.1.json) | Independently verified signed transcript fixtures (test-only; not settlement) |
@@ -93,3 +96,5 @@ Foundation 8 provides a local offline replay/idempotency registry in `coin/m2m_r
 Foundation 9 optionally integrates Foundation 8 into the Foundation 7 CLI via explicit registry flags, emitting a deterministic admission report after verify-before-registry ordering. Without registry flags, Foundation 7 stdout bytes and exit codes remain unchanged.
 
 Foundation 10 provides a strictly read-only replay-registry auditor in `coin/m2m_registry_audit.py` and `coin/m2m_registry_audit_cli.py`. It inspects existing registries without creating, modifying, repairing, or admitting state.
+
+Foundation 11 freezes the L28 M2M v0.1.0 public surface on a release-candidate branch with manifest status `frozen`. It publishes `release_manifest_v0.1.json` with SHA-256 hashes of the complete tracked surface (excluding only the manifest file itself), `compatibility_policy_v0.1.md`, and `release_notes_v0.1.md`. Intended tag after merge: `l28-m2m-v0.1.0` (not created by this milestone). Foundation 11 does not change runtime behavior, normative protocol text (other than this index), vectors, CI, or dependencies.
