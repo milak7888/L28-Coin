@@ -32,6 +32,7 @@ M2M v0.1 is a coordination and evidence-exchange layer. It is not a second ledge
 | [replay_registry_v0.1.md](replay_registry_v0.1.md) | Offline local replay/idempotency registry (Foundation 8) |
 | [admission_cli_v0.1.md](admission_cli_v0.1.md) | Offline CLI replay admission gate and admission report (Foundation 9) |
 | [registry_audit_v0.1.md](registry_audit_v0.1.md) | Offline read-only replay registry audit and integrity report (Foundation 10) |
+| [registry_backup_recovery_v0.1.md](registry_backup_recovery_v0.1.md) | Offline replay registry backup and verified recovery (Foundation 12) |
 | [release_notes_v0.1.md](release_notes_v0.1.md) | L28 M2M v0.1.0 release candidate notes (Foundation 11) |
 | [compatibility_policy_v0.1.md](compatibility_policy_v0.1.md) | Frozen public compatibility policy for v0.1.0 (Foundation 11) |
 | [release_manifest_v0.1.json](release_manifest_v0.1.json) | Deterministic machine-verifiable release manifest (Foundation 11) |
@@ -42,6 +43,7 @@ M2M v0.1 is a coordination and evidence-exchange layer. It is not a second ledge
 | [test_vectors_replay_v0.1.json](test_vectors_replay_v0.1.json) | Replay/idempotency operation sequences (test-only; not settlement) |
 | [test_vectors_admission_v0.1.json](test_vectors_admission_v0.1.json) | CLI replay admission operation sequences (test-only; not settlement) |
 | [test_vectors_registry_audit_v0.1.json](test_vectors_registry_audit_v0.1.json) | Replay registry audit scenarios (test-only; not settlement) |
+| [test_vectors_registry_backup_v0.1.json](test_vectors_registry_backup_v0.1.json) | Replay registry backup/recovery scenarios (test-only; not settlement) |
 
 ## Normative language
 
@@ -97,4 +99,6 @@ Foundation 9 optionally integrates Foundation 8 into the Foundation 7 CLI via ex
 
 Foundation 10 provides a strictly read-only replay-registry auditor in `coin/m2m_registry_audit.py` and `coin/m2m_registry_audit_cli.py`. It inspects existing registries without creating, modifying, repairing, or admitting state.
 
-Foundation 11 freezes the L28 M2M v0.1.0 public surface on a release-candidate branch with manifest status `frozen`. It publishes `release_manifest_v0.1.json` with SHA-256 hashes of the complete tracked surface (excluding only the manifest file itself), `compatibility_policy_v0.1.md`, and `release_notes_v0.1.md`. Intended tag after merge: `l28-m2m-v0.1.0` (not created by this milestone). Foundation 11 does not change runtime behavior, normative protocol text (other than this index), vectors, CI, or dependencies.
+Foundation 11 freezes the L28 M2M v0.1.0 public surface. Tag `l28-m2m-v0.1.0` is the canonical immutable snapshot; post-release development does not alter the published manifest, release notes, or compatibility policy.
+
+Foundation 12 provides offline replay-registry backup and verified recovery in `coin/m2m_registry_backup.py` and `coin/m2m_registry_backup_cli.py`. It copies audited registries to new destinations without modifying sources, activating restored registries, or providing online snapshot service. See [registry_backup_recovery_v0.1.md](registry_backup_recovery_v0.1.md).

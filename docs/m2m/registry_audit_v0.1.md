@@ -26,6 +26,8 @@ It does not create, modify, repair, migrate, admit, sign, query a ledger, or ope
 
 Audit success is local registry integrity evidence only. It does not prove knowledge of raw exchange IDs, settlement acceptance, finality, service completion, or network validity. A healthy audit report must not be treated as tamper-proof against offline modification of the SQLite file itself.
 
+Foundation 12 backup and restore operations depend on audit gates before and after copy. See [registry_backup_recovery_v0.1.md](registry_backup_recovery_v0.1.md).
+
 ## 2. Command syntax
 
 ```

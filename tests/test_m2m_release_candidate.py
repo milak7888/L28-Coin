@@ -55,6 +55,17 @@ ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = ROOT / "docs" / "m2m" / "release_manifest_v0.1.json"
 DOMAIN_MANIFEST = b"L28-M2M-V0.1-RELEASE-MANIFEST\x00"
 
+# Historical v0.1.0 release anchor (immutable after tag l28-m2m-v0.1.0).
+# The Git tag is the canonical snapshot for recomputing all v0.1 artifact hashes.
+HISTORICAL_MANIFEST_SHA256 = (
+    "fc721c1c188b2f0a0ba28fe7e06fcb1f1812363c9d611bd42ebc93d34362ca6c"
+)
+HISTORICAL_MANIFEST_ID = (
+    "8e2b21b55306b3e0dedc2a87a7c607d4440ff6ac92f0b6a4653f9be0ef392366"
+)
+HISTORICAL_ARTIFACT_COUNT = 40
+HISTORICAL_INTENDED_TAG = "l28-m2m-v0.1.0"
+
 MANIFEST_EXCLUDE_ONLY = "docs/m2m/release_manifest_v0.1.json"
 
 RELEASE_NOTES_PATH = "docs/m2m/release_notes_v0.1.md"
@@ -267,56 +278,46 @@ class ReleaseManifestIdTests(unittest.TestCase):
         self.assertNotEqual(_compute_manifest_id(tampered), manifest["manifest_id"])
 
 
-class ReleaseArtifactInventoryTests(unittest.TestCase):
-    def test_artifact_paths_match_independently_derived_inventory(self) -> None:
+class ReleaseHistoricalManifestTests(unittest.TestCase):
+    def test_historical_manifest_byte_identity(self) -> None:
+        digest = hashlib.sha256(MANIFEST_PATH.read_bytes()).hexdigest()
+        self.assertEqual(digest, HISTORICAL_MANIFEST_SHA256)
+
+    def test_historical_manifest_id(self) -> None:
         manifest = _load_manifest()
-        paths = [entry["path"] for entry in manifest["artifacts"]]
-        self.assertEqual(paths, _collect_expected_artifact_paths())
+        self.assertEqual(manifest["manifest_id"], HISTORICAL_MANIFEST_ID)
+        self.assertEqual(_compute_manifest_id(manifest), HISTORICAL_MANIFEST_ID)
+
+    def test_historical_manifest_self_exclusion(self) -> None:
+        paths = {entry["path"] for entry in _load_manifest()["artifacts"]}
+        self.assertNotIn(MANIFEST_EXCLUDE_ONLY, paths)
+
+    def test_historical_artifact_count(self) -> None:
+        self.assertEqual(len(_load_manifest()["artifacts"]), HISTORICAL_ARTIFACT_COUNT)
+
+    def test_historical_intended_tag(self) -> None:
+        self.assertEqual(_load_manifest()["intended_tag"], HISTORICAL_INTENDED_TAG)
+
+
+class ReleaseArtifactInventoryTests(unittest.TestCase):
+    def test_frozen_manifest_artifact_roles_are_explicit(self) -> None:
+        for entry in _load_manifest()["artifacts"]:
+            self.assertIn(entry["role"], APPROVED_ROLES, entry["path"])
+            self.assertTrue(str(entry["role"]).strip(), entry["path"])
+
+    def test_frozen_manifest_release_documents_present(self) -> None:
+        index = _artifact_index(_load_manifest())
+        self.assertIn(RELEASE_NOTES_PATH, index)
+        self.assertEqual(index[RELEASE_NOTES_PATH]["role"], "release_document")
+        self.assertIn(COMPATIBILITY_POLICY_PATH, index)
+        self.assertEqual(index[COMPATIBILITY_POLICY_PATH]["role"], "release_document")
+        self.assertIn(RELEASE_TEST_PATH, index)
+        self.assertEqual(index[RELEASE_TEST_PATH]["role"], "conformance_test")
 
     def test_artifacts_sorted_lexicographically(self) -> None:
         manifest = _load_manifest()
         paths = [entry["path"] for entry in manifest["artifacts"]]
         self.assertEqual(paths, sorted(paths))
-
-    def test_only_manifest_excluded(self) -> None:
-        expected = set(_collect_expected_artifact_paths())
-        all_candidates: Set[str] = set()
-        for path in (ROOT / "coin").glob("m2m_*.py"):
-            all_candidates.add(path.relative_to(ROOT).as_posix())
-        for path in (ROOT / "docs" / "m2m").glob("*.md"):
-            all_candidates.add(path.relative_to(ROOT).as_posix())
-        for path in (ROOT / "docs" / "m2m").glob("test_vectors*.json"):
-            all_candidates.add(path.relative_to(ROOT).as_posix())
-        for path in (ROOT / "tests").glob("test_m2m_*.py"):
-            all_candidates.add(path.relative_to(ROOT).as_posix())
-        all_candidates.update(EXPLICIT_DEPENDENCY_PATHS)
-        all_candidates.add(MANIFEST_EXCLUDE_ONLY)
-
-        manifest_paths = {entry["path"] for entry in _load_manifest()["artifacts"]}
-        self.assertEqual(manifest_paths, expected)
-        self.assertEqual(all_candidates - manifest_paths, {MANIFEST_EXCLUDE_ONLY})
-
-    def test_manifest_self_not_in_inventory(self) -> None:
-        paths = {entry["path"] for entry in _load_manifest()["artifacts"]}
-        self.assertNotIn(MANIFEST_EXCLUDE_ONLY, paths)
-
-    def test_artifact_hashes_and_sizes(self) -> None:
-        manifest = _load_manifest()
-        for entry in manifest["artifacts"]:
-            rel = entry["path"]
-            digest, size = _sha256_file(rel)
-            self.assertEqual(entry["sha256"], digest, rel)
-            self.assertEqual(entry["size_bytes"], size, rel)
-            self.assertRegex(entry["sha256"], r"^[0-9a-f]{64}$")
-
-    def test_artifact_count_matches_derived_inventory(self) -> None:
-        manifest = _load_manifest()
-        self.assertEqual(len(manifest["artifacts"]), len(_collect_expected_artifact_paths()))
-
-    def test_artifact_roles_match_expected_for_every_path(self) -> None:
-        for entry in _load_manifest()["artifacts"]:
-            path = entry["path"]
-            self.assertEqual(entry["role"], _expected_role(path), path)
 
     def test_all_artifacts_have_required_fields(self) -> None:
         for entry in _load_manifest()["artifacts"]:
@@ -341,30 +342,7 @@ class ReleaseArtifactInventoryTests(unittest.TestCase):
         manifest = _load_manifest()
         counts = _role_counts(manifest)
         self.assertEqual(sum(counts.values()), len(manifest["artifacts"]))
-        self.assertEqual(len(manifest["artifacts"]), 40)
-
-    def test_release_notes_cannot_be_omitted(self) -> None:
-        index = _artifact_index(_load_manifest())
-        self.assertIn(RELEASE_NOTES_PATH, index)
-        self.assertEqual(index[RELEASE_NOTES_PATH].get("role"), "release_document")
-
-    def test_compatibility_policy_cannot_be_omitted(self) -> None:
-        index = _artifact_index(_load_manifest())
-        self.assertIn(COMPATIBILITY_POLICY_PATH, index)
-        self.assertEqual(index[COMPATIBILITY_POLICY_PATH].get("role"), "release_document")
-
-    def test_release_verifier_test_cannot_be_omitted(self) -> None:
-        index = _artifact_index(_load_manifest())
-        self.assertIn(RELEASE_TEST_PATH, index)
-        self.assertEqual(index[RELEASE_TEST_PATH].get("role"), "conformance_test")
-
-    def test_future_matching_file_would_fail_without_manifest_regeneration(self) -> None:
-        manifest_paths = {entry["path"] for entry in _load_manifest()["artifacts"]}
-        derived_paths = set(_collect_expected_artifact_paths())
-        self.assertEqual(manifest_paths, derived_paths)
-        simulated_new = "coin/m2m_future_example.py"
-        self.assertNotIn(simulated_new, manifest_paths)
-        self.assertIn(simulated_new, sorted(derived_paths | {simulated_new}))
+        self.assertEqual(len(manifest["artifacts"]), HISTORICAL_ARTIFACT_COUNT)
 
 
 class ReleaseContractTests(unittest.TestCase):
