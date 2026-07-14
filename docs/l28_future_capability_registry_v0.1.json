@@ -1,0 +1,147 @@
+{
+  "registry_version": "l28-future-capability-registry/v0.1",
+  "status": "planning_only_non_activation",
+  "purpose": "Preserve and classify L28 concepts for deliberate future implementation without exposing private source or changing canonical economics.",
+  "identity": {
+    "native_asset": "L28",
+    "platform": "Leap28",
+    "strict_separation_required": true,
+    "bridge_contract_defines_native_identity": false,
+    "wrapped_asset_is_native_l28": false
+  },
+  "economics": {
+    "native_supply_cap": 28000000,
+    "maximum_coinbase_reward": 28,
+    "future_reward_recipient": "successful_miner_or_protocol_authorized_earner",
+    "automatic_creator_reward_routing": false,
+    "alternative_prototype_economics_authorized": false
+  },
+  "implementation_policy": {
+    "copy_private_source": false,
+    "activate_private_state": false,
+    "automatic_migration": false,
+    "automatic_deployment": false,
+    "specification_before_implementation": true,
+    "one_capability_per_foundation_milestone": true,
+    "threat_model_tests_ci_and_review_required": true,
+    "explicit_activation_authorization_required": true
+  },
+  "conceptual_names": {
+    "core_node": "CoreL28Node",
+    "peer_to_peer_node": "L28P2PNode",
+    "runtime_rename_authorized": false
+  },
+  "canonical_public": [
+    {
+      "id": "native_identity_and_economics",
+      "title": "Native L28 identity and monetary invariants"
+    },
+    {
+      "id": "machine_to_machine_protocol",
+      "title": "Machine-to-machine exchange protocol"
+    },
+    {
+      "id": "historical_continuity_verification",
+      "title": "Offline historical continuity verification"
+    }
+  ],
+  "future_candidates": [
+    {
+      "id": "core_node_lifecycle",
+      "title": "Core L28 node lifecycle",
+      "requirements": ["Explicit lifecycle states", "Canonical checkpoint policy", "No implicit initialization"]
+    },
+    {
+      "id": "peer_to_peer_networking",
+      "title": "Authenticated peer-to-peer networking",
+      "requirements": ["Core and P2P role separation", "Peer authentication", "Adversarial synchronization tests"]
+    },
+    {
+      "id": "advanced_mining_and_poi",
+      "title": "Advanced mining and Proof-of-Intelligence",
+      "requirements": ["Miner-bound rewards", "Difficulty specification", "Supply-cap preservation", "No privileged issuance"]
+    },
+    {
+      "id": "dag_consensus_selection",
+      "title": "DAG candidate selection and finality",
+      "requirements": ["Deterministic selection", "Parent-graph validation", "Fork and reorganization policy"]
+    },
+    {
+      "id": "universal_bridge",
+      "title": "Universal bridge and wrapped representations",
+      "requirements": ["Lock-and-mint conservation", "Burn-before-release", "Replay resistance", "Independent reserve reconciliation"]
+    },
+    {
+      "id": "privacy_and_zero_knowledge",
+      "title": "Privacy and zero-knowledge options",
+      "requirements": ["Public cryptographic specification", "Supply conservation proof", "Independent review"]
+    },
+    {
+      "id": "oracle_policy",
+      "title": "Deterministic oracle and policy inputs",
+      "requirements": ["Signed observations", "Staleness policy", "No unilateral authority"]
+    },
+    {
+      "id": "treasury_governance",
+      "title": "Auditable treasury governance",
+      "requirements": ["Explicit authority model", "Lock invariants", "No private wallet coupling"]
+    },
+    {
+      "id": "checkpoint_portability",
+      "title": "Checkpoint portability and deterministic recovery",
+      "requirements": ["Canonical schema", "Enforced provenance", "No automatic import or activation"]
+    },
+    {
+      "id": "scalability_and_sharding",
+      "title": "Deterministic scalability and sharding",
+      "requirements": ["Stable shard assignment", "Cross-shard consistency", "Global supply tests"]
+    },
+    {
+      "id": "ai_agent_economy",
+      "title": "AI-agent earning and machine economy",
+      "requirements": ["Agent authorization", "Work receipts", "Budget and abuse controls"]
+    }
+  ],
+  "historical_utilities": [
+    {
+      "id": "historical_genesis_writer",
+      "title": "Guarded historical genesis-checkpoint writer",
+      "activation": "prohibited"
+    },
+    {
+      "id": "historical_supply_audit",
+      "title": "Historical supply reporting",
+      "activation": "read_only"
+    },
+    {
+      "id": "historical_checkpoint_verification",
+      "title": "Historical checkpoint verification",
+      "activation": "read_only"
+    }
+  ],
+  "inactive_prototypes": [
+    {
+      "id": "alternative_nucleus_architecture",
+      "title": "Alternative nucleus research",
+      "activation": "prohibited",
+      "boundary": "Technical concepts require a new specification based on canonical public L28 economics."
+    }
+  ],
+  "rejected_incompatible": [
+    "Noncanonical alternative supply and allocation models",
+    "Automatic creator routing of future rewards",
+    "Automatic activation of private historical state",
+    "Treating a bridge contract as native L28 identity"
+  ],
+  "promotion_gates": [
+    "Standalone public specification",
+    "Identity and economic compatibility review",
+    "Security and threat model",
+    "Dedicated Foundation branch",
+    "Deterministic and adversarial tests",
+    "Successful continuous integration",
+    "Review before merge",
+    "Separate explicit authorization before activation"
+  ],
+  "recommended_next_specification": "Core L28 Node and P2P Role Architecture"
+}
