@@ -1,0 +1,252 @@
+{
+  "profile_version": "l28-core-p2p-security/v0.1",
+  "status": "specification_only_non_activation",
+  "architecture": "l28-core-p2p-architecture/v0.1",
+  "roles": {
+    "CoreL28Node": {
+      "trust": "native_policy_coordinator",
+      "owns": [
+        "lifecycle_policy",
+        "native_validation_coordination",
+        "issuance_readiness_policy",
+        "persistence_authorization",
+        "checkpoint_admission_policy"
+      ],
+      "prohibited": [
+        "network_listen",
+        "network_connect",
+        "peer_discovery",
+        "participant_signing",
+        "wallet_custody",
+        "automatic_historical_state_discovery",
+        "automatic_canonical_designation",
+        "automatic_creator_reward_routing"
+      ]
+    },
+    "L28P2PNode": {
+      "trust": "untrusted_transport_boundary",
+      "owns": [
+        "bounded_frame_decoding",
+        "peer_session_policy",
+        "peer_replay_policy",
+        "candidate_forwarding",
+        "transport_pause_and_shutdown"
+      ],
+      "prohibited": [
+        "native_ledger_mutation",
+        "mint_authorization",
+        "issued_supply_change",
+        "checkpoint_canonicalization",
+        "core_decision_override",
+        "participant_signing",
+        "wallet_custody",
+        "private_historical_state_loading",
+        "wrapped_asset_identity_substitution"
+      ]
+    }
+  },
+  "core_lifecycle": {
+    "states": [
+      "CREATED",
+      "EVIDENCE_ONLY",
+      "DISPOSABLE_TEST_READY",
+      "PAUSED",
+      "STOPPED",
+      "FAILED",
+      "CANONICAL_READY_RESERVED",
+      "RUNNING_RESERVED"
+    ],
+    "reserved_unreachable_states": [
+      "CANONICAL_READY_RESERVED",
+      "RUNNING_RESERVED"
+    ],
+    "allowed_transitions": [
+      ["CREATED", "EVIDENCE_ONLY"],
+      ["CREATED", "DISPOSABLE_TEST_READY"],
+      ["CREATED", "PAUSED"],
+      ["EVIDENCE_ONLY", "PAUSED"],
+      ["DISPOSABLE_TEST_READY", "PAUSED"],
+      ["PAUSED", "STOPPED"],
+      ["CREATED", "FAILED"],
+      ["EVIDENCE_ONLY", "FAILED"],
+      ["DISPOSABLE_TEST_READY", "FAILED"],
+      ["PAUSED", "FAILED"],
+      ["FAILED", "STOPPED"]
+    ],
+    "canonical_activation_transition_present": false
+  },
+  "p2p_lifecycle": {
+    "states": [
+      "CREATED",
+      "CONFIGURED",
+      "PAUSED",
+      "STOPPED",
+      "FAILED",
+      "LISTENING_RESERVED"
+    ],
+    "reserved_unreachable_states": [
+      "LISTENING_RESERVED"
+    ],
+    "allowed_transitions": [
+      ["CREATED", "CONFIGURED"],
+      ["CREATED", "PAUSED"],
+      ["CONFIGURED", "PAUSED"],
+      ["PAUSED", "STOPPED"],
+      ["CREATED", "FAILED"],
+      ["CONFIGURED", "FAILED"],
+      ["PAUSED", "FAILED"],
+      ["FAILED", "STOPPED"]
+    ],
+    "network_activation_transition_present": false
+  },
+  "trust_boundaries": [
+    {
+      "id": "peer_to_p2p",
+      "input_trust": "untrusted",
+      "required_controls": [
+        "predecode_size_limit",
+        "deterministic_decode",
+        "network_and_protocol_binding",
+        "peer_identity_evidence",
+        "nonce_and_replay_validation",
+        "timestamp_and_expiry_validation"
+      ]
+    },
+    {
+      "id": "p2p_to_core",
+      "input_trust": "normalized_but_untrusted",
+      "required_controls": [
+        "immutable_candidate_projection",
+        "native_transaction_validation",
+        "signature_verification",
+        "issuance_and_supply_invariants",
+        "checkpoint_policy_when_applicable",
+        "no_transport_decision_override"
+      ]
+    },
+    {
+      "id": "core_to_persistence",
+      "input_trust": "validated_candidate_only",
+      "required_controls": [
+        "atomic_commit_boundary",
+        "deterministic_identity",
+        "replay_state_consistency",
+        "failure_before_partial_mutation",
+        "auditable_result"
+      ]
+    },
+    {
+      "id": "checkpoint_to_core",
+      "input_trust": "untrusted_evidence",
+      "required_controls": [
+        "explicit_caller_supplied_input",
+        "duplicate_key_rejection",
+        "schema_and_version_validation",
+        "hash_size_and_count_commitments",
+        "parent_graph_and_supply_checks",
+        "enforced_provenance",
+        "separate_canonical_authorization"
+      ]
+    }
+  ],
+  "future_frame_requirements": {
+    "required_fields": [
+      "protocol_version",
+      "network_id",
+      "message_type",
+      "message_id",
+      "peer_identity_evidence",
+      "nonce",
+      "timestamp",
+      "expiry",
+      "payload_length",
+      "payload_digest"
+    ],
+    "deterministic_encoding_required": true,
+    "duplicate_fields_rejected": true,
+    "unknown_critical_fields_rejected": true,
+    "explicit_resource_limits_required": true,
+    "foundation19_runtime_limits_defined": false,
+    "reason_runtime_limits_undefined": "Foundation 19 provides no network implementation or runtime configuration."
+  },
+  "stable_failure_codes": [
+    "role_violation",
+    "invalid_lifecycle_transition",
+    "reserved_state_unreachable",
+    "activation_not_authorized",
+    "network_not_authorized",
+    "malformed_frame",
+    "frame_too_large",
+    "unsupported_protocol",
+    "network_id_mismatch",
+    "peer_authentication_failed",
+    "message_replayed",
+    "message_expired",
+    "candidate_validation_failed",
+    "issuance_not_ready",
+    "checkpoint_not_authorized",
+    "persistence_failed",
+    "integrity_failure"
+  ],
+  "threats": [
+    "ambiguous_node_role",
+    "transport_bypasses_native_validation",
+    "cross_network_replay",
+    "duplicate_or_reordered_message",
+    "oversized_or_malformed_frame",
+    "peer_resource_exhaustion",
+    "unauthorized_ledger_mutation",
+    "test_state_promoted_to_canonical",
+    "historical_evidence_activated_implicitly",
+    "checkpoint_provenance_stored_but_not_enforced",
+    "partial_persistence_after_failure",
+    "secret_or_host_information_leakage",
+    "automatic_creator_reward_routing",
+    "bridge_identity_confusion"
+  ],
+  "observability": {
+    "deterministic_reports_required": true,
+    "content_bound_report_ids_required": true,
+    "allowed_categories": [
+      "stable_code",
+      "profile_version",
+      "logical_state",
+      "bounded_counts",
+      "content_digest"
+    ],
+    "prohibited_categories": [
+      "filesystem_path",
+      "hostname",
+      "process_identifier",
+      "raw_exception_text",
+      "wallet_material",
+      "private_artifact_content",
+      "peer_credentials"
+    ]
+  },
+  "foundation19_prohibitions": {
+    "runtime_node_class_added": false,
+    "runtime_class_renamed": false,
+    "network_listener_started": false,
+    "outbound_connection_started": false,
+    "ledger_initialized": false,
+    "ledger_migrated": false,
+    "checkpoint_declared_canonical": false,
+    "mining_started": false,
+    "wallet_or_signing_started": false,
+    "bridge_started": false,
+    "deployment_started": false
+  },
+  "acceptance_checks": [
+    "roles_are_distinct",
+    "reserved_states_are_unreachable",
+    "p2p_cannot_mutate_native_state",
+    "p2p_cannot_override_core_validation",
+    "checkpoint_requires_separate_authorization",
+    "historical_evidence_is_not_runtime_state",
+    "mining_bridge_wallet_and_signing_are_out_of_scope",
+    "architecture_and_profile_are_sanitized",
+    "protocol_invariants_pass",
+    "complete_public_test_suite_passes"
+  ]
+}
