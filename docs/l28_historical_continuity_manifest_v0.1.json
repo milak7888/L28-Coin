@@ -1,0 +1,90 @@
+{
+  "activation": {
+    "canonical_continuation_proven": false,
+    "canonical_issuance_initialized": false,
+    "historical_ledger_copied_to_public_repository": false,
+    "network_started": false,
+    "new_ledger_created": false,
+    "wallet_spendability_proven": false
+  },
+  "audit_date": "2026-07-14",
+  "consolidation": {
+    "all_records_target_verified_creator": true,
+    "creator_live_balance_proven": false,
+    "genesis_reward_excluded": true,
+    "records": 205,
+    "reward_units": 72095,
+    "sha256": "78de2831a5f1631c79e2a5f5b702887be149a1517b32ff9d3edb35c7b59f73d7",
+    "total_amount": 2018660,
+    "unconsolidated_genesis_reward": 28,
+    "writer_execution_provenance": false,
+    "writer_source_recovered": false
+  },
+  "economics": {
+    "derived_unlocked_amount": 2324584,
+    "derived_unlocked_is_live_spendable_proof": false,
+    "historical_declared_supply": 2824584,
+    "missing_height_count": 28782,
+    "missing_height_implied_amount": 805896,
+    "physical_recorded_reward_total": 2018688,
+    "treasury_attestation_records": 2,
+    "treasury_economic_commitments_counted": 1,
+    "treasury_lock_commitment": 500000
+  },
+  "identity": {
+    "architecture": "native_blockless_dag_coin",
+    "asset": "L28",
+    "emission_schedule_ceiling": 11130000,
+    "hard_cap": 28000000,
+    "historical_supply_must_not_be_reminted": true,
+    "smart_contract_identity": false
+  },
+  "manifest_version": "l28-historical-continuity/v0.1",
+  "mining": {
+    "accepted_coinbase_receiver_must_match_declared_miner": true,
+    "active": false,
+    "automatic_creator_reward_routing": false,
+    "canonical_pow_formula_defined_in_v1": false,
+    "difficulty_18_is_consensus": false,
+    "winning_proof_binding_implemented": false
+  },
+  "parent_graph": {
+    "cycle_detected_on_final_path": false,
+    "dag_leaf_count": 20694,
+    "final_lock_parent_path_length": 4,
+    "first_root": 1,
+    "parent_in_snapshot": 51426,
+    "parent_only_in_raw_dag": 20671,
+    "snapshot_self_contained": false
+  },
+  "preserved_snapshot": {
+    "claimed_timestamp": "2025-11-15T13:08:38.085676Z",
+    "final_entry_hash": "589034a1c80f6ba8f5d6b90baf0cf247b0b71a0b63e677f1b89028be643156d4",
+    "final_entry_height": 100879,
+    "issuance_records": 72096,
+    "last_issuance_height": 100877,
+    "physical_records": 72098,
+    "public_timestamp_independently_proven": false,
+    "sha256": "6580333e4dba688f242d82a9ea7253369b7723273b3392dc6d8ae9b78d9b2d11",
+    "size_bytes": 30658355,
+    "special_records": 2
+  },
+  "protocol_baseline": "1.0.0",
+  "raw_dag": {
+    "extra_candidates_not_selected": 30167,
+    "future_parents": 0,
+    "missing_parents": 0,
+    "physical_records": 102263,
+    "sha256": "1ba544052cee098cea265add04c8fb0ff0562897803ba829b201293745aad669",
+    "size_bytes": 40707627,
+    "unique_represented_heights": 72096
+  },
+  "reconstruction": {
+    "appendage": "two_chained_SYSTEM_TREASURY_LOCK_attestations",
+    "deterministic_content_and_order_confirmed": true,
+    "ordering": "ascending_height",
+    "selection": "first_physical_raw_candidate_per_represented_height",
+    "serialization": "python_json_dumps_default"
+  },
+  "status": "audit_evidence_only"
+}
