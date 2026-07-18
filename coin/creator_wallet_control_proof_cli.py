@@ -123,7 +123,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             report,
             ensure_ascii=False,
             allow_nan=False,
-            sort_keys=True,
+            sort_keys=False,
             indent=2 if args.pretty else None,
             separators=None if args.pretty else (",", ":"),
         )
@@ -145,7 +145,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 report,
                 ensure_ascii=False,
                 allow_nan=False,
-                sort_keys=True,
+                sort_keys=False,
                 separators=(",", ":"),
             )
         )
