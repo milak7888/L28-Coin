@@ -360,6 +360,7 @@ class TestSideEffectBoundaries(unittest.TestCase):
         self.assertFalse(f66.settlement_authorized)
         self.assertFalse(f66.ledger_mutated)
         self.assertFalse(f66.private_material_exposed)
+        self.assertFalse(f66.persistent_keys_created)
         self.assertFalse(f66.runtime_activated)
 
     def test_no_uaii_processor_or_validator_calls(self) -> None:

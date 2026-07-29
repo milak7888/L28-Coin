@@ -1,12 +1,16 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Foundation 66 — first isolated F64 signed-receipt data-contract slice.
+"""Foundation 66/67 — F64 signed-receipt data contract + isolated Ed25519 slice.
 
-Pure schema validation and deterministic receipt-material construction only.
-Does not sign, verify signatures, select keys, execute approval/replay state,
-submit transactions, settle, mutate a ledger, or process UAII envelopes.
+Foundation 66: pure schema validation and deterministic receipt-material
+construction via CanonUaii (`coin.uaii_json.canon_uaii`).
 
-Canonicalization MUST use coin.uaii_json.canon_uaii (CanonUaii). MUST NOT call
-coin.m2m_verifier canonicalize helpers for F64 material.
+Foundation 67: isolated PureEd25519 signing over `build_signable_bytes` and
+public-key verification. Private keys MUST remain outside this module (callable
+signer boundary). MUST NOT call M2M canonicalize helpers, UAII processing,
+transaction validation, replay stores, ledgers, or network services.
+
+Does not execute approval/replay state, spend, settle, submit transactions,
+mutate ledgers, persist keys, or process UAII envelopes.
 """
 
 from __future__ import annotations
@@ -14,17 +18,22 @@ from __future__ import annotations
 import base64
 import hashlib
 import re
+from collections.abc import Callable
 from typing import Any, Mapping
+
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from .uaii_json import UaiiJsonError, canon_uaii
 
-# Foundation 66 milestone flags (all remain false for this slice)
+# Milestone flags (remain false; F67 does not authorize production/runtime use)
 execution_authorized = False
 signing_authorized = False
 spend_authorized = False
 settlement_authorized = False
 ledger_mutated = False
 private_material_exposed = False
+persistent_keys_created = False
 runtime_activated = False
 
 RECEIPT_PROFILE = "l28-uaii-signed-receipt/v0.1"
@@ -54,6 +63,16 @@ SETTLEMENT_STATUSES = frozenset(
         "refunded",
     }
 )
+
+# Foundation 64 §5.6 — required signer identity field by settlement_status
+STATUS_SIGNER_IDENTITY_FIELD: dict[str, str] = {
+    "authorization_signed": "payer_public_identity",
+    "service_result_signed": "provider_public_identity",
+    "settlement_pending": "payer_public_identity",
+    "settlement_confirmed": "payer_public_identity",
+    "settlement_failed": "payer_public_identity",
+    "refunded": "payer_public_identity",
+}
 
 UNSIGNED_FACTS_FIELDS = (
     "receipt_profile",
@@ -529,3 +548,137 @@ def build_signed_facts_empty_id(
         "execution_authorized": unsigned["execution_authorized"],
     }
     return validate_signed_facts_empty_receipt_id(ordered)
+
+
+def required_signer_identity_field(settlement_status: str) -> str:
+    """Return the Foundation 64 §5.6 identity field name for a status."""
+    try:
+        return STATUS_SIGNER_IDENTITY_FIELD[settlement_status]
+    except KeyError as exc:
+        raise F64ReceiptSchemaError("schema_invalid") from exc
+
+
+def required_signer_identity(unsigned_or_signed_facts: Mapping[str, Any]) -> str:
+    """Return the identity string that MUST own the signer key for these facts."""
+    status = unsigned_or_signed_facts["settlement_status"]
+    field = required_signer_identity_field(status)
+    value = unsigned_or_signed_facts[field]
+    if not isinstance(value, str) or value == "":
+        raise F64ReceiptSchemaError("key_binding_invalid")
+    return value
+
+
+def public_key_id_for_raw(public_key_raw: bytes) -> str:
+    """Encode `ed25519:` + base64url-unpadded raw public key (F64 §5.2)."""
+    if len(public_key_raw) != 32:
+        raise F64ReceiptSchemaError("schema_invalid")
+    return "ed25519:" + base64.urlsafe_b64encode(public_key_raw).decode("ascii").rstrip("=")
+
+
+def _verify_ed25519(*, public_key_hex: str, signature_hex: str, message: bytes) -> None:
+    try:
+        pk_bytes = bytes.fromhex(public_key_hex)
+        sig_bytes = bytes.fromhex(signature_hex)
+    except ValueError as exc:
+        raise F64ReceiptSchemaError("signature_invalid") from exc
+    if len(pk_bytes) != 32 or len(sig_bytes) != 64:
+        raise F64ReceiptSchemaError("signature_invalid")
+    try:
+        Ed25519PublicKey.from_public_bytes(pk_bytes).verify(sig_bytes, message)
+    except (InvalidSignature, ValueError) as exc:
+        raise F64ReceiptSchemaError("signature_invalid") from exc
+
+
+def sign_unsigned_receipt_facts(
+    unsigned_facts: Any,
+    *,
+    sign_signable_bytes: Callable[[bytes], bytes],
+    expected_signer_identity: str,
+) -> dict[str, Any]:
+    """Sign exact `build_signable_bytes` output; return complete 27-field facts.
+
+    ``sign_signable_bytes`` is the isolated signer boundary: it MUST accept the
+    domain-separated signable bytes and return raw 64-byte PureEd25519 signature
+    bytes. This module never accepts, stores, logs, or serializes private keys.
+    """
+    if not callable(sign_signable_bytes):
+        raise F64ReceiptSchemaError("schema_invalid")
+    if not isinstance(expected_signer_identity, str) or expected_signer_identity == "":
+        raise F64ReceiptSchemaError("key_binding_invalid")
+
+    unsigned = validate_unsigned_facts(unsigned_facts)
+    if unsigned["signer_algorithm_profile"] != SIGNER_ALGORITHM_PROFILE:
+        raise F64ReceiptSchemaError("algorithm_unsupported")
+
+    bound_identity = required_signer_identity(unsigned)
+    if expected_signer_identity != bound_identity:
+        raise F64ReceiptSchemaError("key_binding_invalid")
+
+    signable = build_signable_bytes(unsigned)
+    digest = hashlib.sha256(signable).hexdigest()
+
+    try:
+        signature_raw = sign_signable_bytes(signable)
+    except F64ReceiptSchemaError:
+        raise
+    except Exception as exc:  # noqa: BLE001 — fail closed at signer boundary
+        raise F64ReceiptSchemaError("signature_invalid") from exc
+
+    if not isinstance(signature_raw, (bytes, bytearray)) or len(signature_raw) != 64:
+        raise F64ReceiptSchemaError("signature_invalid")
+    signature_hex = bytes(signature_raw).hex()
+
+    # Ensure the isolated signer matched the declared public key (no private material).
+    _verify_ed25519(
+        public_key_hex=unsigned["signer_public_key"],
+        signature_hex=signature_hex,
+        message=signable,
+    )
+
+    empty = build_signed_facts_empty_id(
+        unsigned_facts=unsigned,
+        signed_payload_digest=digest,
+        signature=signature_hex,
+    )
+    receipt_id = compute_receipt_id(empty)
+    complete = dict(empty)
+    complete["receipt_id"] = receipt_id
+    return validate_signed_facts(complete)
+
+
+def verify_signed_receipt_facts(signed_facts: Any) -> dict[str, Any]:
+    """Verify schema, §5.6 identity binding, digest, PureEd25519 signature, receipt_id.
+
+    Reconstructs signable bytes only through Foundation 66 helpers. Does not call
+    M2M canonicalization, UAII processing, validate_transaction, replay stores,
+    ledger, or network code.
+    """
+    signed = validate_signed_facts(signed_facts)
+
+    if signed["signer_algorithm_profile"] != SIGNER_ALGORITHM_PROFILE:
+        raise F64ReceiptSchemaError("algorithm_unsupported")
+
+    # §5.6 — required identity field must be present and selected deterministically.
+    required_signer_identity(signed)
+
+    unsigned = {k: signed[k] for k in UNSIGNED_FACTS_FIELDS}
+    unsigned = validate_unsigned_facts(unsigned)
+
+    signable = build_signable_bytes(unsigned)
+    recomputed_digest = hashlib.sha256(signable).hexdigest()
+    if recomputed_digest != signed["signed_payload_digest"]:
+        raise F64ReceiptSchemaError("digest_mismatch")
+
+    _verify_ed25519(
+        public_key_hex=signed["signer_public_key"],
+        signature_hex=signed["signature"],
+        message=signable,
+    )
+
+    empty = dict(signed)
+    empty["receipt_id"] = ""
+    recomputed_id = compute_receipt_id(empty)
+    if recomputed_id != signed["receipt_id"]:
+        raise F64ReceiptSchemaError("receipt_id_invalid")
+
+    return signed
