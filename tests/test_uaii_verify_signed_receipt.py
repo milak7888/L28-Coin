@@ -128,6 +128,16 @@ def _disposable_signed_receipt() -> dict[str, Any]:
     )
 
 
+def _verify_params(
+    signed: dict[str, Any],
+    accepted: list[str] | None = None,
+) -> dict[str, Any]:
+    return {
+        "signed_receipt": signed,
+        "accepted_receipt_ids": [] if accepted is None else accepted,
+    }
+
+
 class TestFoundation68VerifySignedReceipt(unittest.TestCase):
     def test_registered_and_discoverable(self) -> None:
         self.assertIn("verify_signed_receipt", OPERATIONS)
@@ -143,19 +153,21 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
 
     def test_valid_receipt_verifies_through_uaii(self) -> None:
         signed = _disposable_signed_receipt()
-        r = _call(_envelope("verify_signed_receipt", {"signed_receipt": signed}, nonce="ok1"))
+        r = _call(_envelope("verify_signed_receipt", _verify_params(signed), nonce="ok1"))
         self.assertTrue(r["ok"])
         self.assertEqual(r["code"], "signed_receipt_verified")
         self.assertEqual(r["operation"], "verify_signed_receipt")
         self.assertEqual(r["detail"], "")
         result = r["result"]
         self.assertEqual(result["verification_status"], "verified")
+        self.assertEqual(result["replay_status"], "fresh")
         self.assertEqual(result["receipt_id"], signed["receipt_id"])
         self.assertEqual(result["signed_payload_digest"], signed["signed_payload_digest"])
         self.assertEqual(
             tuple(result.keys()),
             (
                 "verification_status",
+                "replay_status",
                 "receipt_profile",
                 "receipt_id",
                 "signed_payload_digest",
@@ -189,8 +201,8 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
 
     def test_deterministic_repeat(self) -> None:
         signed = _disposable_signed_receipt()
-        a = _call(_envelope("verify_signed_receipt", {"signed_receipt": signed}, nonce="d1"))
-        b = _call(_envelope("verify_signed_receipt", {"signed_receipt": signed}, nonce="d2"))
+        a = _call(_envelope("verify_signed_receipt", _verify_params(signed), nonce="d1"))
+        b = _call(_envelope("verify_signed_receipt", _verify_params(signed), nonce="d2"))
         self.assertEqual(a["result"], b["result"])
         self.assertEqual(a["code"], b["code"])
 
@@ -209,7 +221,7 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
                 bad = dict(signed)
                 bad[field] = value
                 r = _call(
-                    _envelope("verify_signed_receipt", {"signed_receipt": bad}, nonce=f"t-{field}"),
+                    _envelope("verify_signed_receipt", _verify_params(bad), nonce=f"t-{field}"),
                 )
                 self.assertFalse(r["ok"])
                 self.assertIn(r["code"], codes)
@@ -222,7 +234,7 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
         bad = dict(signed)
         bad["signer_public_key"] = raw.hex()
         bad["signer_public_key_id"] = public_key_id_for_raw(raw)
-        r = _call(_envelope("verify_signed_receipt", {"signed_receipt": bad}, nonce="pk"))
+        r = _call(_envelope("verify_signed_receipt", _verify_params(bad), nonce="pk"))
         self.assertFalse(r["ok"])
         self.assertEqual(r["code"], "digest_mismatch")
 
@@ -230,13 +242,13 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
         signed = _disposable_signed_receipt()
         bad_sig = dict(signed)
         bad_sig["signature"] = "g" * 128
-        r1 = _call(_envelope("verify_signed_receipt", {"signed_receipt": bad_sig}, nonce="ms"))
+        r1 = _call(_envelope("verify_signed_receipt", _verify_params(bad_sig), nonce="ms"))
         self.assertFalse(r1["ok"])
         self.assertEqual(r1["code"], "schema_invalid")
 
         bad_alg = dict(signed)
         bad_alg["signer_algorithm_profile"] = "ed25519-prehash/v0.1"
-        r2 = _call(_envelope("verify_signed_receipt", {"signed_receipt": bad_alg}, nonce="alg"))
+        r2 = _call(_envelope("verify_signed_receipt", _verify_params(bad_alg), nonce="alg"))
         self.assertFalse(r2["ok"])
         self.assertEqual(r2["code"], "algorithm_unsupported")
 
@@ -248,32 +260,43 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
         r_extra = _call(
             _envelope(
                 "verify_signed_receipt",
-                {"signed_receipt": signed, "extra_field": 1},
+                {**_verify_params(signed), "extra_field": 1},
                 nonce="extra",
             )
         )
         self.assertEqual(r_extra["code"], "schema_invalid")
 
         r_type = _call(
-            _envelope("verify_signed_receipt", {"signed_receipt": "not-an-object"}, nonce="type")
+            _envelope(
+                "verify_signed_receipt",
+                {"signed_receipt": "not-an-object", "accepted_receipt_ids": []},
+                nonce="type",
+            )
         )
         self.assertEqual(r_type["code"], "schema_invalid")
 
         bad_null = dict(signed)
         bad_null["prior_receipt_id"] = ""
         r_null = _call(
-            _envelope("verify_signed_receipt", {"signed_receipt": bad_null}, nonce="null")
+            _envelope("verify_signed_receipt", _verify_params(bad_null), nonce="null")
         )
         self.assertFalse(r_null["ok"])
         self.assertEqual(r_null["code"], "schema_invalid")
 
+        r_missing_ids = _call(
+            _envelope("verify_signed_receipt", {"signed_receipt": signed}, nonce="no-ids")
+        )
+        self.assertEqual(r_missing_ids["code"], "schema_invalid")
+
     def test_delegates_to_foundation67(self) -> None:
         signed = _disposable_signed_receipt()
         with mock.patch(
-            "coin.uaii_reference_core.verify_signed_receipt_facts",
-            wraps=__import__("coin.uaii_signed_receipt", fromlist=["verify_signed_receipt_facts"]).verify_signed_receipt_facts,
+            "coin.uaii_signed_receipt.verify_signed_receipt_facts",
+            wraps=__import__(
+                "coin.uaii_signed_receipt", fromlist=["verify_signed_receipt_facts"]
+            ).verify_signed_receipt_facts,
         ) as wrapped:
-            r = _call(_envelope("verify_signed_receipt", {"signed_receipt": signed}, nonce="del"))
+            r = _call(_envelope("verify_signed_receipt", _verify_params(signed), nonce="del"))
             self.assertTrue(r["ok"])
             wrapped.assert_called_once()
 
@@ -311,7 +334,7 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
         with mock.patch("coin.tx_validation.validate_transaction") as vt, mock.patch(
             "coin.m2m_verifier.canonicalize", create=True
         ) as canon:
-            r = _call(_envelope("verify_signed_receipt", {"signed_receipt": signed}, nonce="side"))
+            r = _call(_envelope("verify_signed_receipt", _verify_params(signed), nonce="side"))
             self.assertTrue(r["ok"])
             vt.assert_not_called()
             canon.assert_not_called()

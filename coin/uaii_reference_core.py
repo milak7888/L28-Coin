@@ -25,20 +25,25 @@ from .uaii_resource_limits import (
     measured_l6_fallback_envelope,
     walk_enforce_l1_l4,
 )
-from .uaii_signed_receipt import F64ReceiptSchemaError, verify_signed_receipt_facts
+from .uaii_signed_receipt import (
+    F64ReceiptSchemaError,
+    classify_signed_receipt_replay,
+)
 
 # Authorization flags for this bounded implementation milestone
 execution_authorized = False
 implementation_authorized = True
 spend_authorized = False
 ledger_mutated = False
-# Foundation 68 — verification wiring does not authorize signing/adapters/runtime
+# Foundation 68/69 — verification wiring does not authorize signing/adapters/runtime/stores
 signing_authorized = False
 persistent_keys_created = False
 private_material_exposed = False
 settlement_authorized = False
 adapters_activated = False
 runtime_activated = False
+persistent_replay_storage_created = False
+replay_state_mutated = False
 
 INTERFACE_PROFILE = "l28-universal-ai-access-interface/v0.1"
 UAII_CLOCK_SKEW_TOLERANCE_SECONDS = 300
@@ -158,7 +163,7 @@ CAPABILITIES = (
     ("adapter.typescript_sdk", "*", "deferred"),
 )
 
-VERIFY_SIGNED_RECEIPT_PARAMS = ("signed_receipt",)
+VERIFY_SIGNED_RECEIPT_PARAMS = ("signed_receipt", "accepted_receipt_ids")
 
 ADAPTER_IDS = ("mcp", "rest_openapi", "python_sdk", "typescript_sdk")
 
@@ -884,19 +889,24 @@ def _op_get_payment_receipt(params: Mapping[str, Any], _context: Any) -> tuple[s
 
 
 def _op_verify_signed_receipt(params: Mapping[str, Any], _context: Any) -> tuple[str, dict[str, Any]]:
-    """Foundation 68 — verify F64 signed-receipt facts via Foundation 67 only."""
+    """Foundation 68/69 — verify signed receipt and classify receipt_id replay membership."""
     p = _require_keys_order(params, VERIFY_SIGNED_RECEIPT_PARAMS)
     signed_receipt = p["signed_receipt"]
     if not isinstance(signed_receipt, dict):
         raise UaiiCoreError("schema_invalid")
     try:
-        verified = verify_signed_receipt_facts(signed_receipt)
+        classified = classify_signed_receipt_replay(
+            signed_receipt,
+            p["accepted_receipt_ids"],
+        )
     except F64ReceiptSchemaError as exc:
         raise UaiiCoreError(exc.code) from exc
 
+    verified = classified["verified_facts"]
     # Deterministic public verification outcome (no private material; no envelope redesign)
     result = {
         "verification_status": "verified",
+        "replay_status": classified["replay_status"],
         "receipt_profile": verified["receipt_profile"],
         "receipt_id": verified["receipt_id"],
         "signed_payload_digest": verified["signed_payload_digest"],

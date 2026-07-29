@@ -26,7 +26,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 from .uaii_json import UaiiJsonError, canon_uaii
 
-# Milestone flags (remain false; F67 does not authorize production/runtime use)
+# Milestone flags (remain false; no production/runtime/persistent replay authority)
 execution_authorized = False
 signing_authorized = False
 spend_authorized = False
@@ -34,7 +34,12 @@ settlement_authorized = False
 ledger_mutated = False
 private_material_exposed = False
 persistent_keys_created = False
+persistent_replay_storage_created = False
+replay_state_mutated = False
 runtime_activated = False
+
+# Bound for caller-supplied accepted receipt-id lists (Foundation 60 L3).
+MAX_ACCEPTED_RECEIPT_IDS = 256
 
 RECEIPT_PROFILE = "l28-uaii-signed-receipt/v0.1"
 APPROVAL_PROFILE = "l28-f64-approval-decision/v0.1"
@@ -682,3 +687,54 @@ def verify_signed_receipt_facts(signed_facts: Any) -> dict[str, Any]:
         raise F64ReceiptSchemaError("receipt_id_invalid")
 
     return signed
+
+
+def validate_accepted_receipt_ids(accepted_receipt_ids: Any) -> tuple[str, ...]:
+    """Validate caller-supplied previously-accepted receipt_id collection.
+
+    Pure and side-effect free: does not mutate the input, retain state, touch a
+    store, or consult time/network/environment. Duplicates are ambiguous and
+    rejected. Length MUST be ``<= MAX_ACCEPTED_RECEIPT_IDS`` (F60-L3).
+    """
+    if not isinstance(accepted_receipt_ids, list):
+        raise F64ReceiptSchemaError("schema_invalid")
+    if len(accepted_receipt_ids) > MAX_ACCEPTED_RECEIPT_IDS:
+        raise F64ReceiptSchemaError("input_too_large")
+    out: list[str] = []
+    seen: set[str] = set()
+    for item in accepted_receipt_ids:
+        if item is None:
+            raise F64ReceiptSchemaError("schema_invalid")
+        rid = _check_hex64(item)
+        if rid in seen:
+            raise F64ReceiptSchemaError("schema_invalid")
+        seen.add(rid)
+        out.append(rid)
+    return tuple(out)
+
+
+def classify_signed_receipt_replay(
+    signed_facts: Any,
+    accepted_receipt_ids: Any,
+) -> dict[str, Any]:
+    """Verify signed facts (F67), then classify receipt_id membership.
+
+    Normative identifier for this pure slice: Foundation 64 ``receipt_id``
+    (§6.2 / §6.2.4). Classification runs only after cryptographic and integrity
+    verification succeeds. Does not mutate ``accepted_receipt_ids``, create
+    storage, or evaluate time-scoped ``replay_key`` uniqueness (F64 §10.3
+    remains an external-authority obligation).
+
+    Returns public facts including ``replay_status`` of ``fresh`` or ``replayed``.
+    """
+    verified = verify_signed_receipt_facts(signed_facts)
+    accepted = validate_accepted_receipt_ids(accepted_receipt_ids)
+    receipt_id = verified["receipt_id"]
+    replay_status = "replayed" if receipt_id in accepted else "fresh"
+    return {
+        "verification_status": "verified",
+        "replay_status": replay_status,
+        "receipt_id": receipt_id,
+        "signed_payload_digest": verified["signed_payload_digest"],
+        "verified_facts": verified,
+    }
