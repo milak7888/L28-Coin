@@ -25,12 +25,20 @@ from .uaii_resource_limits import (
     measured_l6_fallback_envelope,
     walk_enforce_l1_l4,
 )
+from .uaii_signed_receipt import F64ReceiptSchemaError, verify_signed_receipt_facts
 
 # Authorization flags for this bounded implementation milestone
 execution_authorized = False
 implementation_authorized = True
 spend_authorized = False
 ledger_mutated = False
+# Foundation 68 — verification wiring does not authorize signing/adapters/runtime
+signing_authorized = False
+persistent_keys_created = False
+private_material_exposed = False
+settlement_authorized = False
+adapters_activated = False
+runtime_activated = False
 
 INTERFACE_PROFILE = "l28-universal-ai-access-interface/v0.1"
 UAII_CLOCK_SKEW_TOLERANCE_SECONDS = 300
@@ -44,6 +52,7 @@ OPERATIONS = (
     "create_unsigned_payment_request",
     "validate_payment",
     "get_payment_receipt",
+    "verify_signed_receipt",
 )
 
 ENVELOPE_FIELDS = (
@@ -139,6 +148,7 @@ CAPABILITIES = (
     ("uaii.create_unsigned_payment_request", "create_unsigned_payment_request", "supported"),
     ("uaii.validate_payment", "validate_payment", "supported"),
     ("uaii.get_payment_receipt", "get_payment_receipt", "supported"),
+    ("uaii.verify_signed_receipt", "verify_signed_receipt", "supported"),
     ("uaii.signing", "*", "forbidden"),
     ("uaii.broadcast", "*", "forbidden"),
     ("uaii.autonomous_spend", "*", "forbidden"),
@@ -147,6 +157,8 @@ CAPABILITIES = (
     ("adapter.python_sdk", "*", "deferred"),
     ("adapter.typescript_sdk", "*", "deferred"),
 )
+
+VERIFY_SIGNED_RECEIPT_PARAMS = ("signed_receipt",)
 
 ADAPTER_IDS = ("mcp", "rest_openapi", "python_sdk", "typescript_sdk")
 
@@ -871,6 +883,44 @@ def _op_get_payment_receipt(params: Mapping[str, Any], _context: Any) -> tuple[s
     return "payment_receipt_ok", result
 
 
+def _op_verify_signed_receipt(params: Mapping[str, Any], _context: Any) -> tuple[str, dict[str, Any]]:
+    """Foundation 68 — verify F64 signed-receipt facts via Foundation 67 only."""
+    p = _require_keys_order(params, VERIFY_SIGNED_RECEIPT_PARAMS)
+    signed_receipt = p["signed_receipt"]
+    if not isinstance(signed_receipt, dict):
+        raise UaiiCoreError("schema_invalid")
+    try:
+        verified = verify_signed_receipt_facts(signed_receipt)
+    except F64ReceiptSchemaError as exc:
+        raise UaiiCoreError(exc.code) from exc
+
+    # Deterministic public verification outcome (no private material; no envelope redesign)
+    result = {
+        "verification_status": "verified",
+        "receipt_profile": verified["receipt_profile"],
+        "receipt_id": verified["receipt_id"],
+        "signed_payload_digest": verified["signed_payload_digest"],
+        "signer_algorithm_profile": verified["signer_algorithm_profile"],
+        "signer_public_key_id": verified["signer_public_key_id"],
+        "signer_public_key": verified["signer_public_key"],
+        "settlement_status": verified["settlement_status"],
+        "payer_public_identity": verified["payer_public_identity"],
+        "provider_public_identity": verified["provider_public_identity"],
+        "asset_id": verified["asset_id"],
+        "amount": verified["amount"],
+        "purpose": verified["purpose"],
+        "correlation_id": verified["correlation_id"],
+        "request_id": verified["request_id"],
+        "quote_id": verified["quote_id"],
+        "signing_authorized": False,
+        "spend_authorized": False,
+        "settlement_authorized": False,
+        "ledger_mutated": False,
+        "execution_authorized": False,
+    }
+    return "signed_receipt_verified", result
+
+
 def process_uaii_request(request_bytes: str | bytes, context: Any = None) -> dict[str, Any]:
     """Authoritative Foundation 58 UAII request processor."""
     interface_profile = ""
@@ -1000,6 +1050,8 @@ def process_uaii_request(request_bytes: str | bytes, context: Any = None) -> dic
             code, result = _op_validate_payment(params, context)
         elif operation == "get_payment_receipt":
             code, result = _op_get_payment_receipt(params, context)
+        elif operation == "verify_signed_receipt":
+            code, result = _op_verify_signed_receipt(params, context)
         else:
             raise UaiiCoreError("operation_unsupported", interface_profile=interface_profile)
 

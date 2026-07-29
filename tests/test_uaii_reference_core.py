@@ -114,8 +114,10 @@ class TestUaiiReferenceCore(unittest.TestCase):
     def test_skew_constant(self) -> None:
         self.assertEqual(UAII_CLOCK_SKEW_TOLERANCE_SECONDS, 300)
 
-    def test_seven_operations_tuple(self) -> None:
-        self.assertEqual(len(OPERATIONS), 7)
+    def test_operations_tuple(self) -> None:
+        self.assertEqual(len(OPERATIONS), 8)
+        self.assertIn("verify_signed_receipt", OPERATIONS)
+        self.assertIn("get_payment_receipt", OPERATIONS)
 
     def test_input_type_and_size_and_encoding(self) -> None:
         r = process_uaii_request(123, _context())  # type: ignore[arg-type]
