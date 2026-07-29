@@ -36,10 +36,19 @@ private_material_exposed = False
 persistent_keys_created = False
 persistent_replay_storage_created = False
 replay_state_mutated = False
+persistent_expiration_state_created = False
+system_clock_read = False
+implicit_time_used = False
 runtime_activated = False
 
 # Bound for caller-supplied accepted receipt-id lists (Foundation 60 L3).
 MAX_ACCEPTED_RECEIPT_IDS = 256
+
+# Foundation 64 §9.1.12 / §10.5 — envelope-style skew from Foundation 57.
+RECEIPT_EXPIRY_CLOCK_SKEW_SECONDS = 300
+
+# Foundation 56 JSON safe-integer upper bound (cited in Foundation 64 §8.5).
+MAX_UNIX_SECONDS = 9_007_199_254_740_991
 
 RECEIPT_PROFILE = "l28-uaii-signed-receipt/v0.1"
 APPROVAL_PROFILE = "l28-f64-approval-decision/v0.1"
@@ -736,5 +745,84 @@ def classify_signed_receipt_replay(
         "replay_status": replay_status,
         "receipt_id": receipt_id,
         "signed_payload_digest": verified["signed_payload_digest"],
+        "verified_facts": verified,
+    }
+
+
+def validate_verification_time(verification_time: Any) -> int:
+    """Validate caller-supplied Unix-seconds verification time (exact int).
+
+    Representation: timezone-independent integer Unix seconds (Foundation 56/57
+    / 64). No system clock, timezone config, or environment is consulted.
+    """
+    if type(verification_time) is not int:
+        raise F64ReceiptSchemaError("schema_invalid")
+    if verification_time < 0 or verification_time > MAX_UNIX_SECONDS:
+        raise F64ReceiptSchemaError("schema_invalid")
+    return verification_time
+
+
+def expiration_status_for_verified_facts(
+    verified_facts: Mapping[str, Any],
+    verification_time: Any,
+) -> str:
+    """Classify expiration from already-verified facts and explicit time.
+
+    Foundation 64 §9.1.12 / §10.5 envelope-style rule (Foundation 57):
+
+        expired  iff  verification_time > expires_at + 300
+        valid    otherwise
+
+    Therefore ``verification_time == expires_at`` is **valid** (not expired).
+    Does not mutate inputs or read any clock.
+    """
+    if not isinstance(verified_facts, Mapping):
+        raise F64ReceiptSchemaError("schema_invalid")
+    expires_at = verified_facts.get("expires_at")
+    if type(expires_at) is not int:
+        raise F64ReceiptSchemaError("schema_invalid")
+    t = validate_verification_time(verification_time)
+    if t > expires_at + RECEIPT_EXPIRY_CLOCK_SKEW_SECONDS:
+        return "expired"
+    return "valid"
+
+
+def classify_signed_receipt_expiration(
+    signed_facts: Any,
+    verification_time: Any,
+) -> dict[str, Any]:
+    """Verify signed facts (F67), then classify expiration vs explicit time."""
+    verified = verify_signed_receipt_facts(signed_facts)
+    expiration_status = expiration_status_for_verified_facts(verified, verification_time)
+    return {
+        "verification_status": "verified",
+        "expiration_status": expiration_status,
+        "receipt_id": verified["receipt_id"],
+        "expires_at": verified["expires_at"],
+        "verification_time": validate_verification_time(verification_time),
+        "verified_facts": verified,
+    }
+
+
+def classify_signed_receipt_replay_and_expiration(
+    signed_facts: Any,
+    accepted_receipt_ids: Any,
+    verification_time: Any,
+) -> dict[str, Any]:
+    """Verify once, then classify replay and expiration in that order."""
+    verified = verify_signed_receipt_facts(signed_facts)
+    accepted = validate_accepted_receipt_ids(accepted_receipt_ids)
+    t = validate_verification_time(verification_time)
+    receipt_id = verified["receipt_id"]
+    replay_status = "replayed" if receipt_id in accepted else "fresh"
+    expiration_status = expiration_status_for_verified_facts(verified, t)
+    return {
+        "verification_status": "verified",
+        "replay_status": replay_status,
+        "expiration_status": expiration_status,
+        "receipt_id": receipt_id,
+        "signed_payload_digest": verified["signed_payload_digest"],
+        "expires_at": verified["expires_at"],
+        "verification_time": t,
         "verified_facts": verified,
     }

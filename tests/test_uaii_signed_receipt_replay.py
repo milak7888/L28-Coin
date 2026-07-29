@@ -111,7 +111,11 @@ def _uaii_verify(signed: dict[str, Any], accepted: list[str], *, nonce: str) -> 
         "expires_at": 1_700_000_100,
         "nonce": nonce,
         "execution_authorized": False,
-        "params": {"signed_receipt": signed, "accepted_receipt_ids": accepted},
+        "params": {
+            "signed_receipt": signed,
+            "accepted_receipt_ids": accepted,
+            "verification_time": 1_700_000_000,
+        },
     }
     raw = json.dumps(env, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
     return process_uaii_request(raw, _context())

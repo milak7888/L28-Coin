@@ -131,10 +131,14 @@ def _disposable_signed_receipt() -> dict[str, Any]:
 def _verify_params(
     signed: dict[str, Any],
     accepted: list[str] | None = None,
+    verification_time: int | None = None,
 ) -> dict[str, Any]:
+    # Default evaluation time is before expires_at (fixtures use expires_at=1700000600).
+    t = 1_700_000_000 if verification_time is None else verification_time
     return {
         "signed_receipt": signed,
         "accepted_receipt_ids": [] if accepted is None else accepted,
+        "verification_time": t,
     }
 
 
@@ -161,6 +165,7 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
         result = r["result"]
         self.assertEqual(result["verification_status"], "verified")
         self.assertEqual(result["replay_status"], "fresh")
+        self.assertEqual(result["expiration_status"], "valid")
         self.assertEqual(result["receipt_id"], signed["receipt_id"])
         self.assertEqual(result["signed_payload_digest"], signed["signed_payload_digest"])
         self.assertEqual(
@@ -168,6 +173,7 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
             (
                 "verification_status",
                 "replay_status",
+                "expiration_status",
                 "receipt_profile",
                 "receipt_id",
                 "signed_payload_digest",
@@ -183,6 +189,8 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
                 "correlation_id",
                 "request_id",
                 "quote_id",
+                "expires_at",
+                "verification_time",
                 "signing_authorized",
                 "spend_authorized",
                 "settlement_authorized",
@@ -269,7 +277,11 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
         r_type = _call(
             _envelope(
                 "verify_signed_receipt",
-                {"signed_receipt": "not-an-object", "accepted_receipt_ids": []},
+                {
+                    "signed_receipt": "not-an-object",
+                    "accepted_receipt_ids": [],
+                    "verification_time": 1_700_000_000,
+                },
                 nonce="type",
             )
         )
@@ -287,6 +299,15 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
             _envelope("verify_signed_receipt", {"signed_receipt": signed}, nonce="no-ids")
         )
         self.assertEqual(r_missing_ids["code"], "schema_invalid")
+
+        r_missing_time = _call(
+            _envelope(
+                "verify_signed_receipt",
+                {"signed_receipt": signed, "accepted_receipt_ids": []},
+                nonce="no-time",
+            )
+        )
+        self.assertEqual(r_missing_time["code"], "schema_invalid")
 
     def test_delegates_to_foundation67(self) -> None:
         signed = _disposable_signed_receipt()

@@ -27,7 +27,7 @@ from .uaii_resource_limits import (
 )
 from .uaii_signed_receipt import (
     F64ReceiptSchemaError,
-    classify_signed_receipt_replay,
+    classify_signed_receipt_replay_and_expiration,
 )
 
 # Authorization flags for this bounded implementation milestone
@@ -44,6 +44,9 @@ adapters_activated = False
 runtime_activated = False
 persistent_replay_storage_created = False
 replay_state_mutated = False
+persistent_expiration_state_created = False
+system_clock_read = False
+implicit_time_used = False
 
 INTERFACE_PROFILE = "l28-universal-ai-access-interface/v0.1"
 UAII_CLOCK_SKEW_TOLERANCE_SECONDS = 300
@@ -163,7 +166,11 @@ CAPABILITIES = (
     ("adapter.typescript_sdk", "*", "deferred"),
 )
 
-VERIFY_SIGNED_RECEIPT_PARAMS = ("signed_receipt", "accepted_receipt_ids")
+VERIFY_SIGNED_RECEIPT_PARAMS = (
+    "signed_receipt",
+    "accepted_receipt_ids",
+    "verification_time",
+)
 
 ADAPTER_IDS = ("mcp", "rest_openapi", "python_sdk", "typescript_sdk")
 
@@ -889,15 +896,16 @@ def _op_get_payment_receipt(params: Mapping[str, Any], _context: Any) -> tuple[s
 
 
 def _op_verify_signed_receipt(params: Mapping[str, Any], _context: Any) -> tuple[str, dict[str, Any]]:
-    """Foundation 68/69 — verify signed receipt and classify receipt_id replay membership."""
+    """Foundation 68–70 — verify signed receipt; classify replay then expiration."""
     p = _require_keys_order(params, VERIFY_SIGNED_RECEIPT_PARAMS)
     signed_receipt = p["signed_receipt"]
     if not isinstance(signed_receipt, dict):
         raise UaiiCoreError("schema_invalid")
     try:
-        classified = classify_signed_receipt_replay(
+        classified = classify_signed_receipt_replay_and_expiration(
             signed_receipt,
             p["accepted_receipt_ids"],
+            p["verification_time"],
         )
     except F64ReceiptSchemaError as exc:
         raise UaiiCoreError(exc.code) from exc
@@ -907,6 +915,7 @@ def _op_verify_signed_receipt(params: Mapping[str, Any], _context: Any) -> tuple
     result = {
         "verification_status": "verified",
         "replay_status": classified["replay_status"],
+        "expiration_status": classified["expiration_status"],
         "receipt_profile": verified["receipt_profile"],
         "receipt_id": verified["receipt_id"],
         "signed_payload_digest": verified["signed_payload_digest"],
@@ -922,6 +931,8 @@ def _op_verify_signed_receipt(params: Mapping[str, Any], _context: Any) -> tuple
         "correlation_id": verified["correlation_id"],
         "request_id": verified["request_id"],
         "quote_id": verified["quote_id"],
+        "expires_at": verified["expires_at"],
+        "verification_time": classified["verification_time"],
         "signing_authorized": False,
         "spend_authorized": False,
         "settlement_authorized": False,
