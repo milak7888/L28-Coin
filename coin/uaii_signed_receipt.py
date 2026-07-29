@@ -1,0 +1,531 @@
+# SPDX-License-Identifier: Apache-2.0
+"""Foundation 66 — first isolated F64 signed-receipt data-contract slice.
+
+Pure schema validation and deterministic receipt-material construction only.
+Does not sign, verify signatures, select keys, execute approval/replay state,
+submit transactions, settle, mutate a ledger, or process UAII envelopes.
+
+Canonicalization MUST use coin.uaii_json.canon_uaii (CanonUaii). MUST NOT call
+coin.m2m_verifier canonicalize helpers for F64 material.
+"""
+
+from __future__ import annotations
+
+import base64
+import hashlib
+import re
+from typing import Any, Mapping
+
+from .uaii_json import UaiiJsonError, canon_uaii
+
+# Foundation 66 milestone flags (all remain false for this slice)
+execution_authorized = False
+signing_authorized = False
+spend_authorized = False
+settlement_authorized = False
+ledger_mutated = False
+private_material_exposed = False
+runtime_activated = False
+
+RECEIPT_PROFILE = "l28-uaii-signed-receipt/v0.1"
+APPROVAL_PROFILE = "l28-f64-approval-decision/v0.1"
+REPLAY_PROFILE = "l28-f64-signing-replay/v0.1"
+SIGNER_ALGORITHM_PROFILE = "ed25519-pure/v0.1"
+PURPOSE_SIGNED_RECEIPT = "signed_receipt"
+ASSET_L28 = "L28"
+
+SIGNABLE_DOMAIN_PREFIX = b"L28-UAII-SIGN-V0.1-RECEIPT\x00"
+RECEIPT_ID_DOMAIN_PREFIX = b"L28-UAII-SIGN-V0.1-RECEIPT-ID"
+REPLAY_KEY_DOMAIN_PREFIX = b"L28-F64-SIGNING-REPLAY-V0.1"
+
+MAX_APPROVED_CANONICAL_PAYLOAD_BYTES = 16384
+MAX_SIGNABLE_BYTES = 16512
+
+HEX64_RE = re.compile(r"^[0-9a-f]{64}$")
+HEX128_RE = re.compile(r"^[0-9a-f]{128}$")
+
+SETTLEMENT_STATUSES = frozenset(
+    {
+        "authorization_signed",
+        "service_result_signed",
+        "settlement_pending",
+        "settlement_confirmed",
+        "settlement_failed",
+        "refunded",
+    }
+)
+
+UNSIGNED_FACTS_FIELDS = (
+    "receipt_profile",
+    "prior_receipt_id",
+    "correlation_id",
+    "request_id",
+    "quote_id",
+    "service_result_id",
+    "payer_public_identity",
+    "provider_public_identity",
+    "asset_id",
+    "amount",
+    "purpose",
+    "created_at",
+    "expires_at",
+    "receipt_nonce",
+    "transaction_id",
+    "settlement_status",
+    "signer_algorithm_profile",
+    "signer_public_key_id",
+    "signer_public_key",
+    "signing_authorized",
+    "spend_authorized",
+    "settlement_authorized",
+    "ledger_mutated",
+    "execution_authorized",
+)
+
+SIGNED_FACTS_FIELDS = (
+    "receipt_profile",
+    "receipt_id",
+    "prior_receipt_id",
+    "correlation_id",
+    "request_id",
+    "quote_id",
+    "service_result_id",
+    "payer_public_identity",
+    "provider_public_identity",
+    "asset_id",
+    "amount",
+    "purpose",
+    "created_at",
+    "expires_at",
+    "receipt_nonce",
+    "transaction_id",
+    "settlement_status",
+    "signer_algorithm_profile",
+    "signer_public_key_id",
+    "signer_public_key",
+    "signed_payload_digest",
+    "signature",
+    "signing_authorized",
+    "spend_authorized",
+    "settlement_authorized",
+    "ledger_mutated",
+    "execution_authorized",
+)
+
+APPROVAL_DECISION_FIELDS = (
+    "approval_profile",
+    "approval_id",
+    "request_id",
+    "correlation_id",
+    "quote_id",
+    "payer_identity",
+    "provider_identity",
+    "asset_id",
+    "amount",
+    "purpose",
+    "nonce",
+    "expires_at",
+    "signable_digest",
+    "signer_key_handle",
+    "policy_id",
+    "per_transaction_limit",
+    "cumulative_limit_evaluation",
+    "decision",
+    "decided_at",
+    "approver_identity",
+    "approval_signature_reference",
+)
+
+CUMULATIVE_LIMIT_FIELDS = (
+    "policy_id",
+    "subject_identity",
+    "asset_id",
+    "window_start",
+    "window_end",
+    "prior_authorized_amount",
+    "proposed_amount",
+    "cumulative_maximum",
+    "evaluation_timestamp",
+    "evaluation_result",
+)
+
+REPLAY_MATERIAL_FIELDS = (
+    "replay_profile",
+    "signer_key_handle",
+    "signature_purpose",
+    "payer_identity",
+    "provider_identity",
+    "asset_id",
+    "amount",
+    "request_id",
+    "quote_id",
+    "correlation_id",
+    "nonce",
+    "expires_at",
+    "signed_payload_digest",
+)
+
+assert len(UNSIGNED_FACTS_FIELDS) == 24
+assert len(SIGNED_FACTS_FIELDS) == 27
+assert len(APPROVAL_DECISION_FIELDS) == 21
+assert len(REPLAY_MATERIAL_FIELDS) == 13
+assert len(CUMULATIVE_LIMIT_FIELDS) == 10
+
+
+class F64ReceiptSchemaError(Exception):
+    """Fail-closed Foundation 64 schema/construction error with a stable code."""
+
+    def __init__(self, code: str) -> None:
+        self.code = code
+        super().__init__(code)
+
+
+def _exact_int(value: Any, *, code: str = "schema_invalid") -> int:
+    if type(value) is not int:
+        raise F64ReceiptSchemaError(code)
+    return value
+
+
+def _utf8_len(value: str) -> int:
+    return len(value.encode("utf-8"))
+
+
+def _require_keys_order(
+    obj: Any,
+    fields: tuple[str, ...],
+    *,
+    code: str = "schema_invalid",
+) -> dict[str, Any]:
+    if not isinstance(obj, dict):
+        raise F64ReceiptSchemaError(code)
+    if tuple(obj.keys()) != fields:
+        raise F64ReceiptSchemaError(code)
+    return obj
+
+
+def _check_hex64(value: Any, *, code: str = "schema_invalid") -> str:
+    if not isinstance(value, str) or HEX64_RE.fullmatch(value) is None:
+        raise F64ReceiptSchemaError(code)
+    return value
+
+
+def _check_hex128(value: Any, *, code: str = "schema_invalid") -> str:
+    if not isinstance(value, str) or HEX128_RE.fullmatch(value) is None:
+        raise F64ReceiptSchemaError(code)
+    return value
+
+
+def _check_identity_string(value: Any, *, code: str = "schema_invalid") -> str:
+    if not isinstance(value, str):
+        raise F64ReceiptSchemaError(code)
+    n = _utf8_len(value)
+    if n < 1 or n > 256:
+        raise F64ReceiptSchemaError(code)
+    return value
+
+
+def _check_nonce_string(value: Any) -> str:
+    if not isinstance(value, str):
+        raise F64ReceiptSchemaError("nonce_invalid")
+    raw = value.encode("utf-8")
+    if len(raw) < 1 or len(raw) > 256 or "\0" in value:
+        raise F64ReceiptSchemaError("nonce_invalid")
+    return value
+
+
+def _check_false_flag(value: Any, *, code: str = "schema_invalid") -> bool:
+    if value is not False:
+        raise F64ReceiptSchemaError(code)
+    return False
+
+
+def _check_prior_receipt_id(value: Any) -> Any:
+    if value is None:
+        return None
+    return _check_hex64(value)
+
+
+def _check_transaction_id(value: Any) -> str:
+    if not isinstance(value, str):
+        raise F64ReceiptSchemaError("schema_invalid")
+    if value == "":
+        return value
+    return _check_hex64(value)
+
+
+def _check_signer_public_key_id(value: Any, public_key_hex: str) -> str:
+    if not isinstance(value, str) or not value.startswith("ed25519:"):
+        raise F64ReceiptSchemaError("schema_invalid")
+    b64 = value[len("ed25519:") :]
+    if not b64 or "=" in b64:
+        raise F64ReceiptSchemaError("schema_invalid")
+    pad = "=" * ((4 - (len(b64) % 4)) % 4)
+    try:
+        raw = base64.urlsafe_b64decode(b64 + pad)
+    except (ValueError, TypeError) as exc:
+        raise F64ReceiptSchemaError("schema_invalid") from exc
+    if len(raw) != 32:
+        raise F64ReceiptSchemaError("schema_invalid")
+    if raw.hex() != public_key_hex:
+        raise F64ReceiptSchemaError("key_binding_invalid")
+    return value
+
+
+def _validate_receipt_common_body(obj: Mapping[str, Any]) -> None:
+    if obj["receipt_profile"] != RECEIPT_PROFILE:
+        raise F64ReceiptSchemaError("schema_invalid")
+    _check_prior_receipt_id(obj["prior_receipt_id"])
+    _check_hex64(obj["correlation_id"])
+    _check_hex64(obj["request_id"])
+    _check_hex64(obj["quote_id"])
+    _check_hex64(obj["service_result_id"])
+    _check_identity_string(obj["payer_public_identity"])
+    _check_identity_string(obj["provider_public_identity"])
+    if obj["asset_id"] != ASSET_L28:
+        raise F64ReceiptSchemaError("asset_invalid")
+    amount = _exact_int(obj["amount"], code="amount_invalid")
+    if amount <= 0:
+        raise F64ReceiptSchemaError("amount_invalid")
+    if obj["purpose"] != PURPOSE_SIGNED_RECEIPT:
+        raise F64ReceiptSchemaError("purpose_unsupported")
+    created_at = _exact_int(obj["created_at"])
+    if created_at < 0:
+        raise F64ReceiptSchemaError("schema_invalid")
+    expires_at = _exact_int(obj["expires_at"])
+    if expires_at <= created_at:
+        raise F64ReceiptSchemaError("schema_invalid")
+    _check_nonce_string(obj["receipt_nonce"])
+    _check_transaction_id(obj["transaction_id"])
+    if not isinstance(obj["settlement_status"], str) or obj["settlement_status"] not in SETTLEMENT_STATUSES:
+        raise F64ReceiptSchemaError("schema_invalid")
+    if obj["signer_algorithm_profile"] != SIGNER_ALGORITHM_PROFILE:
+        raise F64ReceiptSchemaError("algorithm_unsupported")
+    public_key = _check_hex64(obj["signer_public_key"])
+    _check_signer_public_key_id(obj["signer_public_key_id"], public_key)
+    _check_false_flag(obj["signing_authorized"])
+    _check_false_flag(obj["spend_authorized"])
+    _check_false_flag(obj["settlement_authorized"])
+    _check_false_flag(obj["ledger_mutated"])
+    _check_false_flag(obj["execution_authorized"])
+
+
+def validate_unsigned_facts(obj: Any) -> dict[str, Any]:
+    """Validate exact 24-field UaiiSignedReceiptUnsignedFacts (F64 §6.2.1)."""
+    ordered = _require_keys_order(obj, UNSIGNED_FACTS_FIELDS)
+    _validate_receipt_common_body(ordered)
+    return dict(ordered)
+
+
+def validate_signed_facts(obj: Any) -> dict[str, Any]:
+    """Validate exact 27-field UaiiSignedReceiptFacts (final form; F64 §6.2)."""
+    ordered = _require_keys_order(obj, SIGNED_FACTS_FIELDS)
+    _check_hex64(ordered["receipt_id"])
+    _validate_receipt_common_body(ordered)
+    _check_hex64(ordered["signed_payload_digest"])
+    _check_hex128(ordered["signature"])
+    return dict(ordered)
+
+
+def validate_signed_facts_empty_receipt_id(obj: Any) -> dict[str, Any]:
+    """Validate construction intermediate: §6.2 fields with receipt_id == \"\"."""
+    ordered = _require_keys_order(obj, SIGNED_FACTS_FIELDS)
+    if ordered["receipt_id"] != "":
+        raise F64ReceiptSchemaError("schema_invalid")
+    _validate_receipt_common_body(ordered)
+    _check_hex64(ordered["signed_payload_digest"])
+    _check_hex128(ordered["signature"])
+    return dict(ordered)
+
+
+def _validate_cumulative_limit_evaluation(
+    obj: Any,
+    *,
+    policy_id: str,
+    amount: int,
+) -> dict[str, Any]:
+    ordered = _require_keys_order(obj, CUMULATIVE_LIMIT_FIELDS)
+    if ordered["policy_id"] != policy_id:
+        raise F64ReceiptSchemaError("cumulative_limit_invalid")
+    _check_identity_string(ordered["subject_identity"])
+    if ordered["asset_id"] != ASSET_L28:
+        raise F64ReceiptSchemaError("asset_invalid")
+    window_start = _exact_int(ordered["window_start"])
+    if window_start < 0:
+        raise F64ReceiptSchemaError("cumulative_limit_invalid")
+    window_end = _exact_int(ordered["window_end"])
+    if window_end <= window_start:
+        raise F64ReceiptSchemaError("cumulative_limit_invalid")
+    prior = _exact_int(ordered["prior_authorized_amount"], code="amount_invalid")
+    if prior < 0:
+        raise F64ReceiptSchemaError("amount_invalid")
+    proposed = _exact_int(ordered["proposed_amount"], code="amount_invalid")
+    if proposed < 0:
+        raise F64ReceiptSchemaError("amount_invalid")
+    if proposed != amount:
+        raise F64ReceiptSchemaError("cumulative_limit_invalid")
+    cumulative_maximum = _exact_int(ordered["cumulative_maximum"], code="amount_invalid")
+    if cumulative_maximum < 0:
+        raise F64ReceiptSchemaError("amount_invalid")
+    _exact_int(ordered["evaluation_timestamp"])
+    if ordered["evaluation_result"] not in ("pass", "fail"):
+        raise F64ReceiptSchemaError("cumulative_limit_invalid")
+    return dict(ordered)
+
+
+def validate_approval_decision(obj: Any) -> dict[str, Any]:
+    """Validate exact 21-field ApprovalDecision including nested §8.5 object."""
+    ordered = _require_keys_order(obj, APPROVAL_DECISION_FIELDS)
+    if ordered["approval_profile"] != APPROVAL_PROFILE:
+        raise F64ReceiptSchemaError("schema_invalid")
+    _check_hex64(ordered["approval_id"])
+    _check_hex64(ordered["request_id"])
+    _check_hex64(ordered["correlation_id"])
+    _check_hex64(ordered["quote_id"])
+    _check_identity_string(ordered["payer_identity"])
+    _check_identity_string(ordered["provider_identity"])
+    if ordered["asset_id"] != ASSET_L28:
+        raise F64ReceiptSchemaError("asset_invalid")
+    amount = _exact_int(ordered["amount"], code="amount_invalid")
+    if amount < 0:
+        raise F64ReceiptSchemaError("amount_invalid")
+    if ordered["purpose"] != PURPOSE_SIGNED_RECEIPT:
+        raise F64ReceiptSchemaError("purpose_unsupported")
+    _check_nonce_string(ordered["nonce"])
+    _exact_int(ordered["expires_at"])
+    _check_hex64(ordered["signable_digest"])
+    _check_identity_string(ordered["signer_key_handle"])
+    policy_id = _check_identity_string(ordered["policy_id"])
+    per_tx = _exact_int(ordered["per_transaction_limit"], code="amount_invalid")
+    if per_tx < 0:
+        raise F64ReceiptSchemaError("amount_invalid")
+    cle = _validate_cumulative_limit_evaluation(
+        ordered["cumulative_limit_evaluation"],
+        policy_id=policy_id,
+        amount=amount,
+    )
+    if ordered["decision"] not in ("approved", "rejected"):
+        raise F64ReceiptSchemaError("schema_invalid")
+    _exact_int(ordered["decided_at"])
+    _check_identity_string(ordered["approver_identity"])
+    if ordered["approval_signature_reference"] is not None:
+        raise F64ReceiptSchemaError("schema_invalid")
+    out = dict(ordered)
+    out["cumulative_limit_evaluation"] = cle
+    return out
+
+
+def validate_replay_key_material(obj: Any) -> dict[str, Any]:
+    """Validate exact 13-field F64SigningReplayKeyMaterial (F64 §10.1)."""
+    ordered = _require_keys_order(obj, REPLAY_MATERIAL_FIELDS)
+    if ordered["replay_profile"] != REPLAY_PROFILE:
+        raise F64ReceiptSchemaError("schema_invalid")
+    _check_identity_string(ordered["signer_key_handle"])
+    if ordered["signature_purpose"] != PURPOSE_SIGNED_RECEIPT:
+        raise F64ReceiptSchemaError("purpose_unsupported")
+    _check_identity_string(ordered["payer_identity"])
+    _check_identity_string(ordered["provider_identity"])
+    if ordered["asset_id"] != ASSET_L28:
+        raise F64ReceiptSchemaError("asset_invalid")
+    amount = _exact_int(ordered["amount"], code="amount_invalid")
+    if amount < 0:
+        raise F64ReceiptSchemaError("amount_invalid")
+    _check_hex64(ordered["request_id"])
+    _check_hex64(ordered["quote_id"])
+    _check_hex64(ordered["correlation_id"])
+    _check_nonce_string(ordered["nonce"])
+    _exact_int(ordered["expires_at"])
+    _check_hex64(ordered["signed_payload_digest"])
+    return dict(ordered)
+
+
+def _canon(obj: Mapping[str, Any]) -> bytes:
+    try:
+        return canon_uaii(dict(obj))
+    except UaiiJsonError as exc:
+        raise F64ReceiptSchemaError(exc.code) from exc
+
+
+def approved_canonical_payload(unsigned_facts: Any) -> bytes:
+    """CanonUaii(UaiiSignedReceiptUnsignedFacts); size-bounded."""
+    validated = validate_unsigned_facts(unsigned_facts)
+    payload = _canon(validated)
+    if len(payload) > MAX_APPROVED_CANONICAL_PAYLOAD_BYTES:
+        raise F64ReceiptSchemaError("input_too_large")
+    return payload
+
+
+def build_signable_bytes(unsigned_facts: Any) -> bytes:
+    """Domain-separated signable bytes (hash/construction only; no signing)."""
+    payload = approved_canonical_payload(unsigned_facts)
+    out = SIGNABLE_DOMAIN_PREFIX + payload
+    if len(out) > MAX_SIGNABLE_BYTES:
+        raise F64ReceiptSchemaError("input_too_large")
+    return out
+
+
+def compute_signed_payload_digest(unsigned_facts: Any) -> str:
+    """lowercase_hex(SHA-256(signable_bytes)); excludes digest/signature/receipt_id."""
+    return hashlib.sha256(build_signable_bytes(unsigned_facts)).hexdigest()
+
+
+def unsigned_facts_from_signed(signed_facts: Any) -> dict[str, Any]:
+    """Extract §6.2.1 unsigned facts from a complete signed-facts object."""
+    signed = validate_signed_facts(signed_facts)
+    extracted = {k: signed[k] for k in UNSIGNED_FACTS_FIELDS}
+    return validate_unsigned_facts(extracted)
+
+
+def compute_receipt_id(signed_facts_empty_id: Any) -> str:
+    """Compute receipt_id from §6.2.4 empty-id intermediate (no signing)."""
+    validated = validate_signed_facts_empty_receipt_id(signed_facts_empty_id)
+    material = RECEIPT_ID_DOMAIN_PREFIX + _canon(validated)
+    return hashlib.sha256(material).hexdigest()
+
+
+def compute_replay_key(replay_material: Any) -> str:
+    """Compute F64 replay_key digest material only (no store / no replay check)."""
+    validated = validate_replay_key_material(replay_material)
+    material = REPLAY_KEY_DOMAIN_PREFIX + _canon(validated)
+    return hashlib.sha256(material).hexdigest()
+
+
+def build_signed_facts_empty_id(
+    *,
+    unsigned_facts: Any,
+    signed_payload_digest: str,
+    signature: str,
+) -> dict[str, Any]:
+    """Assemble construction step-8 object (receipt_id temporary empty string)."""
+    unsigned = validate_unsigned_facts(unsigned_facts)
+    digest = _check_hex64(signed_payload_digest)
+    sig = _check_hex128(signature)
+    ordered: dict[str, Any] = {
+        "receipt_profile": unsigned["receipt_profile"],
+        "receipt_id": "",
+        "prior_receipt_id": unsigned["prior_receipt_id"],
+        "correlation_id": unsigned["correlation_id"],
+        "request_id": unsigned["request_id"],
+        "quote_id": unsigned["quote_id"],
+        "service_result_id": unsigned["service_result_id"],
+        "payer_public_identity": unsigned["payer_public_identity"],
+        "provider_public_identity": unsigned["provider_public_identity"],
+        "asset_id": unsigned["asset_id"],
+        "amount": unsigned["amount"],
+        "purpose": unsigned["purpose"],
+        "created_at": unsigned["created_at"],
+        "expires_at": unsigned["expires_at"],
+        "receipt_nonce": unsigned["receipt_nonce"],
+        "transaction_id": unsigned["transaction_id"],
+        "settlement_status": unsigned["settlement_status"],
+        "signer_algorithm_profile": unsigned["signer_algorithm_profile"],
+        "signer_public_key_id": unsigned["signer_public_key_id"],
+        "signer_public_key": unsigned["signer_public_key"],
+        "signed_payload_digest": digest,
+        "signature": sig,
+        "signing_authorized": unsigned["signing_authorized"],
+        "spend_authorized": unsigned["spend_authorized"],
+        "settlement_authorized": unsigned["settlement_authorized"],
+        "ledger_mutated": unsigned["ledger_mutated"],
+        "execution_authorized": unsigned["execution_authorized"],
+    }
+    return validate_signed_facts_empty_receipt_id(ordered)
