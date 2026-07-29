@@ -39,6 +39,10 @@ replay_state_mutated = False
 persistent_expiration_state_created = False
 system_clock_read = False
 implicit_time_used = False
+acceptance_state_mutated = False
+receipt_recorded = False
+transaction_submission_authorized = False
+adapters_activated = False
 runtime_activated = False
 
 # Bound for caller-supplied accepted receipt-id lists (Foundation 60 L3).
@@ -826,3 +830,52 @@ def classify_signed_receipt_replay_and_expiration(
         "verification_time": t,
         "verified_facts": verified,
     }
+
+
+def acceptance_decision_from_classifications(
+    *,
+    replay_status: str,
+    expiration_status: str,
+) -> tuple[str, str]:
+    """Map replay/expiration classifications to acceptance decision + reason.
+
+    Precedence when both reject conditions apply: replay before expiration.
+    Returns ``(acceptance_decision, rejection_reason)`` where ``rejection_reason``
+    is ``""`` when accepted.
+    """
+    if replay_status not in ("fresh", "replayed"):
+        raise F64ReceiptSchemaError("schema_invalid")
+    if expiration_status not in ("valid", "expired"):
+        raise F64ReceiptSchemaError("schema_invalid")
+    if replay_status == "replayed":
+        return "rejected", "replayed"
+    if expiration_status == "expired":
+        return "rejected", "expired"
+    return "accepted", ""
+
+
+def decide_signed_receipt_acceptance(
+    signed_facts: Any,
+    accepted_receipt_ids: Any,
+    verification_time: Any,
+) -> dict[str, Any]:
+    """Compose F67/F69/F70 outcomes into one informational acceptance decision.
+
+    Order: cryptographic verify → replay → expiration → acceptance.
+    Schema/crypto failures raise ``F64ReceiptSchemaError`` and emit no acceptance
+    fields. Acceptance never records receipts, mutates context, or authorizes
+    spend/settlement/submission.
+    """
+    classified = classify_signed_receipt_replay_and_expiration(
+        signed_facts,
+        accepted_receipt_ids,
+        verification_time,
+    )
+    decision, reason = acceptance_decision_from_classifications(
+        replay_status=classified["replay_status"],
+        expiration_status=classified["expiration_status"],
+    )
+    out = dict(classified)
+    out["acceptance_decision"] = decision
+    out["rejection_reason"] = reason
+    return out

@@ -27,7 +27,7 @@ from .uaii_resource_limits import (
 )
 from .uaii_signed_receipt import (
     F64ReceiptSchemaError,
-    classify_signed_receipt_replay_and_expiration,
+    decide_signed_receipt_acceptance,
 )
 
 # Authorization flags for this bounded implementation milestone
@@ -47,6 +47,9 @@ replay_state_mutated = False
 persistent_expiration_state_created = False
 system_clock_read = False
 implicit_time_used = False
+acceptance_state_mutated = False
+receipt_recorded = False
+transaction_submission_authorized = False
 
 INTERFACE_PROFILE = "l28-universal-ai-access-interface/v0.1"
 UAII_CLOCK_SKEW_TOLERANCE_SECONDS = 300
@@ -896,13 +899,13 @@ def _op_get_payment_receipt(params: Mapping[str, Any], _context: Any) -> tuple[s
 
 
 def _op_verify_signed_receipt(params: Mapping[str, Any], _context: Any) -> tuple[str, dict[str, Any]]:
-    """Foundation 68–70 — verify signed receipt; classify replay then expiration."""
+    """Foundation 68–71 — verify signed receipt; classify replay/expiration; decide acceptance."""
     p = _require_keys_order(params, VERIFY_SIGNED_RECEIPT_PARAMS)
     signed_receipt = p["signed_receipt"]
     if not isinstance(signed_receipt, dict):
         raise UaiiCoreError("schema_invalid")
     try:
-        classified = classify_signed_receipt_replay_and_expiration(
+        decided = decide_signed_receipt_acceptance(
             signed_receipt,
             p["accepted_receipt_ids"],
             p["verification_time"],
@@ -910,12 +913,14 @@ def _op_verify_signed_receipt(params: Mapping[str, Any], _context: Any) -> tuple
     except F64ReceiptSchemaError as exc:
         raise UaiiCoreError(exc.code) from exc
 
-    verified = classified["verified_facts"]
+    verified = decided["verified_facts"]
     # Deterministic public verification outcome (no private material; no envelope redesign)
     result = {
         "verification_status": "verified",
-        "replay_status": classified["replay_status"],
-        "expiration_status": classified["expiration_status"],
+        "replay_status": decided["replay_status"],
+        "expiration_status": decided["expiration_status"],
+        "acceptance_decision": decided["acceptance_decision"],
+        "rejection_reason": decided["rejection_reason"],
         "receipt_profile": verified["receipt_profile"],
         "receipt_id": verified["receipt_id"],
         "signed_payload_digest": verified["signed_payload_digest"],
@@ -932,7 +937,7 @@ def _op_verify_signed_receipt(params: Mapping[str, Any], _context: Any) -> tuple
         "request_id": verified["request_id"],
         "quote_id": verified["quote_id"],
         "expires_at": verified["expires_at"],
-        "verification_time": classified["verification_time"],
+        "verification_time": decided["verification_time"],
         "signing_authorized": False,
         "spend_authorized": False,
         "settlement_authorized": False,

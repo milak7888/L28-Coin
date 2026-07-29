@@ -166,6 +166,8 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
         self.assertEqual(result["verification_status"], "verified")
         self.assertEqual(result["replay_status"], "fresh")
         self.assertEqual(result["expiration_status"], "valid")
+        self.assertEqual(result["acceptance_decision"], "accepted")
+        self.assertEqual(result["rejection_reason"], "")
         self.assertEqual(result["receipt_id"], signed["receipt_id"])
         self.assertEqual(result["signed_payload_digest"], signed["signed_payload_digest"])
         self.assertEqual(
@@ -174,6 +176,8 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
                 "verification_status",
                 "replay_status",
                 "expiration_status",
+                "acceptance_decision",
+                "rejection_reason",
                 "receipt_profile",
                 "receipt_id",
                 "signed_payload_digest",
