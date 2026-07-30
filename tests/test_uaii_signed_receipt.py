@@ -7,6 +7,7 @@ import base64
 import hashlib
 import importlib
 import inspect
+import re
 import unittest
 from typing import Any
 from unittest import mock
@@ -378,19 +379,21 @@ class TestSideEffectBoundaries(unittest.TestCase):
 
     def test_no_network_or_env_or_random(self) -> None:
         src = inspect.getsource(f66)
+        # Word-boundary checks avoid false positives on identifiers such as
+        # ``authorization_requested`` (Foundation 75 inert flag).
         for needle in (
-            "socket",
-            "urllib",
-            "requests",
-            "http.client",
-            "os.environ",
-            "getenv",
-            "secrets.",
-            "PrivateKey",
-            "SigningKey",
-            "ReplayRegistry",
+            r"\bsocket\b",
+            r"\burllib\b",
+            r"\brequests\b",
+            r"\bhttp\.client\b",
+            r"\bos\.environ\b",
+            r"\bgetenv\b",
+            r"\bsecrets\.",
+            r"\bPrivateKey\b",
+            r"\bSigningKey\b",
+            r"\bReplayRegistry\b",
         ):
-            self.assertNotIn(needle, src)
+            self.assertIsNone(re.search(needle, src), needle)
 
     def test_protected_economics_unchanged(self) -> None:
         self.assertEqual(tx_validation.L28_MAX_SUPPLY, 28_000_000)

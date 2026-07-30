@@ -56,6 +56,10 @@ caller_supplied_approval_evaluated_only = True
 approval_issued = False
 approval_granted = False
 authorization_granted = False
+authorization_request_proposed_only = True
+authorization_requested = False
+authorization_submitted = False
+authorization_issued = False
 
 # Bound for caller-supplied accepted receipt-id lists (Foundation 60 L3).
 MAX_ACCEPTED_RECEIPT_IDS = 256
@@ -1263,4 +1267,167 @@ def evaluate_signed_receipt_governance_approval(
     )
     out = dict(bounded)
     out["governance_approval_evaluation"] = evaluation
+    return out
+
+
+TRANSITION_AUTHORIZATION_REQUEST_PROPOSAL_FIELDS = (
+    "authorization_request_proposal_status",
+    "authorization_request_proposal_reason",
+    "receipt_id",
+    "transition_kind",
+    "approval_id",
+    "authorization_requested",
+    "authorization_granted",
+    "application_authorized",
+    "application_executed",
+    "transition_applied",
+    "state_mutated",
+    "persistent_state_created",
+)
+
+
+def _inert_authorization_request_proposal(
+    *,
+    status: str,
+    reason: str,
+    receipt_id: str = "",
+    transition_kind: str = "",
+    approval_id: str = "",
+) -> dict[str, Any]:
+    proposal = {
+        "authorization_request_proposal_status": status,
+        "authorization_request_proposal_reason": reason,
+        "receipt_id": receipt_id,
+        "transition_kind": transition_kind,
+        "approval_id": approval_id,
+        "authorization_requested": False,
+        "authorization_granted": False,
+        "application_authorized": False,
+        "application_executed": False,
+        "transition_applied": False,
+        "state_mutated": False,
+        "persistent_state_created": False,
+    }
+    if tuple(proposal.keys()) != TRANSITION_AUTHORIZATION_REQUEST_PROPOSAL_FIELDS:
+        raise F64ReceiptSchemaError("schema_invalid")
+    return proposal
+
+
+def transition_authorization_request_proposal_from_evaluation(
+    evaluated: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Derive an inert authorization-request proposal from F72–F74 outcomes.
+
+    ``proposed`` means a future separately governed authority *could* be asked;
+    it never solicits, grants, submits, authorizes, or applies anything.
+    """
+    if not isinstance(evaluated, Mapping):
+        raise F64ReceiptSchemaError("schema_invalid")
+
+    decision = evaluated.get("acceptance_decision")
+    proposal = evaluated.get("acceptance_transition_proposal")
+    boundary = evaluated.get("acceptance_transition_application_boundary")
+    governance = evaluated.get("governance_approval_evaluation")
+    if not isinstance(proposal, Mapping):
+        raise F64ReceiptSchemaError("schema_invalid")
+    if not isinstance(boundary, Mapping):
+        raise F64ReceiptSchemaError("schema_invalid")
+    if not isinstance(governance, Mapping):
+        raise F64ReceiptSchemaError("schema_invalid")
+
+    receipt_id = _hex64_receipt_id_or_empty(
+        proposal.get("receipt_id") or boundary.get("receipt_id")
+    )
+
+    if decision != "accepted":
+        return _inert_authorization_request_proposal(
+            status="not_proposed",
+            reason="acceptance_not_accepted",
+            receipt_id=receipt_id,
+        )
+    if (
+        proposal.get("proposal_status") != "applicable"
+        or proposal.get("transition_kind") != "add_accepted_receipt_id"
+    ):
+        return _inert_authorization_request_proposal(
+            status="not_proposed",
+            reason="transition_not_applicable",
+            receipt_id=receipt_id,
+        )
+    if boundary.get("application_boundary_status") != "eligible":
+        return _inert_authorization_request_proposal(
+            status="not_proposed",
+            reason="boundary_ineligible",
+            receipt_id=receipt_id,
+        )
+    if (
+        governance.get("governance_approval_evaluation_status") != "satisfied"
+        or governance.get("governance_approval_evaluation_reason") != ""
+    ):
+        return _inert_authorization_request_proposal(
+            status="not_proposed",
+            reason="governance_approval_not_satisfied",
+            receipt_id=receipt_id,
+        )
+
+    approval_id = _hex64_receipt_id_or_empty(governance.get("approval_id"))
+    if approval_id == "":
+        return _inert_authorization_request_proposal(
+            status="not_proposed",
+            reason="approval_id_missing",
+            receipt_id=receipt_id,
+        )
+
+    inert_ok = (
+        governance.get("approval_granted") is False
+        and governance.get("application_authorized") is False
+        and governance.get("application_executed") is False
+        and governance.get("transition_applied") is False
+        and governance.get("state_mutated") is False
+        and governance.get("persistent_state_created") is False
+        and proposal.get("transition_applied") is False
+        and proposal.get("transition_proposed_only") is True
+        and boundary.get("application_authorized") is False
+        and boundary.get("application_executed") is False
+        and boundary.get("transition_kind") == "add_accepted_receipt_id"
+        and boundary.get("receipt_id") == receipt_id
+        and receipt_id != ""
+    )
+    if not inert_ok:
+        return _inert_authorization_request_proposal(
+            status="not_proposed",
+            reason="proposal_inconsistent",
+            receipt_id=receipt_id,
+            approval_id=approval_id,
+        )
+
+    return _inert_authorization_request_proposal(
+        status="proposed",
+        reason="",
+        receipt_id=receipt_id,
+        transition_kind="add_accepted_receipt_id",
+        approval_id=approval_id,
+    )
+
+
+def propose_signed_receipt_transition_authorization_request(
+    signed_facts: Any,
+    accepted_receipt_ids: Any,
+    verification_time: Any,
+    governance_approval_evidence: Any,
+) -> dict[str, Any]:
+    """Compose F74 evaluation into a pure inert authorization-request proposal.
+
+    Order: verify → … → governance evaluation → authorization-request proposal.
+    Never solicits, grants, submits, authorizes, or applies a transition.
+    """
+    evaluated = evaluate_signed_receipt_governance_approval(
+        signed_facts,
+        accepted_receipt_ids,
+        verification_time,
+        governance_approval_evidence,
+    )
+    auth_proposal = transition_authorization_request_proposal_from_evaluation(evaluated)
+    out = dict(evaluated)
+    out["transition_authorization_request_proposal"] = auth_proposal
     return out

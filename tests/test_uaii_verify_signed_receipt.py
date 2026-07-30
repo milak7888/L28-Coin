@@ -195,6 +195,15 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
         self.assertIs(evaluation["approval_granted"], False)
         self.assertIs(result["approval_granted"], False)
         self.assertIs(result["caller_supplied_approval_evaluated_only"], True)
+        auth_req = result["transition_authorization_request_proposal"]
+        self.assertEqual(auth_req["authorization_request_proposal_status"], "not_proposed")
+        self.assertEqual(
+            auth_req["authorization_request_proposal_reason"],
+            "governance_approval_not_satisfied",
+        )
+        self.assertIs(auth_req["authorization_requested"], False)
+        self.assertIs(result["authorization_request_proposed_only"], True)
+        self.assertIs(result["authorization_requested"], False)
         self.assertEqual(
             tuple(result.keys()),
             (
@@ -206,6 +215,7 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
                 "acceptance_transition_proposal",
                 "acceptance_transition_application_boundary",
                 "governance_approval_evaluation",
+                "transition_authorization_request_proposal",
                 "receipt_profile",
                 "receipt_id",
                 "signed_payload_digest",
@@ -240,6 +250,10 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
                 "approval_issued",
                 "authorization_granted",
                 "caller_supplied_approval_evaluated_only",
+                "authorization_request_proposed_only",
+                "authorization_requested",
+                "authorization_submitted",
+                "authorization_issued",
             ),
         )
         for flag in (
