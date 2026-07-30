@@ -128,6 +128,7 @@ def _uaii_verify(
         "signed_receipt": signed,
         "accepted_receipt_ids": [] if accepted is None else accepted,
         "verification_time": verification_time,
+        "governance_approval_evidence": {},
     }
     if extra_params:
         params.update(extra_params)

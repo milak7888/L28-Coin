@@ -139,6 +139,7 @@ def _verify_params(
         "signed_receipt": signed,
         "accepted_receipt_ids": [] if accepted is None else accepted,
         "verification_time": t,
+        "governance_approval_evidence": {},
     }
 
 
@@ -188,6 +189,12 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
         self.assertIs(result["application_authorized"], False)
         self.assertIs(result["application_executed"], False)
         self.assertIs(result["boundary_evaluated_only"], True)
+        evaluation = result["governance_approval_evaluation"]
+        self.assertEqual(evaluation["governance_approval_evaluation_status"], "not_supplied")
+        self.assertEqual(evaluation["governance_approval_evaluation_reason"], "approval_not_supplied")
+        self.assertIs(evaluation["approval_granted"], False)
+        self.assertIs(result["approval_granted"], False)
+        self.assertIs(result["caller_supplied_approval_evaluated_only"], True)
         self.assertEqual(
             tuple(result.keys()),
             (
@@ -198,6 +205,7 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
                 "rejection_reason",
                 "acceptance_transition_proposal",
                 "acceptance_transition_application_boundary",
+                "governance_approval_evaluation",
                 "receipt_profile",
                 "receipt_id",
                 "signed_payload_digest",
@@ -228,6 +236,10 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
                 "state_mutated",
                 "persistent_state_created",
                 "boundary_evaluated_only",
+                "approval_granted",
+                "approval_issued",
+                "authorization_granted",
+                "caller_supplied_approval_evaluated_only",
             ),
         )
         for flag in (
@@ -313,6 +325,7 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
                     "signed_receipt": "not-an-object",
                     "accepted_receipt_ids": [],
                     "verification_time": 1_700_000_000,
+                    "governance_approval_evidence": {},
                 },
                 nonce="type",
             )

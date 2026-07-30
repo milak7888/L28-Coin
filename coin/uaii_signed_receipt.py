@@ -52,6 +52,10 @@ boundary_evaluated_only = True
 application_authorized = False
 application_executed = False
 state_mutated = False
+caller_supplied_approval_evaluated_only = True
+approval_issued = False
+approval_granted = False
+authorization_granted = False
 
 # Bound for caller-supplied accepted receipt-id lists (Foundation 60 L3).
 MAX_ACCEPTED_RECEIPT_IDS = 256
@@ -1079,4 +1083,184 @@ def evaluate_signed_receipt_acceptance_transition_application_boundary(
     boundary = application_boundary_from_proposed_acceptance(proposed)
     out = dict(proposed)
     out["acceptance_transition_application_boundary"] = boundary
+    return out
+
+
+# Sole supported governance-approval scope for Foundation 74 (matches F72 kind).
+SUPPORTED_GOVERNANCE_APPROVAL_SCOPE = "add_accepted_receipt_id"
+
+GOVERNANCE_APPROVAL_EVIDENCE_FIELDS = (
+    "approval_id",
+    "approval_subject_receipt_id",
+    "approval_transition_kind",
+    "approval_decision",
+    "approval_scope",
+)
+
+GOVERNANCE_APPROVAL_EVALUATION_FIELDS = (
+    "governance_approval_evaluation_status",
+    "governance_approval_evaluation_reason",
+    "approval_id",
+    "approval_granted",
+    "application_authorized",
+    "application_executed",
+    "transition_applied",
+    "state_mutated",
+    "persistent_state_created",
+)
+
+
+def _inert_governance_evaluation(
+    *,
+    status: str,
+    reason: str,
+    approval_id: str,
+) -> dict[str, Any]:
+    evaluation = {
+        "governance_approval_evaluation_status": status,
+        "governance_approval_evaluation_reason": reason,
+        "approval_id": approval_id,
+        "approval_granted": False,
+        "application_authorized": False,
+        "application_executed": False,
+        "transition_applied": False,
+        "state_mutated": False,
+        "persistent_state_created": False,
+    }
+    if tuple(evaluation.keys()) != GOVERNANCE_APPROVAL_EVALUATION_FIELDS:
+        raise F64ReceiptSchemaError("schema_invalid")
+    return evaluation
+
+
+def validate_governance_approval_evidence(evidence: Any) -> dict[str, Any] | None:
+    """Validate caller-supplied governance-approval evidence.
+
+    Empty object ``{}`` means evidence was not supplied (Foundation 56-style
+    optional object). Non-empty evidence MUST use exact field order/types.
+    Returns ``None`` when not supplied; otherwise a validated dict.
+    """
+    if not isinstance(evidence, dict):
+        raise F64ReceiptSchemaError("schema_invalid")
+    if evidence == {}:
+        return None
+    if tuple(evidence.keys()) != GOVERNANCE_APPROVAL_EVIDENCE_FIELDS:
+        raise F64ReceiptSchemaError("schema_invalid")
+    approval_id = _check_hex64(evidence["approval_id"])
+    subject = _check_hex64(evidence["approval_subject_receipt_id"])
+    kind = evidence["approval_transition_kind"]
+    decision = evidence["approval_decision"]
+    scope = evidence["approval_scope"]
+    if not isinstance(kind, str) or kind == "":
+        raise F64ReceiptSchemaError("schema_invalid")
+    if decision not in ("approved", "rejected"):
+        raise F64ReceiptSchemaError("schema_invalid")
+    if not isinstance(scope, str) or scope == "":
+        raise F64ReceiptSchemaError("schema_invalid")
+    return {
+        "approval_id": approval_id,
+        "approval_subject_receipt_id": subject,
+        "approval_transition_kind": kind,
+        "approval_decision": decision,
+        "approval_scope": scope,
+    }
+
+
+def governance_approval_evaluation_from_boundary(
+    bounded: Mapping[str, Any],
+    evidence: Any,
+) -> dict[str, Any]:
+    """Evaluate explicit caller-supplied approval evidence against an F73 boundary.
+
+    ``satisfied`` means internal consistency of supplied evidence only — never an
+    authorization grant. Always returns ``approval_granted=false``.
+    """
+    if not isinstance(bounded, Mapping):
+        raise F64ReceiptSchemaError("schema_invalid")
+    boundary = bounded.get("acceptance_transition_application_boundary")
+    if not isinstance(boundary, Mapping):
+        raise F64ReceiptSchemaError("schema_invalid")
+
+    validated = validate_governance_approval_evidence(evidence)
+    if validated is None:
+        return _inert_governance_evaluation(
+            status="not_supplied",
+            reason="approval_not_supplied",
+            approval_id="",
+        )
+
+    approval_id = validated["approval_id"]
+    if boundary.get("application_boundary_status") != "eligible":
+        return _inert_governance_evaluation(
+            status="not_satisfied",
+            reason="boundary_ineligible",
+            approval_id=approval_id,
+        )
+
+    verified_receipt_id = boundary.get("receipt_id")
+    if validated["approval_subject_receipt_id"] != verified_receipt_id:
+        return _inert_governance_evaluation(
+            status="not_satisfied",
+            reason="receipt_id_mismatch",
+            approval_id=approval_id,
+        )
+    if validated["approval_transition_kind"] != "add_accepted_receipt_id":
+        return _inert_governance_evaluation(
+            status="not_satisfied",
+            reason="transition_kind_mismatch",
+            approval_id=approval_id,
+        )
+    if validated["approval_scope"] != SUPPORTED_GOVERNANCE_APPROVAL_SCOPE:
+        return _inert_governance_evaluation(
+            status="not_satisfied",
+            reason="approval_scope_mismatch",
+            approval_id=approval_id,
+        )
+    if validated["approval_decision"] == "rejected":
+        return _inert_governance_evaluation(
+            status="not_satisfied",
+            reason="approval_rejected",
+            approval_id=approval_id,
+        )
+    if validated["approval_decision"] != "approved":
+        return _inert_governance_evaluation(
+            status="not_satisfied",
+            reason="approval_inconsistent",
+            approval_id=approval_id,
+        )
+    if boundary.get("transition_kind") != "add_accepted_receipt_id":
+        return _inert_governance_evaluation(
+            status="not_satisfied",
+            reason="approval_inconsistent",
+            approval_id=approval_id,
+        )
+    return _inert_governance_evaluation(
+        status="satisfied",
+        reason="",
+        approval_id=approval_id,
+    )
+
+
+def evaluate_signed_receipt_governance_approval(
+    signed_facts: Any,
+    accepted_receipt_ids: Any,
+    verification_time: Any,
+    governance_approval_evidence: Any,
+) -> dict[str, Any]:
+    """Compose F73 boundary + caller approval evidence into a pure evaluation.
+
+    Order: verify → replay → expiration → acceptance → proposal → boundary →
+    governance-approval evaluation. Never grants approval/authorization or
+    applies a transition.
+    """
+    bounded = evaluate_signed_receipt_acceptance_transition_application_boundary(
+        signed_facts,
+        accepted_receipt_ids,
+        verification_time,
+    )
+    evaluation = governance_approval_evaluation_from_boundary(
+        bounded,
+        governance_approval_evidence,
+    )
+    out = dict(bounded)
+    out["governance_approval_evaluation"] = evaluation
     return out
