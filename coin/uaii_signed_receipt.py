@@ -66,6 +66,8 @@ authorization_active = False
 transition_application_authorization_eligibility_proposed_only = True
 application_authorization_proposed = False
 application_authorization_requested = False
+application_authorization_request_proposed_only = True
+application_authorization_submitted = False
 
 # Bound for caller-supplied accepted receipt-id lists (Foundation 60 L3).
 MAX_ACCEPTED_RECEIPT_IDS = 256
@@ -1871,4 +1873,195 @@ def propose_signed_receipt_transition_application_authorization_eligibility(
     )
     out = dict(evaluated)
     out["transition_application_authorization_eligibility_proposal"] = eligibility
+    return out
+
+
+TRANSITION_APPLICATION_AUTHORIZATION_REQUEST_PROPOSAL_FIELDS = (
+    "transition_application_authorization_request_status",
+    "transition_application_authorization_request_reason",
+    "receipt_id",
+    "transition_kind",
+    "approval_id",
+    "authorization_response_id",
+    "authorization_scope",
+    "application_authorization_requested",
+    "application_authorization_submitted",
+    "authorization_issued",
+    "authorization_granted",
+    "authorization_active",
+    "application_authorized",
+    "application_executed",
+    "transition_applied",
+    "state_mutated",
+    "persistent_state_created",
+)
+
+
+def _inert_transition_application_authorization_request_proposal(
+    *,
+    status: str,
+    reason: str,
+    receipt_id: str = "",
+    transition_kind: str = "",
+    approval_id: str = "",
+    authorization_response_id: str = "",
+    authorization_scope: str = "",
+) -> dict[str, Any]:
+    proposal = {
+        "transition_application_authorization_request_status": status,
+        "transition_application_authorization_request_reason": reason,
+        "receipt_id": receipt_id,
+        "transition_kind": transition_kind,
+        "approval_id": approval_id,
+        "authorization_response_id": authorization_response_id,
+        "authorization_scope": authorization_scope,
+        "application_authorization_requested": False,
+        "application_authorization_submitted": False,
+        "authorization_issued": False,
+        "authorization_granted": False,
+        "authorization_active": False,
+        "application_authorized": False,
+        "application_executed": False,
+        "transition_applied": False,
+        "state_mutated": False,
+        "persistent_state_created": False,
+    }
+    if tuple(proposal.keys()) != TRANSITION_APPLICATION_AUTHORIZATION_REQUEST_PROPOSAL_FIELDS:
+        raise F64ReceiptSchemaError("schema_invalid")
+    return proposal
+
+
+def transition_application_authorization_request_proposal_from_eligibility(
+    evaluated: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Derive an inert application-authorization solicitation proposal from F77.
+
+    ``proposed`` means a future separately governed authority *could* be asked;
+    it never transmits, issues, grants, activates, applies, or executes.
+    """
+    if not isinstance(evaluated, Mapping):
+        raise F64ReceiptSchemaError("schema_invalid")
+
+    eligibility = evaluated.get(
+        "transition_application_authorization_eligibility_proposal"
+    )
+    if not isinstance(eligibility, Mapping):
+        raise F64ReceiptSchemaError("schema_invalid")
+
+    receipt_id = _hex64_receipt_id_or_empty(eligibility.get("receipt_id"))
+    approval_id = _hex64_receipt_id_or_empty(eligibility.get("approval_id"))
+    response_id = _hex64_receipt_id_or_empty(
+        eligibility.get("authorization_response_id")
+    )
+    transition_kind = eligibility.get("transition_kind")
+    if not isinstance(transition_kind, str):
+        transition_kind = ""
+
+    if (
+        eligibility.get("transition_application_authorization_eligibility_status")
+        != "eligible"
+        or eligibility.get("transition_application_authorization_eligibility_reason")
+        != ""
+    ):
+        return _inert_transition_application_authorization_request_proposal(
+            status="not_proposed",
+            reason="application_authorization_not_eligible",
+            receipt_id=receipt_id,
+            transition_kind=(
+                transition_kind if transition_kind == "add_accepted_receipt_id" else ""
+            ),
+            approval_id=approval_id,
+            authorization_response_id=response_id,
+        )
+
+    if receipt_id == "":
+        return _inert_transition_application_authorization_request_proposal(
+            status="not_proposed",
+            reason="receipt_id_missing",
+            approval_id=approval_id,
+            authorization_response_id=response_id,
+        )
+    if transition_kind != "add_accepted_receipt_id":
+        return _inert_transition_application_authorization_request_proposal(
+            status="not_proposed",
+            reason="transition_kind_mismatch",
+            receipt_id=receipt_id,
+            approval_id=approval_id,
+            authorization_response_id=response_id,
+        )
+    if approval_id == "":
+        return _inert_transition_application_authorization_request_proposal(
+            status="not_proposed",
+            reason="approval_id_missing",
+            receipt_id=receipt_id,
+            transition_kind=transition_kind,
+            authorization_response_id=response_id,
+        )
+    if response_id == "":
+        return _inert_transition_application_authorization_request_proposal(
+            status="not_proposed",
+            reason="authorization_response_id_missing",
+            receipt_id=receipt_id,
+            transition_kind=transition_kind,
+            approval_id=approval_id,
+        )
+
+    inert_ok = (
+        eligibility.get("application_authorization_proposed") is False
+        and eligibility.get("application_authorization_requested") is False
+        and eligibility.get("authorization_issued") is False
+        and eligibility.get("authorization_granted") is False
+        and eligibility.get("authorization_active") is False
+        and eligibility.get("application_authorized") is False
+        and eligibility.get("application_executed") is False
+        and eligibility.get("transition_applied") is False
+        and eligibility.get("state_mutated") is False
+        and eligibility.get("persistent_state_created") is False
+    )
+    if not inert_ok:
+        return _inert_transition_application_authorization_request_proposal(
+            status="not_proposed",
+            reason="application_authorization_request_inconsistent",
+            receipt_id=receipt_id,
+            transition_kind=transition_kind,
+            approval_id=approval_id,
+            authorization_response_id=response_id,
+            authorization_scope=SUPPORTED_GOVERNANCE_APPROVAL_SCOPE,
+        )
+
+    return _inert_transition_application_authorization_request_proposal(
+        status="proposed",
+        reason="",
+        receipt_id=receipt_id,
+        transition_kind="add_accepted_receipt_id",
+        approval_id=approval_id,
+        authorization_response_id=response_id,
+        authorization_scope=SUPPORTED_GOVERNANCE_APPROVAL_SCOPE,
+    )
+
+
+def propose_signed_receipt_transition_application_authorization_request(
+    signed_facts: Any,
+    accepted_receipt_ids: Any,
+    verification_time: Any,
+    governance_approval_evidence: Any,
+    authorization_response_evidence: Any,
+) -> dict[str, Any]:
+    """Compose F77 eligibility into a pure inert application-auth solicitation proposal.
+
+    Order: verify → … → eligibility proposal → application-auth solicitation proposal.
+    Never transmits, issues, grants, activates, applies, or executes.
+    """
+    eligible = propose_signed_receipt_transition_application_authorization_eligibility(
+        signed_facts,
+        accepted_receipt_ids,
+        verification_time,
+        governance_approval_evidence,
+        authorization_response_evidence,
+    )
+    proposal = transition_application_authorization_request_proposal_from_eligibility(
+        eligible
+    )
+    out = dict(eligible)
+    out["transition_application_authorization_request_proposal"] = proposal
     return out

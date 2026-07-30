@@ -232,6 +232,19 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
         )
         self.assertIs(result["application_authorization_proposed"], False)
         self.assertIs(result["application_authorization_requested"], False)
+        app_auth_req = result["transition_application_authorization_request_proposal"]
+        self.assertEqual(
+            app_auth_req["transition_application_authorization_request_status"],
+            "not_proposed",
+        )
+        self.assertEqual(
+            app_auth_req["transition_application_authorization_request_reason"],
+            "application_authorization_not_eligible",
+        )
+        self.assertIs(app_auth_req["application_authorization_requested"], False)
+        self.assertIs(app_auth_req["application_authorization_submitted"], False)
+        self.assertIs(result["application_authorization_request_proposed_only"], True)
+        self.assertIs(result["application_authorization_submitted"], False)
         self.assertEqual(
             tuple(result.keys()),
             (
@@ -246,6 +259,7 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
                 "transition_authorization_request_proposal",
                 "authorization_response_evaluation",
                 "transition_application_authorization_eligibility_proposal",
+                "transition_application_authorization_request_proposal",
                 "receipt_profile",
                 "receipt_id",
                 "signed_payload_digest",
@@ -290,6 +304,8 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
                 "transition_application_authorization_eligibility_proposed_only",
                 "application_authorization_proposed",
                 "application_authorization_requested",
+                "application_authorization_request_proposed_only",
+                "application_authorization_submitted",
             ),
         )
         for flag in (
