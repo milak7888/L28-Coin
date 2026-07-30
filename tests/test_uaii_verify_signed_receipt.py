@@ -216,6 +216,22 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
         self.assertIs(auth_resp["authorization_granted"], False)
         self.assertIs(result["caller_supplied_authorization_response_evaluated_only"], True)
         self.assertIs(result["authorization_active"], False)
+        eligibility = result["transition_application_authorization_eligibility_proposal"]
+        self.assertEqual(
+            eligibility["transition_application_authorization_eligibility_status"],
+            "not_eligible",
+        )
+        self.assertEqual(
+            eligibility["transition_application_authorization_eligibility_reason"],
+            "governance_approval_not_satisfied",
+        )
+        self.assertIs(eligibility["application_authorization_proposed"], False)
+        self.assertIs(
+            result["transition_application_authorization_eligibility_proposed_only"],
+            True,
+        )
+        self.assertIs(result["application_authorization_proposed"], False)
+        self.assertIs(result["application_authorization_requested"], False)
         self.assertEqual(
             tuple(result.keys()),
             (
@@ -229,6 +245,7 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
                 "governance_approval_evaluation",
                 "transition_authorization_request_proposal",
                 "authorization_response_evaluation",
+                "transition_application_authorization_eligibility_proposal",
                 "receipt_profile",
                 "receipt_id",
                 "signed_payload_digest",
@@ -270,6 +287,9 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
                 "caller_supplied_authorization_response_evaluated_only",
                 "authorization_response_issued",
                 "authorization_active",
+                "transition_application_authorization_eligibility_proposed_only",
+                "application_authorization_proposed",
+                "application_authorization_requested",
             ),
         )
         for flag in (

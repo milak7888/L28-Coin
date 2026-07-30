@@ -27,7 +27,7 @@ from .uaii_resource_limits import (
 )
 from .uaii_signed_receipt import (
     F64ReceiptSchemaError,
-    evaluate_signed_receipt_authorization_response,
+    propose_signed_receipt_transition_application_authorization_eligibility,
 )
 
 # Authorization flags for this bounded implementation milestone
@@ -69,6 +69,9 @@ authorization_issued = False
 caller_supplied_authorization_response_evaluated_only = True
 authorization_response_issued = False
 authorization_active = False
+transition_application_authorization_eligibility_proposed_only = True
+application_authorization_proposed = False
+application_authorization_requested = False
 
 INTERFACE_PROFILE = "l28-universal-ai-access-interface/v0.1"
 UAII_CLOCK_SKEW_TOLERANCE_SECONDS = 300
@@ -920,13 +923,13 @@ def _op_get_payment_receipt(params: Mapping[str, Any], _context: Any) -> tuple[s
 
 
 def _op_verify_signed_receipt(params: Mapping[str, Any], _context: Any) -> tuple[str, dict[str, Any]]:
-    """Foundation 68–76 — verify through auth-request; evaluate response evidence."""
+    """Foundation 68–77 — verify through response eval; derive eligibility proposal."""
     p = _require_keys_order(params, VERIFY_SIGNED_RECEIPT_PARAMS)
     signed_receipt = p["signed_receipt"]
     if not isinstance(signed_receipt, dict):
         raise UaiiCoreError("schema_invalid")
     try:
-        decided = evaluate_signed_receipt_authorization_response(
+        decided = propose_signed_receipt_transition_application_authorization_eligibility(
             signed_receipt,
             p["accepted_receipt_ids"],
             p["verification_time"],
@@ -953,6 +956,9 @@ def _op_verify_signed_receipt(params: Mapping[str, Any], _context: Any) -> tuple
             "transition_authorization_request_proposal"
         ],
         "authorization_response_evaluation": decided["authorization_response_evaluation"],
+        "transition_application_authorization_eligibility_proposal": decided[
+            "transition_application_authorization_eligibility_proposal"
+        ],
         "receipt_profile": verified["receipt_profile"],
         "receipt_id": verified["receipt_id"],
         "signed_payload_digest": verified["signed_payload_digest"],
@@ -994,6 +1000,9 @@ def _op_verify_signed_receipt(params: Mapping[str, Any], _context: Any) -> tuple
         "caller_supplied_authorization_response_evaluated_only": True,
         "authorization_response_issued": False,
         "authorization_active": False,
+        "transition_application_authorization_eligibility_proposed_only": True,
+        "application_authorization_proposed": False,
+        "application_authorization_requested": False,
     }
     return "signed_receipt_verified", result
 
