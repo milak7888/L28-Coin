@@ -27,7 +27,7 @@ from .uaii_resource_limits import (
 )
 from .uaii_signed_receipt import (
     F64ReceiptSchemaError,
-    propose_signed_receipt_acceptance_transition,
+    evaluate_signed_receipt_acceptance_transition_application_boundary,
 )
 
 # Authorization flags for this bounded implementation milestone
@@ -54,6 +54,10 @@ transition_proposed_only = True
 transition_applied = False
 accepted_receipt_ids_mutated = False
 persistent_state_created = False
+boundary_evaluated_only = True
+application_authorized = False
+application_executed = False
+state_mutated = False
 
 INTERFACE_PROFILE = "l28-universal-ai-access-interface/v0.1"
 UAII_CLOCK_SKEW_TOLERANCE_SECONDS = 300
@@ -903,13 +907,13 @@ def _op_get_payment_receipt(params: Mapping[str, Any], _context: Any) -> tuple[s
 
 
 def _op_verify_signed_receipt(params: Mapping[str, Any], _context: Any) -> tuple[str, dict[str, Any]]:
-    """Foundation 68–72 — verify; classify; decide acceptance; propose inert transition."""
+    """Foundation 68–73 — verify through proposal; evaluate inert application boundary."""
     p = _require_keys_order(params, VERIFY_SIGNED_RECEIPT_PARAMS)
     signed_receipt = p["signed_receipt"]
     if not isinstance(signed_receipt, dict):
         raise UaiiCoreError("schema_invalid")
     try:
-        decided = propose_signed_receipt_acceptance_transition(
+        decided = evaluate_signed_receipt_acceptance_transition_application_boundary(
             signed_receipt,
             p["accepted_receipt_ids"],
             p["verification_time"],
@@ -926,6 +930,9 @@ def _op_verify_signed_receipt(params: Mapping[str, Any], _context: Any) -> tuple
         "acceptance_decision": decided["acceptance_decision"],
         "rejection_reason": decided["rejection_reason"],
         "acceptance_transition_proposal": decided["acceptance_transition_proposal"],
+        "acceptance_transition_application_boundary": decided[
+            "acceptance_transition_application_boundary"
+        ],
         "receipt_profile": verified["receipt_profile"],
         "receipt_id": verified["receipt_id"],
         "signed_payload_digest": verified["signed_payload_digest"],
@@ -951,6 +958,11 @@ def _op_verify_signed_receipt(params: Mapping[str, Any], _context: Any) -> tuple
         "transition_applied": False,
         "transition_proposed_only": True,
         "accepted_receipt_ids_mutated": False,
+        "application_authorized": False,
+        "application_executed": False,
+        "state_mutated": False,
+        "persistent_state_created": False,
+        "boundary_evaluated_only": True,
     }
     return "signed_receipt_verified", result
 

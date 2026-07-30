@@ -48,6 +48,10 @@ transition_proposed_only = True
 transition_applied = False
 accepted_receipt_ids_mutated = False
 persistent_state_created = False
+boundary_evaluated_only = True
+application_authorized = False
+application_executed = False
+state_mutated = False
 
 # Bound for caller-supplied accepted receipt-id lists (Foundation 60 L3).
 MAX_ACCEPTED_RECEIPT_IDS = 256
@@ -962,4 +966,117 @@ def propose_signed_receipt_acceptance_transition(
     proposal = acceptance_transition_proposal_from_decision(decided)
     out = dict(decided)
     out["acceptance_transition_proposal"] = proposal
+    return out
+
+
+APPLICATION_BOUNDARY_RESULT_FIELDS = (
+    "application_boundary_status",
+    "application_boundary_reason",
+    "receipt_id",
+    "transition_kind",
+    "application_authorized",
+    "application_executed",
+    "state_mutated",
+    "persistent_state_created",
+)
+
+
+def _hex64_receipt_id_or_empty(value: Any) -> str:
+    if not isinstance(value, str) or value == "":
+        return ""
+    try:
+        return _check_hex64(value)
+    except F64ReceiptSchemaError:
+        return ""
+
+
+def application_boundary_from_proposed_acceptance(
+    proposed: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Evaluate structural eligibility of a Foundation 72 proposal for a future authority.
+
+    Eligibility is not authorization and not execution. Always returns
+    ``application_authorized=false`` and ``application_executed=false``.
+    """
+    if not isinstance(proposed, Mapping):
+        raise F64ReceiptSchemaError("schema_invalid")
+    decision = proposed.get("acceptance_decision")
+    rejection_reason = proposed.get("rejection_reason")
+    proposal = proposed.get("acceptance_transition_proposal")
+    if not isinstance(proposal, Mapping):
+        raise F64ReceiptSchemaError("schema_invalid")
+    if tuple(proposal.keys()) != ACCEPTANCE_TRANSITION_PROPOSAL_FIELDS:
+        raise F64ReceiptSchemaError("schema_invalid")
+
+    receipt_id = _hex64_receipt_id_or_empty(proposal.get("receipt_id"))
+    inert_ok = (
+        proposal.get("transition_applied") is False
+        and proposal.get("transition_proposed_only") is True
+    )
+    eligible = (
+        decision == "accepted"
+        and rejection_reason == ""
+        and proposal.get("proposal_status") == "applicable"
+        and proposal.get("transition_kind") == "add_accepted_receipt_id"
+        and receipt_id != ""
+        and proposal.get("expected_prior_replay_status") == "fresh"
+        and proposal.get("proposed_resulting_replay_status") == "replayed"
+        and proposal.get("precondition") == "receipt_id_absent_from_accepted_receipt_ids"
+        and proposal.get("proposed_effect") == "add_receipt_id_to_accepted_receipt_ids"
+        and inert_ok
+        and proposed.get("replay_status") == "fresh"
+        and proposed.get("expiration_status") == "valid"
+    )
+
+    if eligible:
+        boundary = {
+            "application_boundary_status": "eligible",
+            "application_boundary_reason": "",
+            "receipt_id": receipt_id,
+            "transition_kind": "add_accepted_receipt_id",
+            "application_authorized": False,
+            "application_executed": False,
+            "state_mutated": False,
+            "persistent_state_created": False,
+        }
+    else:
+        if decision == "rejected" and rejection_reason in ("replayed", "expired"):
+            reason = rejection_reason
+        elif proposal.get("proposal_status") == "not_applicable":
+            reason = "proposal_not_applicable"
+        else:
+            reason = "proposal_inconsistent"
+        boundary = {
+            "application_boundary_status": "ineligible",
+            "application_boundary_reason": reason,
+            "receipt_id": receipt_id,
+            "transition_kind": "",
+            "application_authorized": False,
+            "application_executed": False,
+            "state_mutated": False,
+            "persistent_state_created": False,
+        }
+    if tuple(boundary.keys()) != APPLICATION_BOUNDARY_RESULT_FIELDS:
+        raise F64ReceiptSchemaError("schema_invalid")
+    return boundary
+
+
+def evaluate_signed_receipt_acceptance_transition_application_boundary(
+    signed_facts: Any,
+    accepted_receipt_ids: Any,
+    verification_time: Any,
+) -> dict[str, Any]:
+    """Compose F72 proposal into a pure, non-executing application boundary result.
+
+    Order: verify → replay → expiration → acceptance → proposal → boundary.
+    Never authorizes or executes application; never mutates accepted IDs.
+    """
+    proposed = propose_signed_receipt_acceptance_transition(
+        signed_facts,
+        accepted_receipt_ids,
+        verification_time,
+    )
+    boundary = application_boundary_from_proposed_acceptance(proposed)
+    out = dict(proposed)
+    out["acceptance_transition_application_boundary"] = boundary
     return out

@@ -306,7 +306,7 @@ class TestFoundation71AcceptanceDecision(unittest.TestCase):
         self.assertEqual(result["acceptance_decision"], "accepted")
         self.assertEqual(result["rejection_reason"], "")
         self.assertEqual(
-            tuple(result.keys())[:6],
+            tuple(result.keys())[:7],
             (
                 "verification_status",
                 "replay_status",
@@ -314,6 +314,7 @@ class TestFoundation71AcceptanceDecision(unittest.TestCase):
                 "acceptance_decision",
                 "rejection_reason",
                 "acceptance_transition_proposal",
+                "acceptance_transition_application_boundary",
             ),
         )
 

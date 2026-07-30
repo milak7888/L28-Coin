@@ -178,6 +178,16 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
         self.assertIs(result["transition_applied"], False)
         self.assertIs(result["transition_proposed_only"], True)
         self.assertIs(result["accepted_receipt_ids_mutated"], False)
+        boundary = result["acceptance_transition_application_boundary"]
+        self.assertEqual(boundary["application_boundary_status"], "eligible")
+        self.assertEqual(boundary["application_boundary_reason"], "")
+        self.assertEqual(boundary["receipt_id"], signed["receipt_id"])
+        self.assertEqual(boundary["transition_kind"], "add_accepted_receipt_id")
+        self.assertIs(boundary["application_authorized"], False)
+        self.assertIs(boundary["application_executed"], False)
+        self.assertIs(result["application_authorized"], False)
+        self.assertIs(result["application_executed"], False)
+        self.assertIs(result["boundary_evaluated_only"], True)
         self.assertEqual(
             tuple(result.keys()),
             (
@@ -187,6 +197,7 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
                 "acceptance_decision",
                 "rejection_reason",
                 "acceptance_transition_proposal",
+                "acceptance_transition_application_boundary",
                 "receipt_profile",
                 "receipt_id",
                 "signed_payload_digest",
@@ -212,6 +223,11 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
                 "transition_applied",
                 "transition_proposed_only",
                 "accepted_receipt_ids_mutated",
+                "application_authorized",
+                "application_executed",
+                "state_mutated",
+                "persistent_state_created",
+                "boundary_evaluated_only",
             ),
         )
         for flag in (
