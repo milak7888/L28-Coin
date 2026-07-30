@@ -44,6 +44,10 @@ receipt_recorded = False
 transaction_submission_authorized = False
 adapters_activated = False
 runtime_activated = False
+transition_proposed_only = True
+transition_applied = False
+accepted_receipt_ids_mutated = False
+persistent_state_created = False
 
 # Bound for caller-supplied accepted receipt-id lists (Foundation 60 L3).
 MAX_ACCEPTED_RECEIPT_IDS = 256
@@ -878,4 +882,84 @@ def decide_signed_receipt_acceptance(
     out = dict(classified)
     out["acceptance_decision"] = decision
     out["rejection_reason"] = reason
+    return out
+
+
+ACCEPTANCE_TRANSITION_PROPOSAL_FIELDS = (
+    "proposal_status",
+    "transition_kind",
+    "receipt_id",
+    "expected_prior_replay_status",
+    "proposed_resulting_replay_status",
+    "precondition",
+    "proposed_effect",
+    "transition_applied",
+    "transition_proposed_only",
+)
+
+
+def acceptance_transition_proposal_from_decision(
+    decided: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Map a Foundation 71 decision to an inert acceptance-state transition proposal.
+
+    Applicable only when ``acceptance_decision == "accepted"``. Uses Foundation 69
+    replay vocabulary (``fresh`` / ``replayed``) for prior/resulting status. Never
+    mutates caller context; ``transition_applied`` is always ``False``.
+    """
+    receipt_id = decided["receipt_id"]
+    if not isinstance(receipt_id, str):
+        raise F64ReceiptSchemaError("schema_invalid")
+    if decided.get("acceptance_decision") == "accepted":
+        if decided.get("replay_status") != "fresh":
+            raise F64ReceiptSchemaError("schema_invalid")
+        if decided.get("expiration_status") != "valid":
+            raise F64ReceiptSchemaError("schema_invalid")
+        proposal = {
+            "proposal_status": "applicable",
+            "transition_kind": "add_accepted_receipt_id",
+            "receipt_id": receipt_id,
+            "expected_prior_replay_status": "fresh",
+            "proposed_resulting_replay_status": "replayed",
+            "precondition": "receipt_id_absent_from_accepted_receipt_ids",
+            "proposed_effect": "add_receipt_id_to_accepted_receipt_ids",
+            "transition_applied": False,
+            "transition_proposed_only": True,
+        }
+    else:
+        proposal = {
+            "proposal_status": "not_applicable",
+            "transition_kind": "",
+            "receipt_id": receipt_id,
+            "expected_prior_replay_status": "",
+            "proposed_resulting_replay_status": "",
+            "precondition": "",
+            "proposed_effect": "",
+            "transition_applied": False,
+            "transition_proposed_only": True,
+        }
+    if tuple(proposal.keys()) != ACCEPTANCE_TRANSITION_PROPOSAL_FIELDS:
+        raise F64ReceiptSchemaError("schema_invalid")
+    return proposal
+
+
+def propose_signed_receipt_acceptance_transition(
+    signed_facts: Any,
+    accepted_receipt_ids: Any,
+    verification_time: Any,
+) -> dict[str, Any]:
+    """Compose F71 acceptance into a pure, inert transition proposal.
+
+    Order: verify → replay → expiration → acceptance → proposal.
+    Does not insert into ``accepted_receipt_ids``, persist state, or claim
+    that acceptance was recorded.
+    """
+    decided = decide_signed_receipt_acceptance(
+        signed_facts,
+        accepted_receipt_ids,
+        verification_time,
+    )
+    proposal = acceptance_transition_proposal_from_decision(decided)
+    out = dict(decided)
+    out["acceptance_transition_proposal"] = proposal
     return out

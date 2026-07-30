@@ -170,6 +170,14 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
         self.assertEqual(result["rejection_reason"], "")
         self.assertEqual(result["receipt_id"], signed["receipt_id"])
         self.assertEqual(result["signed_payload_digest"], signed["signed_payload_digest"])
+        proposal = result["acceptance_transition_proposal"]
+        self.assertEqual(proposal["proposal_status"], "applicable")
+        self.assertEqual(proposal["transition_kind"], "add_accepted_receipt_id")
+        self.assertEqual(proposal["receipt_id"], signed["receipt_id"])
+        self.assertIs(proposal["transition_applied"], False)
+        self.assertIs(result["transition_applied"], False)
+        self.assertIs(result["transition_proposed_only"], True)
+        self.assertIs(result["accepted_receipt_ids_mutated"], False)
         self.assertEqual(
             tuple(result.keys()),
             (
@@ -178,6 +186,7 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
                 "expiration_status",
                 "acceptance_decision",
                 "rejection_reason",
+                "acceptance_transition_proposal",
                 "receipt_profile",
                 "receipt_id",
                 "signed_payload_digest",
@@ -200,6 +209,9 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
                 "settlement_authorized",
                 "ledger_mutated",
                 "execution_authorized",
+                "transition_applied",
+                "transition_proposed_only",
+                "accepted_receipt_ids_mutated",
             ),
         )
         for flag in (
