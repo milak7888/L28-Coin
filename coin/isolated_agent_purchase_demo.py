@@ -647,6 +647,27 @@ def run_isolated_agent_purchase_demo(
     return result
 
 
+CLI_SCHEMA = "l28.isolated-agent-purchase-demo"
+CLI_SCHEMA_VERSION = "0.2"
+DEFAULT_DEMO_INPUT = "l28-demo-input-v0.1"
+
+CLI_ERROR_MESSAGES = {
+    "invalid_argument": "Invalid command-line arguments.",
+    "schema_invalid": "Demo input or artifact schema is invalid.",
+    "identity_invalid": "Buyer and seller identities are invalid.",
+    "identity_mismatch": "Public identity binding mismatch.",
+    "digest_mismatch": "Public digest binding mismatch.",
+    "output_mismatch": "Service output does not match canonical request.",
+    "signature_invalid": "Public signature verification failed.",
+    "verification_failed": "Independent demo verification failed.",
+    "demo_failed": "Demo generation failed.",
+}
+
+CLI_ENVELOPE_COMPLETED_FIELDS = ("schema", "schema_version", "status", "result")
+CLI_ENVELOPE_ERROR_FIELDS = ("schema", "schema_version", "status", "error")
+CLI_ERROR_FIELDS = ("code", "message")
+
+
 def _safe_public_summary(result: Mapping[str, Any]) -> dict[str, Any]:
     return {
         "demo_profile": result["demo_profile"],
@@ -671,28 +692,141 @@ def _safe_public_summary(result: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
+def _cli_error_message(code: str) -> str:
+    return CLI_ERROR_MESSAGES.get(code, CLI_ERROR_MESSAGES["demo_failed"])
+
+
+def build_cli_completed_envelope(result: Mapping[str, Any]) -> dict[str, Any]:
+    envelope = {
+        "schema": CLI_SCHEMA,
+        "schema_version": CLI_SCHEMA_VERSION,
+        "status": "completed",
+        "result": dict(result),
+    }
+    if tuple(envelope.keys()) != CLI_ENVELOPE_COMPLETED_FIELDS:
+        raise DemoError("schema_invalid")
+    return envelope
+
+
+def build_cli_error_envelope(*, code: str) -> dict[str, Any]:
+    safe_code = code if code in CLI_ERROR_MESSAGES else "demo_failed"
+    error = {
+        "code": safe_code,
+        "message": _cli_error_message(safe_code),
+    }
+    if tuple(error.keys()) != CLI_ERROR_FIELDS:
+        raise DemoError("schema_invalid")
+    envelope = {
+        "schema": CLI_SCHEMA,
+        "schema_version": CLI_SCHEMA_VERSION,
+        "status": "error",
+        "error": error,
+    }
+    if tuple(envelope.keys()) != CLI_ENVELOPE_ERROR_FIELDS:
+        raise DemoError("schema_invalid")
+    return envelope
+
+
+def _dumps_json(payload: Mapping[str, Any], *, pretty: bool) -> str:
+    if pretty:
+        return json.dumps(
+            payload,
+            ensure_ascii=False,
+            allow_nan=False,
+            sort_keys=False,
+            indent=2,
+        )
+    return json.dumps(
+        payload,
+        ensure_ascii=False,
+        allow_nan=False,
+        sort_keys=False,
+        separators=(",", ":"),
+    )
+
+
+def _emit_json(payload: Mapping[str, Any], *, pretty: bool) -> None:
+    sys.stdout.write(_dumps_json(payload, pretty=pretty))
+    sys.stdout.write("\n")
+
+
 def main(argv: list[str] | None = None) -> int:
+    """Offline public CLI entry point (simulation only; no funds)."""
+    argv_list = list(sys.argv[1:] if argv is None else argv)
+    want_json = "--json" in argv_list
+    want_pretty = "--pretty" in argv_list
+
     parser = argparse.ArgumentParser(
-        description="Isolated Agent Purchase Demo v0.1 (simulation only; no funds)."
+        prog="python -m coin.isolated_agent_purchase_demo",
+        description=(
+            "Offline public CLI for Isolated Agent Purchase Demo "
+            "(simulation only; no funds)."
+        ),
     )
     parser.add_argument(
         "--input",
-        default="l28-demo-input-v0.1",
-        help="Deterministic demo input text (no network; SHA-256 service).",
+        default=DEFAULT_DEMO_INPUT,
+        help="Deterministic public demo input text (default: safe fixed demo input).",
     )
     parser.add_argument(
         "--json",
         action="store_true",
-        help="Emit full public result JSON (never includes private keys).",
+        help="Emit exactly one machine-readable JSON document on stdout.",
     )
-    args = parser.parse_args(argv)
+    parser.add_argument(
+        "--pretty",
+        action="store_true",
+        help="Indent JSON stdout (use with --json for the stable envelope).",
+    )
+    parser.add_argument(
+        "--verify",
+        action="store_true",
+        help="Independently verify service output and receipt signature before success.",
+    )
+
+    class _ArgError(Exception):
+        pass
+
+    def _parser_error(message: str) -> None:
+        raise _ArgError(message)
+
+    parser.error = _parser_error  # type: ignore[method-assign]
+
+    try:
+        args = parser.parse_args(argv_list)
+    except _ArgError:
+        if want_json:
+            _emit_json(
+                build_cli_error_envelope(code="invalid_argument"),
+                pretty=want_pretty,
+            )
+        else:
+            print("invalid_argument", file=sys.stderr)
+        return 2
+
     try:
         result = run_isolated_agent_purchase_demo(request_input=args.input)
+        if args.verify:
+            check = verify_isolated_agent_purchase_demo_result(result)
+            if (
+                check.get("service_output_verified") is not True
+                or check.get("receipt_signature_verified") is not True
+                or check.get("ok") is not True
+            ):
+                raise DemoError("verification_failed")
     except DemoError as exc:
-        print(json.dumps({"ok": False, "code": exc.code}, separators=(",", ":")), file=sys.stderr)
+        code = exc.code if exc.code in CLI_ERROR_MESSAGES else "demo_failed"
+        if args.json:
+            _emit_json(build_cli_error_envelope(code=code), pretty=args.pretty)
+        else:
+            print(code, file=sys.stderr)
         return 1
-    payload = result if args.json else _safe_public_summary(result)
-    print(json.dumps(payload, separators=(",", ":"), ensure_ascii=False))
+
+    if args.json:
+        _emit_json(build_cli_completed_envelope(result), pretty=args.pretty)
+    else:
+        # Backward-compatible human/summary JSON (v0.1).
+        _emit_json(_safe_public_summary(result), pretty=args.pretty)
     return 0
 
 
