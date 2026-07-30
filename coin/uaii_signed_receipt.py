@@ -60,6 +60,9 @@ authorization_request_proposed_only = True
 authorization_requested = False
 authorization_submitted = False
 authorization_issued = False
+caller_supplied_authorization_response_evaluated_only = True
+authorization_response_issued = False
+authorization_active = False
 
 # Bound for caller-supplied accepted receipt-id lists (Foundation 60 L3).
 MAX_ACCEPTED_RECEIPT_IDS = 256
@@ -1430,4 +1433,207 @@ def propose_signed_receipt_transition_authorization_request(
     auth_proposal = transition_authorization_request_proposal_from_evaluation(evaluated)
     out = dict(evaluated)
     out["transition_authorization_request_proposal"] = auth_proposal
+    return out
+
+
+AUTHORIZATION_RESPONSE_EVIDENCE_FIELDS = (
+    "authorization_response_id",
+    "authorization_request_receipt_id",
+    "authorization_request_transition_kind",
+    "authorization_request_approval_id",
+    "authorization_decision",
+    "authorization_scope",
+)
+
+AUTHORIZATION_RESPONSE_EVALUATION_FIELDS = (
+    "authorization_response_evaluation_status",
+    "authorization_response_evaluation_reason",
+    "authorization_response_id",
+    "authorization_issued",
+    "authorization_granted",
+    "authorization_active",
+    "application_authorized",
+    "application_executed",
+    "transition_applied",
+    "state_mutated",
+    "persistent_state_created",
+)
+
+
+def _inert_authorization_response_evaluation(
+    *,
+    status: str,
+    reason: str,
+    authorization_response_id: str = "",
+) -> dict[str, Any]:
+    evaluation = {
+        "authorization_response_evaluation_status": status,
+        "authorization_response_evaluation_reason": reason,
+        "authorization_response_id": authorization_response_id,
+        "authorization_issued": False,
+        "authorization_granted": False,
+        "authorization_active": False,
+        "application_authorized": False,
+        "application_executed": False,
+        "transition_applied": False,
+        "state_mutated": False,
+        "persistent_state_created": False,
+    }
+    if tuple(evaluation.keys()) != AUTHORIZATION_RESPONSE_EVALUATION_FIELDS:
+        raise F64ReceiptSchemaError("schema_invalid")
+    return evaluation
+
+
+def validate_authorization_response_evidence(evidence: Any) -> dict[str, Any] | None:
+    """Validate caller-supplied authorization-response evidence.
+
+    Empty object ``{}`` means evidence was not supplied (Foundation 74-style
+    optional object). Non-empty evidence MUST use exact field order/types.
+    """
+    if not isinstance(evidence, dict):
+        raise F64ReceiptSchemaError("schema_invalid")
+    if evidence == {}:
+        return None
+    if tuple(evidence.keys()) != AUTHORIZATION_RESPONSE_EVIDENCE_FIELDS:
+        raise F64ReceiptSchemaError("schema_invalid")
+    response_id = _check_hex64(evidence["authorization_response_id"])
+    receipt_id = _check_hex64(evidence["authorization_request_receipt_id"])
+    kind = evidence["authorization_request_transition_kind"]
+    approval_id = _check_hex64(evidence["authorization_request_approval_id"])
+    decision = evidence["authorization_decision"]
+    scope = evidence["authorization_scope"]
+    if not isinstance(kind, str) or kind == "":
+        raise F64ReceiptSchemaError("schema_invalid")
+    if decision not in ("authorized", "denied"):
+        raise F64ReceiptSchemaError("schema_invalid")
+    if not isinstance(scope, str) or scope == "":
+        raise F64ReceiptSchemaError("schema_invalid")
+    return {
+        "authorization_response_id": response_id,
+        "authorization_request_receipt_id": receipt_id,
+        "authorization_request_transition_kind": kind,
+        "authorization_request_approval_id": approval_id,
+        "authorization_decision": decision,
+        "authorization_scope": scope,
+    }
+
+
+def authorization_response_evaluation_from_request_proposal(
+    proposed: Mapping[str, Any],
+    evidence: Any,
+) -> dict[str, Any]:
+    """Evaluate explicit authorization-response evidence against an F75 proposal.
+
+    ``satisfied`` means internal consistency only — never an authorization grant.
+    """
+    if not isinstance(proposed, Mapping):
+        raise F64ReceiptSchemaError("schema_invalid")
+    auth_req = proposed.get("transition_authorization_request_proposal")
+    if not isinstance(auth_req, Mapping):
+        raise F64ReceiptSchemaError("schema_invalid")
+
+    validated = validate_authorization_response_evidence(evidence)
+    if validated is None:
+        return _inert_authorization_response_evaluation(
+            status="not_supplied",
+            reason="authorization_response_not_supplied",
+        )
+
+    response_id = validated["authorization_response_id"]
+    if auth_req.get("authorization_request_proposal_status") != "proposed":
+        return _inert_authorization_response_evaluation(
+            status="not_satisfied",
+            reason="authorization_request_not_proposed",
+            authorization_response_id=response_id,
+        )
+
+    if validated["authorization_request_receipt_id"] != auth_req.get("receipt_id"):
+        return _inert_authorization_response_evaluation(
+            status="not_satisfied",
+            reason="receipt_id_mismatch",
+            authorization_response_id=response_id,
+        )
+    if validated["authorization_request_transition_kind"] != auth_req.get(
+        "transition_kind"
+    ):
+        return _inert_authorization_response_evaluation(
+            status="not_satisfied",
+            reason="transition_kind_mismatch",
+            authorization_response_id=response_id,
+        )
+    if validated["authorization_request_approval_id"] != auth_req.get("approval_id"):
+        return _inert_authorization_response_evaluation(
+            status="not_satisfied",
+            reason="approval_id_mismatch",
+            authorization_response_id=response_id,
+        )
+    if validated["authorization_scope"] != SUPPORTED_GOVERNANCE_APPROVAL_SCOPE:
+        return _inert_authorization_response_evaluation(
+            status="not_satisfied",
+            reason="authorization_scope_mismatch",
+            authorization_response_id=response_id,
+        )
+    if validated["authorization_decision"] == "denied":
+        return _inert_authorization_response_evaluation(
+            status="not_satisfied",
+            reason="authorization_denied",
+            authorization_response_id=response_id,
+        )
+    if validated["authorization_decision"] != "authorized":
+        return _inert_authorization_response_evaluation(
+            status="not_satisfied",
+            reason="authorization_response_inconsistent",
+            authorization_response_id=response_id,
+        )
+
+    inert_ok = (
+        auth_req.get("authorization_requested") is False
+        and auth_req.get("authorization_granted") is False
+        and auth_req.get("application_authorized") is False
+        and auth_req.get("application_executed") is False
+        and auth_req.get("transition_applied") is False
+        and auth_req.get("state_mutated") is False
+        and auth_req.get("persistent_state_created") is False
+        and auth_req.get("transition_kind") == "add_accepted_receipt_id"
+        and auth_req.get("receipt_id") != ""
+        and auth_req.get("approval_id") != ""
+    )
+    if not inert_ok:
+        return _inert_authorization_response_evaluation(
+            status="not_satisfied",
+            reason="authorization_response_inconsistent",
+            authorization_response_id=response_id,
+        )
+
+    return _inert_authorization_response_evaluation(
+        status="satisfied",
+        reason="",
+        authorization_response_id=response_id,
+    )
+
+
+def evaluate_signed_receipt_authorization_response(
+    signed_facts: Any,
+    accepted_receipt_ids: Any,
+    verification_time: Any,
+    governance_approval_evidence: Any,
+    authorization_response_evidence: Any,
+) -> dict[str, Any]:
+    """Compose F75 proposal + caller response evidence into a pure evaluation.
+
+    Order: verify → … → authorization-request proposal → response evaluation.
+    Never issues, grants, activates, or applies authorization.
+    """
+    proposed = propose_signed_receipt_transition_authorization_request(
+        signed_facts,
+        accepted_receipt_ids,
+        verification_time,
+        governance_approval_evidence,
+    )
+    evaluation = authorization_response_evaluation_from_request_proposal(
+        proposed,
+        authorization_response_evidence,
+    )
+    out = dict(proposed)
+    out["authorization_response_evaluation"] = evaluation
     return out

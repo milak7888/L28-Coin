@@ -136,6 +136,7 @@ def _uaii_verify(
             "accepted_receipt_ids": [] if accepted is None else accepted,
             "verification_time": verification_time,
             "governance_approval_evidence": {},
+            "authorization_response_evidence": {},
         },
     }
     raw = json.dumps(env, separators=(",", ":"), ensure_ascii=False).encode("utf-8")

@@ -116,6 +116,7 @@ def _uaii_verify(signed: dict[str, Any], accepted: list[str], *, nonce: str) -> 
             "accepted_receipt_ids": accepted,
             "verification_time": 1_700_000_000,
             "governance_approval_evidence": {},
+            "authorization_response_evidence": {},
         },
     }
     raw = json.dumps(env, separators=(",", ":"), ensure_ascii=False).encode("utf-8")

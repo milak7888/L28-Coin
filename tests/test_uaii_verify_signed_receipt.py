@@ -140,6 +140,7 @@ def _verify_params(
         "accepted_receipt_ids": [] if accepted is None else accepted,
         "verification_time": t,
         "governance_approval_evidence": {},
+        "authorization_response_evidence": {},
     }
 
 
@@ -204,6 +205,17 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
         self.assertIs(auth_req["authorization_requested"], False)
         self.assertIs(result["authorization_request_proposed_only"], True)
         self.assertIs(result["authorization_requested"], False)
+        auth_resp = result["authorization_response_evaluation"]
+        self.assertEqual(
+            auth_resp["authorization_response_evaluation_status"], "not_supplied"
+        )
+        self.assertEqual(
+            auth_resp["authorization_response_evaluation_reason"],
+            "authorization_response_not_supplied",
+        )
+        self.assertIs(auth_resp["authorization_granted"], False)
+        self.assertIs(result["caller_supplied_authorization_response_evaluated_only"], True)
+        self.assertIs(result["authorization_active"], False)
         self.assertEqual(
             tuple(result.keys()),
             (
@@ -216,6 +228,7 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
                 "acceptance_transition_application_boundary",
                 "governance_approval_evaluation",
                 "transition_authorization_request_proposal",
+                "authorization_response_evaluation",
                 "receipt_profile",
                 "receipt_id",
                 "signed_payload_digest",
@@ -254,6 +267,9 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
                 "authorization_requested",
                 "authorization_submitted",
                 "authorization_issued",
+                "caller_supplied_authorization_response_evaluated_only",
+                "authorization_response_issued",
+                "authorization_active",
             ),
         )
         for flag in (
@@ -340,6 +356,7 @@ class TestFoundation68VerifySignedReceipt(unittest.TestCase):
                     "accepted_receipt_ids": [],
                     "verification_time": 1_700_000_000,
                     "governance_approval_evidence": {},
+                    "authorization_response_evidence": {},
                 },
                 nonce="type",
             )

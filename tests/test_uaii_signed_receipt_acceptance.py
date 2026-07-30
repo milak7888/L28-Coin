@@ -136,6 +136,7 @@ def _uaii_verify(
             "accepted_receipt_ids": [] if accepted is None else accepted,
             "verification_time": verification_time,
             "governance_approval_evidence": {},
+            "authorization_response_evidence": {},
         },
     }
     raw = json.dumps(env, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
@@ -307,7 +308,7 @@ class TestFoundation71AcceptanceDecision(unittest.TestCase):
         self.assertEqual(result["acceptance_decision"], "accepted")
         self.assertEqual(result["rejection_reason"], "")
         self.assertEqual(
-            tuple(result.keys())[:9],
+            tuple(result.keys())[:10],
             (
                 "verification_status",
                 "replay_status",
@@ -318,6 +319,7 @@ class TestFoundation71AcceptanceDecision(unittest.TestCase):
                 "acceptance_transition_application_boundary",
                 "governance_approval_evaluation",
                 "transition_authorization_request_proposal",
+                "authorization_response_evaluation",
             ),
         )
 

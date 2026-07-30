@@ -148,6 +148,7 @@ def _uaii_verify(
         "accepted_receipt_ids": [] if accepted is None else accepted,
         "verification_time": verification_time,
         "governance_approval_evidence": {} if evidence is None else evidence,
+        "authorization_response_evidence": {},
     }
     if extra_params:
         params.update(extra_params)
