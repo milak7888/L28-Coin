@@ -1,0 +1,45 @@
+{
+  "fixture_schema": "l28-uai-conformance-fixture/v0.1",
+  "plan_version": "universal-access-conformance-plan/v0.1",
+  "fixture_id": "fx-uai-v01-0012",
+  "case_id": "UAI-CONF-v0.1-ENV-FCL-001",
+  "area": "envelope",
+  "class": "fail_closed",
+  "operation": "envelope",
+  "description": "Malformed / truncated JSON",
+  "interface_profile": "l28-universal-ai-access-interface/v0.1",
+  "fixed_clock": {
+    "verification_time": 1700000100,
+    "created_at": 1700000000,
+    "expires_at": 1700000300
+  },
+  "identities": {
+    "payer_a": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+    "payee_b": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+    "observer": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqobsrv"
+  },
+  "request_raw": "{\"interface_profile\":\"l28-universal-ai-access-interface/v0.1\",\"operation\":\"discover_capabilities\"",
+  "request_encoding": "raw_utf8",
+  "expected": {
+    "outcome": "reject",
+    "ok": false,
+    "code": "schema_invalid",
+    "execution_authorized": false,
+    "error": {
+      "code": "schema_invalid",
+      "message": "malformed json"
+    }
+  },
+  "canonical": {
+    "algorithm": "sha256-utf8-raw",
+    "request_raw_sha256": "14d762cd2f4c9602e50dbeb410fb4dcd17cfa4af7755f614830225b79427b603"
+  },
+  "safety": {
+    "contains_private_keys": false,
+    "contains_credentials": false,
+    "contains_production_addresses": false,
+    "contains_environment_values": false,
+    "mutates_historical_ledger": false,
+    "uses_real_balances_or_transactions": false
+  }
+}

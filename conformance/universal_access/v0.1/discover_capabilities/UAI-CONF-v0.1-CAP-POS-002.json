@@ -1,0 +1,121 @@
+{
+  "fixture_schema": "l28-uai-conformance-fixture/v0.1",
+  "plan_version": "universal-access-conformance-plan/v0.1",
+  "fixture_id": "fx-uai-v01-0015",
+  "case_id": "UAI-CONF-v0.1-CAP-POS-002",
+  "area": "discover_capabilities",
+  "class": "positive",
+  "operation": "discover_capabilities",
+  "description": "Discover with adapter declarations",
+  "interface_profile": "l28-universal-ai-access-interface/v0.1",
+  "fixed_clock": {
+    "verification_time": 1700000100,
+    "created_at": 1700000000,
+    "expires_at": 1700000300
+  },
+  "identities": {
+    "payer_a": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+    "payee_b": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+    "observer": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqobsrv"
+  },
+  "request": {
+    "interface_profile": "l28-universal-ai-access-interface/v0.1",
+    "operation": "discover_capabilities",
+    "request_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "created_at": 1700000000,
+    "expires_at": 1700000300,
+    "nonce": "nonce-uai-conf-b",
+    "execution_authorized": false,
+    "params": {
+      "include_adapter_declarations": true
+    }
+  },
+  "request_encoding": "json_object",
+  "expected": {
+    "outcome": "accept",
+    "ok": true,
+    "code": "ok",
+    "interface_profile": "l28-universal-ai-access-interface/v0.1",
+    "operation": "discover_capabilities",
+    "request_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "execution_authorized": false,
+    "report_id": "ccdd3c47bdbde50321db621f82d96b0449840c310cc2f00d3968a109fe47f9a5",
+    "result": {
+      "interface_profile": "l28-universal-ai-access-interface/v0.1",
+      "protocol_version": "1.0.0",
+      "currency": "L28",
+      "operations": [
+        "discover_capabilities",
+        "get_protocol_status",
+        "get_balance",
+        "create_quote",
+        "create_unsigned_payment_request",
+        "validate_payment",
+        "get_payment_receipt",
+        "verify_signed_receipt"
+      ],
+      "capabilities": [
+        {
+          "capability_id": "cap.discover",
+          "operation_or_wildcard": "discover_capabilities",
+          "status": "supported"
+        },
+        {
+          "capability_id": "cap.balance",
+          "operation_or_wildcard": "get_balance",
+          "status": "supported"
+        },
+        {
+          "capability_id": "cap.sign",
+          "operation_or_wildcard": "sign_and_broadcast",
+          "status": "forbidden"
+        }
+      ],
+      "adapter_declarations": [
+        {
+          "adapter_id": "adapter.mcp",
+          "status": "deferred"
+        },
+        {
+          "adapter_id": "adapter.rest_openapi",
+          "status": "deferred"
+        },
+        {
+          "adapter_id": "adapter.python_sdk",
+          "status": "deferred"
+        },
+        {
+          "adapter_id": "adapter.typescript_sdk",
+          "status": "deferred"
+        }
+      ],
+      "execution_authorized": false,
+      "signing_authorized": false,
+      "spend_authorized": false,
+      "protected_economics": {
+        "hard_cap_l28": 28000000,
+        "emission_ceiling_l28": 11130000,
+        "historically_mined_l28": 2824584,
+        "treasury_locked_l28": 500000,
+        "circulating_snapshot_l28": 2324584,
+        "issuance_mechanism": "coinbase_only",
+        "height_authority": "consensus_derived",
+        "historical_evidence": "immutable",
+        "adapter_override_allowed": false
+      }
+    },
+    "error": null
+  },
+  "canonical": {
+    "algorithm": "sha256-utf8-exact-order-json",
+    "request_canonical_sha256": "0811c15af387ebe747b70c379b5af83809ec7bd91b305051f19110c8e4af640e"
+  },
+  "safety": {
+    "contains_private_keys": false,
+    "contains_credentials": false,
+    "contains_production_addresses": false,
+    "contains_environment_values": false,
+    "mutates_historical_ledger": false,
+    "uses_real_balances_or_transactions": false
+  }
+}

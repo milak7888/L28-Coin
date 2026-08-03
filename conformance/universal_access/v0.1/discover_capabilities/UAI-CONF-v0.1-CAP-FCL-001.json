@@ -1,0 +1,112 @@
+{
+  "fixture_schema": "l28-uai-conformance-fixture/v0.1",
+  "plan_version": "universal-access-conformance-plan/v0.1",
+  "fixture_id": "fx-uai-v01-0018",
+  "case_id": "UAI-CONF-v0.1-CAP-FCL-001",
+  "area": "discover_capabilities",
+  "class": "fail_closed",
+  "operation": "discover_capabilities",
+  "description": "Response would set spend_authorized=true",
+  "interface_profile": "l28-universal-ai-access-interface/v0.1",
+  "fixed_clock": {
+    "verification_time": 1700000100,
+    "created_at": 1700000000,
+    "expires_at": 1700000300
+  },
+  "identities": {
+    "payer_a": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+    "payee_b": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+    "observer": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqobsrv"
+  },
+  "request": {
+    "interface_profile": "l28-universal-ai-access-interface/v0.1",
+    "operation": "discover_capabilities",
+    "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "created_at": 1700000000,
+    "expires_at": 1700000300,
+    "nonce": "nonce-uai-conf-a",
+    "execution_authorized": false,
+    "params": {
+      "include_adapter_declarations": false
+    }
+  },
+  "request_encoding": "json_object",
+  "candidate_response": {
+    "ok": true,
+    "code": "ok",
+    "interface_profile": "l28-universal-ai-access-interface/v0.1",
+    "operation": "discover_capabilities",
+    "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "result": {
+      "interface_profile": "l28-universal-ai-access-interface/v0.1",
+      "protocol_version": "1.0.0",
+      "currency": "L28",
+      "operations": [
+        "discover_capabilities",
+        "get_protocol_status",
+        "get_balance",
+        "create_quote",
+        "create_unsigned_payment_request",
+        "validate_payment",
+        "get_payment_receipt",
+        "verify_signed_receipt"
+      ],
+      "capabilities": [
+        {
+          "capability_id": "cap.discover",
+          "operation_or_wildcard": "discover_capabilities",
+          "status": "supported"
+        },
+        {
+          "capability_id": "cap.balance",
+          "operation_or_wildcard": "get_balance",
+          "status": "supported"
+        },
+        {
+          "capability_id": "cap.sign",
+          "operation_or_wildcard": "sign_and_broadcast",
+          "status": "forbidden"
+        }
+      ],
+      "adapter_declarations": [],
+      "execution_authorized": false,
+      "signing_authorized": false,
+      "spend_authorized": true,
+      "protected_economics": {
+        "hard_cap_l28": 28000000,
+        "emission_ceiling_l28": 11130000,
+        "historically_mined_l28": 2824584,
+        "treasury_locked_l28": 500000,
+        "circulating_snapshot_l28": 2324584,
+        "issuance_mechanism": "coinbase_only",
+        "height_authority": "consensus_derived",
+        "historical_evidence": "immutable",
+        "adapter_override_allowed": false
+      }
+    },
+    "execution_authorized": false,
+    "report_id": "14e95a3e6d13eac0bc99817b048d8c1f1d814da1b20391130af334ff2f12d2e6"
+  },
+  "expected": {
+    "outcome": "reject",
+    "ok": false,
+    "code": "schema_invalid",
+    "execution_authorized": false,
+    "error": {
+      "code": "schema_invalid",
+      "message": "spend_authorized must be false"
+    }
+  },
+  "canonical": {
+    "algorithm": "sha256-utf8-exact-order-json",
+    "request_canonical_sha256": "16a48dd7cabde511179b2500a6e42432642701640afc8896b23c105a7cd0fa5c"
+  },
+  "safety": {
+    "contains_private_keys": false,
+    "contains_credentials": false,
+    "contains_production_addresses": false,
+    "contains_environment_values": false,
+    "mutates_historical_ledger": false,
+    "uses_real_balances_or_transactions": false
+  }
+}
