@@ -1,0 +1,69 @@
+{
+  "fixture_schema": "l28-uai-conformance-fixture/v0.1",
+  "plan_version": "universal-access-conformance-plan/v0.1",
+  "fixture_id": "fx-uai-v01-0023",
+  "case_id": "UAI-CONF-v0.1-BAL-NEG-001",
+  "area": "get_balance",
+  "class": "negative",
+  "operation": "get_balance",
+  "description": "Reserved identity COINBASE",
+  "interface_profile": "l28-universal-ai-access-interface/v0.1",
+  "fixed_clock": {
+    "verification_time": 1700000100,
+    "created_at": 1700000000,
+    "expires_at": 1700000300
+  },
+  "identities": {
+    "payer_a": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+    "payee_b": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+    "observer": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqobsrv"
+  },
+  "ledger_view": {
+    "canonical_height": 100878,
+    "height_authority": "consensus_derived",
+    "balances": {
+      "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer": 28,
+      "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee": 0
+    },
+    "ledger_state_id": "10219ab6090fc49e5c0a6928ee86c43d9d8c65ba9c7e001a18179ef601565801",
+    "read_only": true,
+    "may_mint": false,
+    "may_mutate_canonical_state": false
+  },
+  "request": {
+    "interface_profile": "l28-universal-ai-access-interface/v0.1",
+    "operation": "get_balance",
+    "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "created_at": 1700000000,
+    "expires_at": 1700000300,
+    "nonce": "nonce-uai-conf-a",
+    "execution_authorized": false,
+    "params": {
+      "address": "COINBASE",
+      "require_canonical_height": true
+    }
+  },
+  "request_encoding": "json_object",
+  "expected": {
+    "outcome": "reject",
+    "ok": false,
+    "code": "reserved_identity_forbidden",
+    "execution_authorized": false,
+    "error": {
+      "code": "reserved_identity_forbidden",
+      "message": "reserved identity forbidden"
+    }
+  },
+  "canonical": {
+    "algorithm": "sha256-utf8-exact-order-json",
+    "request_canonical_sha256": "20021ebe3f3a1f210d8a81cd15b36e2872e7cf71ace3f63680c8b19589bd92d2"
+  },
+  "safety": {
+    "contains_private_keys": false,
+    "contains_credentials": false,
+    "contains_production_addresses": false,
+    "contains_environment_values": false,
+    "mutates_historical_ledger": false,
+    "uses_real_balances_or_transactions": false
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "fixture_schema": "l28-uai-conformance-fixture/v0.1",
+  "plan_version": "universal-access-conformance-plan/v0.1",
+  "fixture_id": "fx-uai-v01-0021",
+  "case_id": "UAI-CONF-v0.1-PST-FCL-001",
+  "area": "get_protocol_status",
+  "class": "fail_closed",
+  "operation": "get_protocol_status",
+  "description": "Missing consensus/protocol state when required",
+  "interface_profile": "l28-universal-ai-access-interface/v0.1",
+  "fixed_clock": {
+    "verification_time": 1700000100,
+    "created_at": 1700000000,
+    "expires_at": 1700000300
+  },
+  "identities": {
+    "payer_a": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+    "payee_b": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+    "observer": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqobsrv"
+  },
+  "require_consensus_state": true,
+  "consensus_view": null,
+  "request": {
+    "interface_profile": "l28-universal-ai-access-interface/v0.1",
+    "operation": "get_protocol_status",
+    "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "created_at": 1700000000,
+    "expires_at": 1700000300,
+    "nonce": "nonce-uai-conf-a",
+    "execution_authorized": false,
+    "params": {}
+  },
+  "request_encoding": "json_object",
+  "expected": {
+    "outcome": "reject",
+    "ok": false,
+    "code": "consensus_state_unavailable",
+    "execution_authorized": false,
+    "error": {
+      "code": "consensus_state_unavailable",
+      "message": "missing consensus state"
+    }
+  },
+  "canonical": {
+    "algorithm": "sha256-utf8-exact-order-json",
+    "request_canonical_sha256": "896b628d21bd248e98c6b112aefe9b3dd33521df5831d67ea833fdf4d2410e7c"
+  },
+  "safety": {
+    "contains_private_keys": false,
+    "contains_credentials": false,
+    "contains_production_addresses": false,
+    "contains_environment_values": false,
+    "mutates_historical_ledger": false,
+    "uses_real_balances_or_transactions": false
+  }
+}

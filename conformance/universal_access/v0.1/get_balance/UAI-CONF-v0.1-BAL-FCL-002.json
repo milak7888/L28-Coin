@@ -1,0 +1,89 @@
+{
+  "fixture_schema": "l28-uai-conformance-fixture/v0.1",
+  "plan_version": "universal-access-conformance-plan/v0.1",
+  "fixture_id": "fx-uai-v01-0026",
+  "case_id": "UAI-CONF-v0.1-BAL-FCL-002",
+  "area": "get_balance",
+  "class": "fail_closed",
+  "operation": "get_balance",
+  "description": "Response includes private key material",
+  "interface_profile": "l28-universal-ai-access-interface/v0.1",
+  "fixed_clock": {
+    "verification_time": 1700000100,
+    "created_at": 1700000000,
+    "expires_at": 1700000300
+  },
+  "identities": {
+    "payer_a": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+    "payee_b": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+    "observer": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqobsrv"
+  },
+  "ledger_view": {
+    "canonical_height": 100878,
+    "height_authority": "consensus_derived",
+    "balances": {
+      "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer": 28,
+      "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee": 0
+    },
+    "ledger_state_id": "10219ab6090fc49e5c0a6928ee86c43d9d8c65ba9c7e001a18179ef601565801",
+    "read_only": true,
+    "may_mint": false,
+    "may_mutate_canonical_state": false
+  },
+  "request": {
+    "interface_profile": "l28-universal-ai-access-interface/v0.1",
+    "operation": "get_balance",
+    "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "created_at": 1700000000,
+    "expires_at": 1700000300,
+    "nonce": "nonce-uai-conf-a",
+    "execution_authorized": false,
+    "params": {
+      "address": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+      "require_canonical_height": true
+    }
+  },
+  "request_encoding": "json_object",
+  "candidate_response": {
+    "ok": true,
+    "code": "ok",
+    "interface_profile": "l28-universal-ai-access-interface/v0.1",
+    "operation": "get_balance",
+    "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "result": {
+      "address": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+      "balance": 28,
+      "currency": "L28",
+      "canonical_height": 100878,
+      "ledger_state_id": "10219ab6090fc49e5c0a6928ee86c43d9d8c65ba9c7e001a18179ef601565801",
+      "execution_authorized": false,
+      "private_key": "DISPOSABLE_FORBIDDEN_FIELD_MARKER"
+    },
+    "execution_authorized": false,
+    "report_id": "afc45d35feea22a7e9c0c00d79bfc532143c0422dd65e1d3ee30e0eeb419f6c7"
+  },
+  "expected": {
+    "outcome": "reject",
+    "ok": false,
+    "code": "secret_material_forbidden",
+    "execution_authorized": false,
+    "error": {
+      "code": "secret_material_forbidden",
+      "message": "secret material forbidden"
+    }
+  },
+  "canonical": {
+    "algorithm": "sha256-utf8-exact-order-json",
+    "request_canonical_sha256": "8093b26115c17ef196111e8f4210cec1379bc3bd20ca531724726f128c2d8db2"
+  },
+  "safety": {
+    "contains_private_keys": false,
+    "contains_credentials": false,
+    "contains_production_addresses": false,
+    "contains_environment_values": false,
+    "mutates_historical_ledger": false,
+    "uses_real_balances_or_transactions": false,
+    "forbidden_field_under_test": "private_key",
+    "forbidden_field_value_is_disposable_marker": true
+  }
+}

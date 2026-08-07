@@ -352,9 +352,14 @@ class TestUniversalAccessEnvelopeCapabilityFixtures(unittest.TestCase):
                 path.parent in (ENVELOPE_DIR, DISCOVER_DIR),
                 msg=path,
             )
-        # no other json under v0.1 beyond the two allowlisted directories
-        all_json = set(FIXTURE_ROOT.rglob("*.json"))
-        self.assertEqual(all_json, set(self.paths))
+        # Discover/validate only the two F81 directories. Sibling operation
+        # directories under v0.1 are owned by later foundations and must not
+        # be included in F81 fixture counts.
+        env_json = set(ENVELOPE_DIR.glob("*.json"))
+        cap_json = set(DISCOVER_DIR.glob("*.json"))
+        self.assertEqual(env_json | cap_json, set(self.paths))
+        self.assertEqual(len(env_json), 13)
+        self.assertEqual(len(cap_json), 5)
         parents = {p.parent for p in self.paths}
         self.assertEqual(parents, {ENVELOPE_DIR, DISCOVER_DIR})
 
