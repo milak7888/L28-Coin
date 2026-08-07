@@ -1,0 +1,110 @@
+{
+  "fixture_schema": "l28-uai-conformance-fixture/v0.1",
+  "plan_version": "universal-access-conformance-plan/v0.1",
+  "fixture_id": "fx-uai-v01-0034",
+  "case_id": "UAI-CONF-v0.1-QUO-BND-003",
+  "area": "create_quote",
+  "class": "boundary",
+  "operation": "create_quote",
+  "description": "Spending-limit fields in service_terms only informational",
+  "interface_profile": "l28-universal-ai-access-interface/v0.1",
+  "fixed_clock": {
+    "verification_time": 1700000100,
+    "created_at": 1700000000,
+    "expires_at": 1700000300
+  },
+  "identities": {
+    "payer_a": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+    "payee_b": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+    "observer": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqobsrv"
+  },
+  "evaluation_time": 1700000100,
+  "request": {
+    "interface_profile": "l28-universal-ai-access-interface/v0.1",
+    "operation": "create_quote",
+    "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "created_at": 1700000000,
+    "expires_at": 1700000300,
+    "nonce": "nonce-uai-conf-a",
+    "execution_authorized": false,
+    "params": {
+      "payer_identity": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+      "payee_identity": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+      "service_id": "svc.demo.echo",
+      "service_params": {
+        "units": 1
+      },
+      "amount": 28,
+      "currency": "L28",
+      "purpose": "conformance-quote",
+      "quote_expires_at": 1700000200,
+      "quote_nonce": "nonce-uai-conf-a",
+      "max_amount": 28,
+      "rejectable": true,
+      "service_terms": {
+        "per_transaction_limit": 100,
+        "cumulative_maximum": 1000,
+        "approval_threshold": 50
+      }
+    }
+  },
+  "request_encoding": "json_object",
+  "expected": {
+    "outcome": "accept",
+    "ok": true,
+    "code": "quote_created",
+    "interface_profile": "l28-universal-ai-access-interface/v0.1",
+    "operation": "create_quote",
+    "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "execution_authorized": false,
+    "report_id": "8b14c11fcacaa61eeeda8b284af1958b27e6268a1df65320c650d06b0e619a3c",
+    "result": {
+      "quote": {
+        "quote_profile": "l28-uaii-quote/v0.1",
+        "payer_identity": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+        "payee_identity": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+        "service_id": "svc.demo.echo",
+        "service_params": {
+          "units": 1
+        },
+        "amount": 28,
+        "currency": "L28",
+        "purpose": "conformance-quote",
+        "quote_expires_at": 1700000200,
+        "quote_nonce": "nonce-uai-conf-a",
+        "max_amount": 28,
+        "rejectable": true,
+        "service_terms": {
+          "per_transaction_limit": 100,
+          "cumulative_maximum": 1000,
+          "approval_threshold": 50
+        },
+        "service_terms_hash": "34f1f7d427e94882607cf31df2cb0d893531cbb43aca5bc3d522b13ae2305e12",
+        "spend_authorized": false,
+        "execution_authorized": false
+      },
+      "quote_id": "54818fc9b5a520b2a3b529399ae6b298dcb89a2d647ef4abb3c2a610f8a91959",
+      "spend_authorized": false,
+      "execution_authorized": false,
+      "read_only": true,
+      "deterministic": true,
+      "limits_informational_only": true
+    },
+    "error": null
+  },
+  "canonical": {
+    "algorithm": "sha256-utf8-exact-order-json",
+    "request_canonical_sha256": "8411377e9b0f8a70797b4540bd43155e67762218bba4e38b74888942e5a051a7",
+    "quote_canonical_sha256": "54818fc9b5a520b2a3b529399ae6b298dcb89a2d647ef4abb3c2a610f8a91959",
+    "quote_id": "54818fc9b5a520b2a3b529399ae6b298dcb89a2d647ef4abb3c2a610f8a91959",
+    "service_terms_hash": "34f1f7d427e94882607cf31df2cb0d893531cbb43aca5bc3d522b13ae2305e12"
+  },
+  "safety": {
+    "contains_private_keys": false,
+    "contains_credentials": false,
+    "contains_production_addresses": false,
+    "contains_environment_values": false,
+    "mutates_historical_ledger": false,
+    "uses_real_balances_or_transactions": false
+  }
+}

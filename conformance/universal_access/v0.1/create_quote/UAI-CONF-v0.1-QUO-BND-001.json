@@ -1,0 +1,107 @@
+{
+  "fixture_schema": "l28-uai-conformance-fixture/v0.1",
+  "plan_version": "universal-access-conformance-plan/v0.1",
+  "fixture_id": "fx-uai-v01-0032",
+  "case_id": "UAI-CONF-v0.1-QUO-BND-001",
+  "area": "create_quote",
+  "class": "boundary",
+  "operation": "create_quote",
+  "description": "quote_expires_at equal envelope expires_at",
+  "interface_profile": "l28-universal-ai-access-interface/v0.1",
+  "fixed_clock": {
+    "verification_time": 1700000100,
+    "created_at": 1700000000,
+    "expires_at": 1700000300
+  },
+  "identities": {
+    "payer_a": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+    "payee_b": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+    "observer": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqobsrv"
+  },
+  "evaluation_time": 1700000100,
+  "request": {
+    "interface_profile": "l28-universal-ai-access-interface/v0.1",
+    "operation": "create_quote",
+    "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "created_at": 1700000000,
+    "expires_at": 1700000300,
+    "nonce": "nonce-uai-conf-a",
+    "execution_authorized": false,
+    "params": {
+      "payer_identity": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+      "payee_identity": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+      "service_id": "svc.demo.echo",
+      "service_params": {
+        "units": 1
+      },
+      "amount": 28,
+      "currency": "L28",
+      "purpose": "conformance-quote",
+      "quote_expires_at": 1700000300,
+      "quote_nonce": "nonce-uai-conf-a",
+      "max_amount": 28,
+      "rejectable": true,
+      "service_terms": {
+        "per_transaction_limit": 100,
+        "cumulative_maximum": 1000
+      }
+    }
+  },
+  "request_encoding": "json_object",
+  "expected": {
+    "outcome": "accept",
+    "ok": true,
+    "code": "quote_created",
+    "interface_profile": "l28-universal-ai-access-interface/v0.1",
+    "operation": "create_quote",
+    "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "execution_authorized": false,
+    "report_id": "10abb96b214be6a2fd29cfb6d214d4c995e7179d633a642bf58bcaf15dceb190",
+    "result": {
+      "quote": {
+        "quote_profile": "l28-uaii-quote/v0.1",
+        "payer_identity": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+        "payee_identity": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+        "service_id": "svc.demo.echo",
+        "service_params": {
+          "units": 1
+        },
+        "amount": 28,
+        "currency": "L28",
+        "purpose": "conformance-quote",
+        "quote_expires_at": 1700000300,
+        "quote_nonce": "nonce-uai-conf-a",
+        "max_amount": 28,
+        "rejectable": true,
+        "service_terms": {
+          "per_transaction_limit": 100,
+          "cumulative_maximum": 1000
+        },
+        "service_terms_hash": "924c4e5c4c2c16ec0c58a11e470ce95ca74e2556fc0aab02c6f1524fde4e6def",
+        "spend_authorized": false,
+        "execution_authorized": false
+      },
+      "quote_id": "6a5bb9a4ff6226debac7c2f0a714956c057668896bc35b932500095dfe9cec1a",
+      "spend_authorized": false,
+      "execution_authorized": false,
+      "read_only": true,
+      "deterministic": true
+    },
+    "error": null
+  },
+  "canonical": {
+    "algorithm": "sha256-utf8-exact-order-json",
+    "request_canonical_sha256": "744472dc10934bdb999c394e6c2389cdc1dc49dff321963bbda03ff1658680c3",
+    "quote_canonical_sha256": "6a5bb9a4ff6226debac7c2f0a714956c057668896bc35b932500095dfe9cec1a",
+    "quote_id": "6a5bb9a4ff6226debac7c2f0a714956c057668896bc35b932500095dfe9cec1a",
+    "service_terms_hash": "924c4e5c4c2c16ec0c58a11e470ce95ca74e2556fc0aab02c6f1524fde4e6def"
+  },
+  "safety": {
+    "contains_private_keys": false,
+    "contains_credentials": false,
+    "contains_production_addresses": false,
+    "contains_environment_values": false,
+    "mutates_historical_ledger": false,
+    "uses_real_balances_or_transactions": false
+  }
+}

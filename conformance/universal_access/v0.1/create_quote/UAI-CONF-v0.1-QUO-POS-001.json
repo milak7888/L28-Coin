@@ -1,0 +1,108 @@
+{
+  "fixture_schema": "l28-uai-conformance-fixture/v0.1",
+  "plan_version": "universal-access-conformance-plan/v0.1",
+  "fixture_id": "fx-uai-v01-0027",
+  "case_id": "UAI-CONF-v0.1-QUO-POS-001",
+  "area": "create_quote",
+  "class": "positive",
+  "operation": "create_quote",
+  "description": "Valid quote params; rejectable=true",
+  "interface_profile": "l28-universal-ai-access-interface/v0.1",
+  "fixed_clock": {
+    "verification_time": 1700000100,
+    "created_at": 1700000000,
+    "expires_at": 1700000300
+  },
+  "identities": {
+    "payer_a": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+    "payee_b": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+    "observer": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqobsrv"
+  },
+  "evaluation_time": 1700000100,
+  "request": {
+    "interface_profile": "l28-universal-ai-access-interface/v0.1",
+    "operation": "create_quote",
+    "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "created_at": 1700000000,
+    "expires_at": 1700000300,
+    "nonce": "nonce-uai-conf-a",
+    "execution_authorized": false,
+    "params": {
+      "payer_identity": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+      "payee_identity": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+      "service_id": "svc.demo.echo",
+      "service_params": {
+        "units": 1
+      },
+      "amount": 28,
+      "currency": "L28",
+      "purpose": "conformance-quote",
+      "quote_expires_at": 1700000200,
+      "quote_nonce": "nonce-uai-conf-a",
+      "max_amount": 28,
+      "rejectable": true,
+      "service_terms": {
+        "per_transaction_limit": 100,
+        "cumulative_maximum": 1000
+      }
+    }
+  },
+  "request_encoding": "json_object",
+  "expected": {
+    "outcome": "accept",
+    "ok": true,
+    "code": "quote_created",
+    "interface_profile": "l28-universal-ai-access-interface/v0.1",
+    "operation": "create_quote",
+    "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "execution_authorized": false,
+    "report_id": "3db881009d18374bd35b4a345e4de8f78c7fe905b17f4c37d541b15ddfb4870c",
+    "result": {
+      "quote": {
+        "quote_profile": "l28-uaii-quote/v0.1",
+        "payer_identity": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+        "payee_identity": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+        "service_id": "svc.demo.echo",
+        "service_params": {
+          "units": 1
+        },
+        "amount": 28,
+        "currency": "L28",
+        "purpose": "conformance-quote",
+        "quote_expires_at": 1700000200,
+        "quote_nonce": "nonce-uai-conf-a",
+        "max_amount": 28,
+        "rejectable": true,
+        "service_terms": {
+          "per_transaction_limit": 100,
+          "cumulative_maximum": 1000
+        },
+        "service_terms_hash": "924c4e5c4c2c16ec0c58a11e470ce95ca74e2556fc0aab02c6f1524fde4e6def",
+        "spend_authorized": false,
+        "execution_authorized": false
+      },
+      "quote_id": "00b822fd34bb02006c8939253ad77091615581001266d6e78e0be186b6fffa30",
+      "spend_authorized": false,
+      "execution_authorized": false,
+      "read_only": true,
+      "deterministic": true
+    },
+    "error": null
+  },
+  "canonical": {
+    "algorithm": "sha256-utf8-exact-order-json",
+    "request_canonical_sha256": "43d1670d1bf99e862ed534fb8302555682eef4b922b1d0b3c84cd5179245c470",
+    "quote_canonical_sha256": "00b822fd34bb02006c8939253ad77091615581001266d6e78e0be186b6fffa30",
+    "quote_id": "00b822fd34bb02006c8939253ad77091615581001266d6e78e0be186b6fffa30",
+    "service_terms_hash": "924c4e5c4c2c16ec0c58a11e470ce95ca74e2556fc0aab02c6f1524fde4e6def"
+  },
+  "adapter_expectation": "identical_public_outcome",
+  "safety": {
+    "contains_private_keys": false,
+    "contains_credentials": false,
+    "contains_production_addresses": false,
+    "contains_environment_values": false,
+    "mutates_historical_ledger": false,
+    "uses_real_balances_or_transactions": false
+  }
+}
