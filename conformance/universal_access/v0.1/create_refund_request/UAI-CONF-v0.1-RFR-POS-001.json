@@ -1,0 +1,108 @@
+{
+  "fixture_schema": "l28-uai-conformance-fixture/v0.1",
+  "plan_version": "universal-access-conformance-plan/v0.1",
+  "fixture_id": "fx-uai-v01-0059",
+  "case_id": "UAI-CONF-v0.1-RFR-POS-001",
+  "area": "create_refund_request",
+  "class": "positive",
+  "operation": "create_refund_request",
+  "description": "Schema-valid deferred refund request object (message only)",
+  "interface_profile": "l28-universal-ai-access-interface/v0.1",
+  "fixed_clock": {
+    "verification_time": 1700000100,
+    "created_at": 1700000000,
+    "expires_at": 1700000300
+  },
+  "identities": {
+    "payer_a": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+    "payee_b": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+    "observer": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqobsrv"
+  },
+  "evaluation_time": 1700000100,
+  "request": {
+    "interface_profile": "l28-universal-ai-access-interface/v0.1",
+    "operation": "create_refund_request",
+    "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "created_at": 1700000000,
+    "expires_at": 1700000300,
+    "nonce": "nonce-uai-conf-a",
+    "execution_authorized": false,
+    "params": {
+      "refund_request_profile": "l28-uaii-refund-request/v0.1",
+      "original_receipt_id": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "original_quote_id": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "payer_identity": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+      "payee_identity": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+      "asset_id": "L28",
+      "amount": 28,
+      "refund_reason": "conformance-deferred-refund",
+      "refund_nonce": "nonce-uai-conf-a",
+      "refund_expires_at": 1700000200,
+      "spend_authorized": false,
+      "execution_authorized": false,
+      "ledger_mutated": false
+    }
+  },
+  "request_encoding": "json_object",
+  "supporting_objects": {
+    "original_receipt": {
+      "receipt_id": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "quote_id": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "payer_identity": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+      "payee_identity": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+      "asset_id": "L28",
+      "amount": 28,
+      "currency": "L28"
+    }
+  },
+  "expected": {
+    "outcome": "accept",
+    "ok": true,
+    "code": "deferred_non_executing",
+    "interface_profile": "l28-universal-ai-access-interface/v0.1",
+    "operation": "create_refund_request",
+    "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "execution_authorized": false,
+    "report_id": "327977b7bd4e42c6aa76b63e38ec8908a625ae8c732e3cdd87636791af05199e",
+    "result": {
+      "refund_request": {
+        "refund_request_profile": "l28-uaii-refund-request/v0.1",
+        "original_receipt_id": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "original_quote_id": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "payer_identity": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+        "payee_identity": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+        "asset_id": "L28",
+        "amount": 28,
+        "refund_reason": "conformance-deferred-refund",
+        "refund_nonce": "nonce-uai-conf-a",
+        "refund_expires_at": 1700000200,
+        "spend_authorized": false,
+        "execution_authorized": false,
+        "ledger_mutated": false
+      },
+      "deferred": true,
+      "non_executing": true,
+      "message_shape_only": true,
+      "spend_authorized": false,
+      "signing_authorized": false,
+      "settlement_authorized": false,
+      "ledger_mutated": false,
+      "execution_authorized": false
+    },
+    "error": null
+  },
+  "canonical": {
+    "algorithm": "sha256-utf8-exact-order-json",
+    "request_canonical_sha256": "52fbd2b9b5b0b97c1707bdc933d397e7b3894c01f1ba982cc78c25f4801e7391",
+    "refund_request_canonical_sha256": "2dbf9a79e0b525929aa2164c0c3b5aa43fc79bcfc3b0039defeb98ea8500a6af"
+  },
+  "adapter_expectation": "identical_public_outcome",
+  "safety": {
+    "contains_private_keys": false,
+    "contains_credentials": false,
+    "contains_production_addresses": false,
+    "contains_environment_values": false,
+    "mutates_historical_ledger": false,
+    "uses_real_balances_or_transactions": false
+  }
+}

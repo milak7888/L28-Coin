@@ -1,0 +1,81 @@
+{
+  "fixture_schema": "l28-uai-conformance-fixture/v0.1",
+  "plan_version": "universal-access-conformance-plan/v0.1",
+  "fixture_id": "fx-uai-v01-0060",
+  "case_id": "UAI-CONF-v0.1-RFR-NEG-001",
+  "area": "create_refund_request",
+  "class": "negative",
+  "operation": "create_refund_request",
+  "description": "Operation invoked as executable settlement",
+  "interface_profile": "l28-universal-ai-access-interface/v0.1",
+  "fixed_clock": {
+    "verification_time": 1700000100,
+    "created_at": 1700000000,
+    "expires_at": 1700000300
+  },
+  "identities": {
+    "payer_a": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+    "payee_b": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+    "observer": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqobsrv"
+  },
+  "evaluation_time": 1700000100,
+  "request": {
+    "interface_profile": "l28-universal-ai-access-interface/v0.1",
+    "operation": "create_refund_request",
+    "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "created_at": 1700000000,
+    "expires_at": 1700000300,
+    "nonce": "nonce-uai-conf-a",
+    "execution_authorized": false,
+    "params": {
+      "refund_request_profile": "l28-uaii-refund-request/v0.1",
+      "original_receipt_id": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "original_quote_id": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "payer_identity": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+      "payee_identity": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+      "asset_id": "L28",
+      "amount": 28,
+      "refund_reason": "conformance-deferred-refund",
+      "refund_nonce": "nonce-uai-conf-a",
+      "refund_expires_at": 1700000200,
+      "spend_authorized": false,
+      "execution_authorized": false,
+      "ledger_mutated": false,
+      "execute_settlement": true
+    }
+  },
+  "request_encoding": "json_object",
+  "supporting_objects": {
+    "original_receipt": {
+      "receipt_id": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "quote_id": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "payer_identity": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+      "payee_identity": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+      "asset_id": "L28",
+      "amount": 28,
+      "currency": "L28"
+    }
+  },
+  "expected": {
+    "outcome": "reject",
+    "ok": false,
+    "code": "operation_unsupported",
+    "execution_authorized": false,
+    "error": {
+      "code": "operation_unsupported",
+      "message": "create_refund_request is deferred and non-executing"
+    }
+  },
+  "canonical": {
+    "algorithm": "sha256-utf8-exact-order-json",
+    "request_canonical_sha256": "02650c7b6275321a48ceb494dd25a9f3829e10803e316370c96fad655a02dd15"
+  },
+  "safety": {
+    "contains_private_keys": false,
+    "contains_credentials": false,
+    "contains_production_addresses": false,
+    "contains_environment_values": false,
+    "mutates_historical_ledger": false,
+    "uses_real_balances_or_transactions": false
+  }
+}
