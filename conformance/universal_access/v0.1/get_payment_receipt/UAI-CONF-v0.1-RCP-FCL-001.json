@@ -1,0 +1,117 @@
+{
+  "fixture_schema": "l28-uai-conformance-fixture/v0.1",
+  "plan_version": "universal-access-conformance-plan/v0.1",
+  "fixture_id": "fx-uai-v01-0049",
+  "case_id": "UAI-CONF-v0.1-RCP-FCL-001",
+  "area": "get_payment_receipt",
+  "class": "fail_closed",
+  "operation": "get_payment_receipt",
+  "description": "Treat F56 unsigned receipt as F64 signed receipt",
+  "interface_profile": "l28-universal-ai-access-interface/v0.1",
+  "fixed_clock": {
+    "verification_time": 1700000100,
+    "created_at": 1700000000,
+    "expires_at": 1700000300
+  },
+  "identities": {
+    "payer_a": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+    "payee_b": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+    "observer": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqobsrv"
+  },
+  "evaluation_time": 1700000100,
+  "request": {
+    "interface_profile": "l28-universal-ai-access-interface/v0.1",
+    "operation": "get_payment_receipt",
+    "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "created_at": 1700000000,
+    "expires_at": 1700000300,
+    "nonce": "nonce-uai-conf-a",
+    "execution_authorized": false,
+    "params": {
+      "quote_id": "00b822fd34bb02006c8939253ad77091615581001266d6e78e0be186b6fffa30",
+      "payment_request_id": "1dcbae9620a4c216543c4a527fb0f48a2206dbe7733eba9c88b3238502061a55",
+      "payer_identity": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+      "payee_identity": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+      "amount": 28,
+      "currency": "L28",
+      "service_id": "svc.demo.echo",
+      "service_result_hash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "l28_tx_id": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "l28_sender": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+      "l28_receiver": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+      "l28_amount": 28,
+      "l28_timestamp": 1700000000,
+      "verification_status": "verified",
+      "completed_at": 1700000100,
+      "receipt_nonce": "nonce-uai-conf-receipt"
+    }
+  },
+  "request_encoding": "json_object",
+  "candidate_response": {
+    "ok": true,
+    "code": "payment_receipt_ok",
+    "interface_profile": "l28-universal-ai-access-interface/v0.1",
+    "operation": "get_payment_receipt",
+    "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "result": {
+      "receipt": {
+        "receipt_profile": "l28-uaii-signed-receipt/v0.1",
+        "quote_id": "00b822fd34bb02006c8939253ad77091615581001266d6e78e0be186b6fffa30",
+        "payment_request_id": "1dcbae9620a4c216543c4a527fb0f48a2206dbe7733eba9c88b3238502061a55",
+        "payer_identity": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+        "payee_identity": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+        "amount": 28,
+        "currency": "L28",
+        "service_id": "svc.demo.echo",
+        "service_result_hash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "l28_tx_id": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "l28_sender": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+        "l28_receiver": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+        "l28_amount": 28,
+        "l28_timestamp": 1700000000,
+        "verification_status": "verified",
+        "completed_at": 1700000100,
+        "receipt_nonce": "nonce-uai-conf-receipt",
+        "completion_assertion": "provider_asserted_complete",
+        "spend_authorized": false,
+        "signing_authorized": false,
+        "settlement_authorized": false,
+        "ledger_mutated": false,
+        "execution_authorized": false,
+        "audit_id": "5b25833c7d06382a5e7bb0846b62f91d55ba62cc2139a86bb7dd8441274c7210",
+        "receipt_id": "ff562a8492c1a71de282f76494abe9f261dde4cd0516ffd3fac8c9e1ab2d79b2"
+      },
+      "receipt_id": "ff562a8492c1a71de282f76494abe9f261dde4cd0516ffd3fac8c9e1ab2d79b2",
+      "receipt_profile": "l28-uaii-signed-receipt/v0.1",
+      "spend_authorized": false,
+      "signing_authorized": false,
+      "settlement_authorized": false,
+      "ledger_mutated": false,
+      "execution_authorized": false
+    },
+    "execution_authorized": false,
+    "report_id": "775e65c4eea519a01e4a1d94849b45c3d230ed45b4888fa9e0dfbbe684a6294e"
+  },
+  "expected": {
+    "outcome": "reject",
+    "ok": false,
+    "code": "schema_invalid",
+    "execution_authorized": false,
+    "error": {
+      "code": "schema_invalid",
+      "message": "receipt profile conflation forbidden; payment-receipt distinct from signed-receipt"
+    }
+  },
+  "canonical": {
+    "algorithm": "sha256-utf8-exact-order-json",
+    "request_canonical_sha256": "80987a987729dbda4b2d4f41c3beae6f22f8ce75acfdf78e803f41e631d16cd7"
+  },
+  "safety": {
+    "contains_private_keys": false,
+    "contains_credentials": false,
+    "contains_production_addresses": false,
+    "contains_environment_values": false,
+    "mutates_historical_ledger": false,
+    "uses_real_balances_or_transactions": false
+  }
+}
