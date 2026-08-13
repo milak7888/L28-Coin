@@ -1,0 +1,89 @@
+{
+  "fixture_schema": "l28-uai-conformance-fixture/v0.1",
+  "plan_version": "universal-access-conformance-plan/v0.1",
+  "fixture_id": "fx-uai-v01-0051",
+  "case_id": "UAI-CONF-v0.1-VSR-NEG-001",
+  "area": "verify_signed_receipt",
+  "class": "negative",
+  "operation": "verify_signed_receipt",
+  "description": "Invalid public signature material",
+  "interface_profile": "l28-universal-ai-access-interface/v0.1",
+  "fixed_clock": {
+    "verification_time": 1700000100,
+    "created_at": 1700000000,
+    "expires_at": 1700000300
+  },
+  "identities": {
+    "payer_a": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+    "payee_b": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+    "observer": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqobsrv"
+  },
+  "evaluation_time": 1700000100,
+  "request": {
+    "interface_profile": "l28-universal-ai-access-interface/v0.1",
+    "operation": "verify_signed_receipt",
+    "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "created_at": 1700000000,
+    "expires_at": 1700000300,
+    "nonce": "nonce-uai-conf-a",
+    "execution_authorized": false,
+    "params": {
+      "signed_receipt": {
+        "receipt_profile": "l28-uaii-signed-receipt/v0.1",
+        "receipt_id": "e3218ab5ec3eb886fb577ef679bf227dc7873d82e90caf459a83761d2e0ff703",
+        "prior_receipt_id": null,
+        "correlation_id": "f1aae599c42ec0f1cd2dc848f0918fd50bab43f32d285a090b9683aa8901cb7b",
+        "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "quote_id": "00b822fd34bb02006c8939253ad77091615581001266d6e78e0be186b6fffa30",
+        "service_result_id": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "payer_public_identity": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+        "provider_public_identity": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+        "asset_id": "L28",
+        "amount": 28,
+        "purpose": "signed_receipt",
+        "created_at": 1700000000,
+        "expires_at": 1700000300,
+        "receipt_nonce": "nonce-uai-conf-receipt",
+        "transaction_id": "",
+        "settlement_status": "authorization_signed",
+        "signer_algorithm_profile": "ed25519-pure/v0.1",
+        "signer_public_key_id": "a95c5a79468f0166b0b4b7bbc66dbdd34115890d4268ac3a8cfbd6d2dc32fc39",
+        "signer_public_key": "14d8b0f56f60f970ae6a93ffb8bc8196047e1fd89fa98adb033652e72b1053e6",
+        "signed_payload_digest": "74c2435848d89da294584a9bce83017619f0f9d7053a525b6301d166cb8362e4",
+        "signature": "not-a-valid-public-signature",
+        "signing_authorized": false,
+        "spend_authorized": false,
+        "settlement_authorized": false,
+        "ledger_mutated": false,
+        "execution_authorized": false
+      },
+      "accepted_receipt_ids": [],
+      "verification_time": 1700000100,
+      "governance_approval_evidence": {},
+      "authorization_response_evidence": {}
+    }
+  },
+  "request_encoding": "json_object",
+  "expected": {
+    "outcome": "reject",
+    "ok": false,
+    "code": "signature_invalid",
+    "execution_authorized": false,
+    "error": {
+      "code": "signature_invalid",
+      "message": "invalid public signature material"
+    }
+  },
+  "canonical": {
+    "algorithm": "sha256-utf8-exact-order-json",
+    "request_canonical_sha256": "bae649d33aef0e7a330f9d9db8057fc54b85ca9305abf5e81bc41fb6bf7a9715"
+  },
+  "safety": {
+    "contains_private_keys": false,
+    "contains_credentials": false,
+    "contains_production_addresses": false,
+    "contains_environment_values": false,
+    "mutates_historical_ledger": false,
+    "uses_real_balances_or_transactions": false
+  }
+}

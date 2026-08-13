@@ -1,0 +1,131 @@
+{
+  "fixture_schema": "l28-uai-conformance-fixture/v0.1",
+  "plan_version": "universal-access-conformance-plan/v0.1",
+  "fixture_id": "fx-uai-v01-0055",
+  "case_id": "UAI-CONF-v0.1-VSR-BND-002",
+  "area": "verify_signed_receipt",
+  "class": "boundary",
+  "operation": "verify_signed_receipt",
+  "description": "Approval-threshold fields present as public evidence only",
+  "interface_profile": "l28-universal-ai-access-interface/v0.1",
+  "fixed_clock": {
+    "verification_time": 1700000100,
+    "created_at": 1700000000,
+    "expires_at": 1700000300
+  },
+  "identities": {
+    "payer_a": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+    "payee_b": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+    "observer": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqobsrv"
+  },
+  "evaluation_time": 1700000100,
+  "request": {
+    "interface_profile": "l28-universal-ai-access-interface/v0.1",
+    "operation": "verify_signed_receipt",
+    "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "created_at": 1700000000,
+    "expires_at": 1700000300,
+    "nonce": "nonce-uai-conf-a",
+    "execution_authorized": false,
+    "params": {
+      "signed_receipt": {
+        "receipt_profile": "l28-uaii-signed-receipt/v0.1",
+        "receipt_id": "e3218ab5ec3eb886fb577ef679bf227dc7873d82e90caf459a83761d2e0ff703",
+        "prior_receipt_id": null,
+        "correlation_id": "f1aae599c42ec0f1cd2dc848f0918fd50bab43f32d285a090b9683aa8901cb7b",
+        "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "quote_id": "00b822fd34bb02006c8939253ad77091615581001266d6e78e0be186b6fffa30",
+        "service_result_id": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "payer_public_identity": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+        "provider_public_identity": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+        "asset_id": "L28",
+        "amount": 28,
+        "purpose": "signed_receipt",
+        "created_at": 1700000000,
+        "expires_at": 1700000300,
+        "receipt_nonce": "nonce-uai-conf-receipt",
+        "transaction_id": "",
+        "settlement_status": "authorization_signed",
+        "signer_algorithm_profile": "ed25519-pure/v0.1",
+        "signer_public_key_id": "a95c5a79468f0166b0b4b7bbc66dbdd34115890d4268ac3a8cfbd6d2dc32fc39",
+        "signer_public_key": "14d8b0f56f60f970ae6a93ffb8bc8196047e1fd89fa98adb033652e72b1053e6",
+        "signed_payload_digest": "74c2435848d89da294584a9bce83017619f0f9d7053a525b6301d166cb8362e4",
+        "signature": "d20db619740c442a3fde53d56184395d61c88cba859fce04c1cda010eb9998585af90126649ac953f7300532e8bb14b06e0ec7029f244c2c082413b693522d74",
+        "signing_authorized": false,
+        "spend_authorized": false,
+        "settlement_authorized": false,
+        "ledger_mutated": false,
+        "execution_authorized": false
+      },
+      "accepted_receipt_ids": [],
+      "verification_time": 1700000100,
+      "governance_approval_evidence": {},
+      "authorization_response_evidence": {}
+    }
+  },
+  "request_encoding": "json_object",
+  "supporting_objects": {
+    "approval_threshold_evidence": {
+      "policy_id": "l28-uai-conf-limit-policy-v01",
+      "per_transaction_limit": 100,
+      "cumulative_maximum": 1000,
+      "proposed_amount": 28,
+      "evaluation_result": "within_limit",
+      "authorization_granted": false,
+      "spend_authorized": false,
+      "execution_authorized": false
+    }
+  },
+  "expected": {
+    "outcome": "accept",
+    "ok": true,
+    "code": "signed_receipt_verified",
+    "interface_profile": "l28-universal-ai-access-interface/v0.1",
+    "operation": "verify_signed_receipt",
+    "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "execution_authorized": false,
+    "report_id": "39cad9375f412d63f05dddfaedc0c39d20f51e5cdd33f17102e8d2d190bc1a1f",
+    "result": {
+      "verification_status": "verified",
+      "verification_composition": "allowed",
+      "replay_status": "fresh",
+      "expiration_status": "valid",
+      "acceptance_decision": "accepted",
+      "rejection_reason": "",
+      "receipt_profile": "l28-uaii-signed-receipt/v0.1",
+      "receipt_id": "e3218ab5ec3eb886fb577ef679bf227dc7873d82e90caf459a83761d2e0ff703",
+      "signed_payload_digest": "74c2435848d89da294584a9bce83017619f0f9d7053a525b6301d166cb8362e4",
+      "signer_algorithm_profile": "ed25519-pure/v0.1",
+      "signer_public_key_id": "a95c5a79468f0166b0b4b7bbc66dbdd34115890d4268ac3a8cfbd6d2dc32fc39",
+      "settlement_status": "authorization_signed",
+      "verification_time": 1700000100,
+      "governance_approval_evidence_empty": true,
+      "authorization_response_evidence_empty": true,
+      "signing_authorized": false,
+      "spend_authorized": false,
+      "settlement_authorized": false,
+      "ledger_mutated": false,
+      "execution_authorized": false,
+      "transition_applied": false,
+      "application_authorized": false,
+      "authorization_granted": false,
+      "authorization_active": false,
+      "approval_threshold_fields_are_evidence_only": true,
+      "implicit_authorization": false
+    },
+    "error": null
+  },
+  "canonical": {
+    "algorithm": "sha256-utf8-exact-order-json",
+    "request_canonical_sha256": "72506be78dee3a73d7e6c8ecec87c6820764de00a5b57532c70a58fd3a424c02",
+    "receipt_id": "e3218ab5ec3eb886fb577ef679bf227dc7873d82e90caf459a83761d2e0ff703"
+  },
+  "safety": {
+    "contains_private_keys": false,
+    "contains_credentials": false,
+    "contains_production_addresses": false,
+    "contains_environment_values": false,
+    "mutates_historical_ledger": false,
+    "uses_real_balances_or_transactions": false
+  }
+}
