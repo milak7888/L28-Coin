@@ -1,0 +1,73 @@
+{
+  "fixture_schema": "l28-uai-conformance-fixture/v0.1",
+  "plan_version": "universal-access-conformance-plan/v0.1",
+  "fixture_id": "fx-uai-v01-0071",
+  "case_id": "UAI-CONF-v0.1-CTL-BND-001",
+  "area": "control",
+  "class": "boundary",
+  "operation": "discover_capabilities",
+  "description": "Audit identifiers are exactly 64 lowercase hex",
+  "interface_profile": "l28-universal-ai-access-interface/v0.1",
+  "fixed_clock": {
+    "verification_time": 1700000100,
+    "created_at": 1700000000,
+    "expires_at": 1700000300
+  },
+  "identities": {
+    "payer_a": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+    "payee_b": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+    "observer": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqobsrv"
+  },
+  "evaluation_time": 1700000100,
+  "request": {
+    "interface_profile": "l28-universal-ai-access-interface/v0.1",
+    "operation": "discover_capabilities",
+    "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "created_at": 1700000000,
+    "expires_at": 1700000300,
+    "nonce": "nonce-uai-conf-a",
+    "execution_authorized": false,
+    "params": {
+      "include_adapter_declarations": false
+    }
+  },
+  "request_encoding": "json_object",
+  "expected": {
+    "outcome": "accept",
+    "ok": true,
+    "code": "ok",
+    "interface_profile": "l28-universal-ai-access-interface/v0.1",
+    "operation": "discover_capabilities",
+    "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "execution_authorized": false,
+    "report_id": "9b43681b18602a43f1b343b2aa1c3d1ef9d1a3442ec603e44344ebbcba06ac55",
+    "result": {
+      "deterministic_equivalence": true,
+      "spend_authorized": false,
+      "signing_authorized": false,
+      "settlement_authorized": false,
+      "ledger_mutated": false,
+      "execution_authorized": false,
+      "audit_ids_lowercase_hex64": true,
+      "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "quote_id": "00b822fd34bb02006c8939253ad77091615581001266d6e78e0be186b6fffa30",
+      "receipt_id": "e3218ab5ec3eb886fb577ef679bf227dc7873d82e90caf459a83761d2e0ff703"
+    },
+    "error": null
+  },
+  "canonical": {
+    "algorithm": "sha256-utf8-exact-order-json",
+    "request_canonical_sha256": "16a48dd7cabde511179b2500a6e42432642701640afc8896b23c105a7cd0fa5c",
+    "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "quote_id": "00b822fd34bb02006c8939253ad77091615581001266d6e78e0be186b6fffa30",
+    "receipt_id": "e3218ab5ec3eb886fb577ef679bf227dc7873d82e90caf459a83761d2e0ff703"
+  },
+  "safety": {
+    "contains_private_keys": false,
+    "contains_credentials": false,
+    "contains_production_addresses": false,
+    "contains_environment_values": false,
+    "mutates_historical_ledger": false,
+    "uses_real_balances_or_transactions": false
+  }
+}
