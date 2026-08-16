@@ -1,0 +1,69 @@
+{
+  "fixture_schema": "l28-uai-conformance-fixture/v0.1",
+  "plan_version": "universal-access-conformance-plan/v0.1",
+  "fixture_id": "fx-uai-v01-0064",
+  "case_id": "UAI-CONF-v0.1-RRC-NEG-001",
+  "area": "create_refund_receipt",
+  "class": "negative",
+  "operation": "create_refund_receipt",
+  "description": "Refund receipt claims settlement_finalized=true",
+  "interface_profile": "l28-universal-ai-access-interface/v0.1",
+  "fixed_clock": {
+    "verification_time": 1700000100,
+    "created_at": 1700000000,
+    "expires_at": 1700000300
+  },
+  "identities": {
+    "payer_a": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+    "payee_b": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+    "observer": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqobsrv"
+  },
+  "evaluation_time": 1700000100,
+  "request": {
+    "interface_profile": "l28-universal-ai-access-interface/v0.1",
+    "operation": "create_refund_receipt",
+    "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "created_at": 1700000000,
+    "expires_at": 1700000300,
+    "nonce": "nonce-uai-conf-a",
+    "execution_authorized": false,
+    "params": {
+      "refund_receipt_profile": "l28-uaii-refund-receipt/v0.1",
+      "refund_request_id": "2dbf9a79e0b525929aa2164c0c3b5aa43fc79bcfc3b0039defeb98ea8500a6af",
+      "original_receipt_id": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "refund_status": "deferred",
+      "amount": 28,
+      "asset_id": "L28",
+      "payer_identity": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+      "payee_identity": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+      "audit_id": "764374161da4d063c9e87616c5dec573635712c3c6fdea6fc5ee97614369ffab",
+      "spend_authorized": false,
+      "execution_authorized": false,
+      "ledger_mutated": false,
+      "settlement_finalized": true
+    }
+  },
+  "request_encoding": "json_object",
+  "expected": {
+    "outcome": "reject",
+    "ok": false,
+    "code": "schema_invalid",
+    "execution_authorized": false,
+    "error": {
+      "code": "schema_invalid",
+      "message": "settlement_finalized must be false on deferred refund receipts"
+    }
+  },
+  "canonical": {
+    "algorithm": "sha256-utf8-exact-order-json",
+    "request_canonical_sha256": "d2a7904c66bcc01ce7aea110c6fcb2d7afccb689ca4a25e4d28edcb724323bea"
+  },
+  "safety": {
+    "contains_private_keys": false,
+    "contains_credentials": false,
+    "contains_production_addresses": false,
+    "contains_environment_values": false,
+    "mutates_historical_ledger": false,
+    "uses_real_balances_or_transactions": false
+  }
+}
