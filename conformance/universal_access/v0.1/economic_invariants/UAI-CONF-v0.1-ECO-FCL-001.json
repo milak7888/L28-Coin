@@ -1,0 +1,86 @@
+{
+  "fixture_schema": "l28-uai-conformance-fixture/v0.1",
+  "plan_version": "universal-access-conformance-plan/v0.1",
+  "fixture_id": "fx-uai-v01-0077",
+  "case_id": "UAI-CONF-v0.1-ECO-FCL-001",
+  "area": "economic_invariants",
+  "class": "fail_closed",
+  "operation": "get_protocol_status",
+  "description": "Attempt to mutate immutable historical evidence",
+  "interface_profile": "l28-universal-ai-access-interface/v0.1",
+  "fixed_clock": {
+    "verification_time": 1700000100,
+    "created_at": 1700000000,
+    "expires_at": 1700000300
+  },
+  "identities": {
+    "payer_a": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+    "payee_b": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+    "observer": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqobsrv"
+  },
+  "evaluation_time": 1700000100,
+  "consensus_view": {
+    "protocol_version": "1.0.0",
+    "protocol_status": "FROZEN",
+    "available": true,
+    "height_authority": "consensus_derived",
+    "protected_economics": {
+      "hard_cap_l28": 28000000,
+      "emission_ceiling_l28": 11130000,
+      "historically_mined_l28": 2824584,
+      "treasury_locked_l28": 500000,
+      "circulating_snapshot_l28": 2324584,
+      "issuance_mechanism": "coinbase_only",
+      "height_authority": "consensus_derived",
+      "historical_evidence": "immutable",
+      "adapter_override_allowed": false
+    }
+  },
+  "request": {
+    "interface_profile": "l28-universal-ai-access-interface/v0.1",
+    "operation": "get_protocol_status",
+    "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "created_at": 1700000000,
+    "expires_at": 1700000300,
+    "nonce": "nonce-uai-conf-a",
+    "execution_authorized": false,
+    "params": {
+      "historically_mined_l28": 0,
+      "historical_evidence": "rewritten"
+    }
+  },
+  "request_encoding": "json_object",
+  "expected": {
+    "outcome": "reject",
+    "ok": false,
+    "code": "adapter_override_forbidden",
+    "execution_authorized": false,
+    "result": {
+      "spend_authorized": false,
+      "signing_authorized": false,
+      "settlement_authorized": false,
+      "ledger_mutated": false,
+      "execution_authorized": false,
+      "transaction_submitted": false,
+      "historical_evidence": "immutable",
+      "historically_mined_l28": 2824584,
+      "historical_data_unchanged": true
+    },
+    "error": {
+      "code": "adapter_override_forbidden",
+      "message": "historical evidence is immutable"
+    }
+  },
+  "canonical": {
+    "algorithm": "sha256-utf8-exact-order-json",
+    "request_canonical_sha256": "39c41a57cfed365129541481e19bcd085ff54b9dce2de4c3badb436df478f232"
+  },
+  "safety": {
+    "contains_private_keys": false,
+    "contains_credentials": false,
+    "contains_production_addresses": false,
+    "contains_environment_values": false,
+    "mutates_historical_ledger": false,
+    "uses_real_balances_or_transactions": false
+  }
+}
