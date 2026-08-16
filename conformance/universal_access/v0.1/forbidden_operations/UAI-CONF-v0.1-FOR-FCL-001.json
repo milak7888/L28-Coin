@@ -1,0 +1,69 @@
+{
+  "fixture_schema": "l28-uai-conformance-fixture/v0.1",
+  "plan_version": "universal-access-conformance-plan/v0.1",
+  "fixture_id": "fx-uai-v01-0068",
+  "case_id": "UAI-CONF-v0.1-FOR-FCL-001",
+  "area": "forbidden_operations",
+  "class": "fail_closed",
+  "operation": "get_protocol_status",
+  "description": "Adapter attempts supply or height override",
+  "interface_profile": "l28-universal-ai-access-interface/v0.1",
+  "fixed_clock": {
+    "verification_time": 1700000100,
+    "created_at": 1700000000,
+    "expires_at": 1700000300
+  },
+  "identities": {
+    "payer_a": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayer",
+    "payee_b": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqpayee",
+    "observer": "l28test1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqobsrv"
+  },
+  "evaluation_time": 1700000100,
+  "request": {
+    "interface_profile": "l28-universal-ai-access-interface/v0.1",
+    "operation": "get_protocol_status",
+    "request_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "created_at": 1700000000,
+    "expires_at": 1700000300,
+    "nonce": "nonce-uai-conf-a",
+    "execution_authorized": false,
+    "params": {
+      "adapter_override_canonical_height": 1,
+      "adapter_override_historically_mined_l28": 0
+    }
+  },
+  "request_encoding": "json_object",
+  "expected": {
+    "outcome": "reject",
+    "ok": false,
+    "code": "adapter_override_forbidden",
+    "execution_authorized": false,
+    "result": {
+      "spend_authorized": false,
+      "signing_authorized": false,
+      "settlement_authorized": false,
+      "ledger_mutated": false,
+      "execution_authorized": false,
+      "transaction_submitted": false,
+      "consensus_overridden": false,
+      "protocol_mutated": false
+    },
+    "error": {
+      "code": "adapter_override_forbidden",
+      "message": "adapter must not override supply or consensus height"
+    }
+  },
+  "canonical": {
+    "algorithm": "sha256-utf8-exact-order-json",
+    "request_canonical_sha256": "2ffe60fde77f016c81dd4fdd70b33994cb67858ad08d811f92c7587dc3c08217"
+  },
+  "adapter_expectation": "identical_public_outcome",
+  "safety": {
+    "contains_private_keys": false,
+    "contains_credentials": false,
+    "contains_production_addresses": false,
+    "contains_environment_values": false,
+    "mutates_historical_ledger": false,
+    "uses_real_balances_or_transactions": false
+  }
+}
