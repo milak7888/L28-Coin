@@ -1,0 +1,84 @@
+{
+  "fixture_id": "fx-btc-v01-0038",
+  "plan_version": "bitcoin-interoperability-conformance-plan/v0.1",
+  "design_profile": "bitcoin-interoperability-spec/v0.1",
+  "case_id": "BTC-CONF-v0.1-ECO-NEG-001",
+  "family": "ECO",
+  "polarity": "negative",
+  "description": "External Bitcoin adapter attempts to override L28 hard cap",
+  "fixed_clock": {
+    "verification_time": 1700000100,
+    "created_at": 1700000000,
+    "expires_at": 1700000300
+  },
+  "test_policy": {
+    "not_production_policy": true,
+    "production_proof_architecture": "BLOCKED_REQUIRES_FUTURE_SECURITY_DECISION",
+    "production_confirmation_count": "BLOCKED_REQUIRES_FUTURE_SECURITY_DECISION",
+    "production_quorum": "BLOCKED_REQUIRES_FUTURE_SECURITY_DECISION",
+    "test_min_confirmations": 2,
+    "test_observer_count": 2,
+    "test_require_merkle_path": true,
+    "test_require_network_identity": true
+  },
+  "bitcoin_evidence": {
+    "evidence_domain": "bitcoin",
+    "bitcoin_network": "bitcoin-test-mainnet",
+    "native_asset": false
+  },
+  "l28_invariants": {
+    "protocol_version": "1.0.0",
+    "hard_cap_l28": 28000000,
+    "emission_ceiling_l28": 11130000,
+    "historically_mined_l28": 2824584,
+    "treasury_locked_l28": 500000,
+    "circulating_snapshot_l28": 2324584,
+    "issuance_mechanism": "coinbase_only",
+    "height_authority": "consensus_derived",
+    "historical_evidence": "immutable",
+    "adapter_override_allowed": false
+  },
+  "request": {
+    "evidence_domain": "bitcoin",
+    "declared_network": "bitcoin-test-mainnet",
+    "execution_authorized": false,
+    "spend_authorized": false,
+    "override_target": "hard_cap_l28",
+    "proposed_value": 28000001
+  },
+  "expected": {
+    "outcome": "reject",
+    "ok": false,
+    "code": "adapter_override_forbidden",
+    "execution_authorized": false,
+    "spend_authorized": false,
+    "signing_authorized": false,
+    "broadcast_authorized": false,
+    "ledger_mutated": false,
+    "settlement_finalized": false,
+    "transaction_submitted": false,
+    "l28_issuance_authorized": false,
+    "adapter_override_allowed": false,
+    "result": null,
+    "error": {
+      "code": "adapter_override_forbidden",
+      "category": "economic_override",
+      "field_path": "request.override_target"
+    }
+  },
+  "safety": {
+    "contains_private_keys": false,
+    "contains_credentials": false,
+    "uses_real_wallet": false,
+    "uses_real_balance": false,
+    "uses_real_transaction": false,
+    "network_call_performed": false,
+    "signing_performed": false,
+    "broadcast_performed": false,
+    "ledger_mutated": false,
+    "settlement_finalized": false,
+    "spend_authorized": false,
+    "execution_authorized": false,
+    "adapter_override_allowed": false
+  }
+}
