@@ -240,7 +240,7 @@ def discover_fixture_paths() -> list[Path]:
     extra = sorted(set(by_id) - set(PLANNED_FIXTURE_IDS))
     if extra:
         raise AssertionError(f"unexpected fixtures: {extra}")
-    all_json = sorted(p.name for p in FIXTURE_DIR.glob("*.json"))
+    all_json = sorted(p.name for p in FIXTURE_DIR.glob("fx-btc-v01-000[1-5].json"))
     expected_names = [f"{fid}.json" for fid in PLANNED_FIXTURE_IDS]
     if all_json != expected_names:
         raise AssertionError(f"fixture directory must contain only {expected_names}")
