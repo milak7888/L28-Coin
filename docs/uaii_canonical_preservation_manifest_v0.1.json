@@ -1,0 +1,353 @@
+{
+  "manifest_version": "uaii-canonical-preservation-manifest/v0.1",
+  "interface_profile": "l28-universal-ai-access-interface/v0.1",
+  "protocol_version": "1.0.0",
+  "canonical_operations": [
+    "discover_capabilities",
+    "get_protocol_status",
+    "get_balance",
+    "create_quote",
+    "create_unsigned_payment_request",
+    "validate_payment",
+    "get_payment_receipt",
+    "verify_signed_receipt"
+  ],
+  "deferred_operations": [
+    "create_refund_request",
+    "create_refund_receipt"
+  ],
+  "canonical_artifacts": [
+    {
+      "path": "docs/universal_access_interface_v0.1.md",
+      "sha256": "b701ad4f296c0fa55b5ffc4833a963894fcae10e8f58a036324ee024cd317eba"
+    },
+    {
+      "path": "coin/uaii_json.py",
+      "sha256": "a63df23ca9e35b772574d2454f61a9615c3dcf93cacf50f0649fb1a2cab1fb47"
+    },
+    {
+      "path": "coin/uaii_reference_core.py",
+      "sha256": "f52e4af4c58555ef2eebb8fc05ad432a45900562bf7a272a264021878cee346c"
+    }
+  ],
+  "fixture_root": "conformance/universal_access/v0.1",
+  "fixture_count": 77,
+  "fixtures": [
+    {
+      "path": "conformance/universal_access/v0.1/control/UAI-CONF-v0.1-CTL-BND-001.json",
+      "sha256": "a5a50126e919cba746887054d47b0222cfb7c4eefb280b67af1c530f65b9ba83"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/control/UAI-CONF-v0.1-CTL-BND-002.json",
+      "sha256": "c5e51f5deb9d3760c43f250af8d1b71c9b9cfd298382bf2956371485ee9d289b"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/control/UAI-CONF-v0.1-CTL-FCL-001.json",
+      "sha256": "1182f30ee18feaa5898300e07b6be36509173c46aa076e16b7681f701f8b94d5"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/control/UAI-CONF-v0.1-CTL-NEG-001.json",
+      "sha256": "294c4b1ea3e0cfb71d94137b067ca4b4e202e6c077958a8daabc77558caa4012"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/control/UAI-CONF-v0.1-CTL-POS-001.json",
+      "sha256": "ac4459d35fa9c5f52cb4b5aabbd6629f939b327cf2d49f7b3ab21bdcb89647ef"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/create_quote/UAI-CONF-v0.1-QUO-BND-001.json",
+      "sha256": "c5d2e9f5554bcd3819de5ac9711b9cd25b07b7b34d6dfdb5bfb0f2338436d2f2"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/create_quote/UAI-CONF-v0.1-QUO-BND-002.json",
+      "sha256": "76502f2d6fbd9594b538fc7d94e10ae71eb5ef4c2bc4d110374ec5964a419f3f"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/create_quote/UAI-CONF-v0.1-QUO-BND-003.json",
+      "sha256": "82ecc1593f7b53ee179b4b4668a23d2f94d70d9ded763091876e946df59de254"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/create_quote/UAI-CONF-v0.1-QUO-FCL-001.json",
+      "sha256": "57399b4e94c5d8485a8f1347debea6479d2a37e37b370305b1b65e3a2cec0d4a"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/create_quote/UAI-CONF-v0.1-QUO-NEG-001.json",
+      "sha256": "f38d917c215a56ca6cf512fab3a6111d779b1c0d83e149ae270aae67cbe991fc"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/create_quote/UAI-CONF-v0.1-QUO-NEG-002.json",
+      "sha256": "a6467fc7973ffb621f30275cc711eb9d09f439fc7549f8f482d0591f6347fa76"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/create_quote/UAI-CONF-v0.1-QUO-NEG-003.json",
+      "sha256": "8a86de7f327a7404f72096dd5152a73d242046e92146ecbb560cdb6f40cbe169"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/create_quote/UAI-CONF-v0.1-QUO-NEG-004.json",
+      "sha256": "38cc6cc0f13a7bc3ea2b612e4554e898b43f104e06b3ea555196273432557773"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/create_quote/UAI-CONF-v0.1-QUO-POS-001.json",
+      "sha256": "ad2cedf9f265182b1e09182af859d7a3398161a424d37ed1f44e0f0aa10de6d6"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/create_refund_receipt/UAI-CONF-v0.1-RRC-FCL-001.json",
+      "sha256": "0742d5767276266aab705f2b5e53c717421bcbf2578f834ec658995dd5a9c86e"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/create_refund_receipt/UAI-CONF-v0.1-RRC-NEG-001.json",
+      "sha256": "6c528913ac5280ab60779f12c7336c6ce4f67cd75d8015d7492a23aa38d61aee"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/create_refund_receipt/UAI-CONF-v0.1-RRC-POS-001.json",
+      "sha256": "a144f06f448947242dec4b8dce4f20e73d54e0ebb48fe3359be086d296224e68"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/create_refund_request/UAI-CONF-v0.1-RFR-FCL-001.json",
+      "sha256": "a17152877a905a55667c12cdbb769119d4dff548161a8c63cee384e711f5b768"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/create_refund_request/UAI-CONF-v0.1-RFR-NEG-001.json",
+      "sha256": "c53385603990c3e84330b84595cef289d5bf4199630ce9521904192c9e9d34b3"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/create_refund_request/UAI-CONF-v0.1-RFR-NEG-002.json",
+      "sha256": "8ed57913abb8904f833ded1b6ec41fbf12186e004751709a5fa5ac762f55f8e7"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/create_refund_request/UAI-CONF-v0.1-RFR-POS-001.json",
+      "sha256": "6ad31eace1b1029588cec8dcf67362629deab5db69e7a3e6b3e85dce552ebded"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/create_unsigned_payment_request/UAI-CONF-v0.1-UPR-BND-001.json",
+      "sha256": "bc6df6171a0cd317104f574f5b9b8209106309f5a0e8f4965d88c69868950467"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/create_unsigned_payment_request/UAI-CONF-v0.1-UPR-FCL-001.json",
+      "sha256": "8fef99ea98c34684d1781f7c71f7a4d1126c34d90aeada9251cccf3021bb6497"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/create_unsigned_payment_request/UAI-CONF-v0.1-UPR-NEG-001.json",
+      "sha256": "9c421a68b412c532d0be8c8c5fcd4aebc32312d4eecf40af3535556273191913"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/create_unsigned_payment_request/UAI-CONF-v0.1-UPR-NEG-002.json",
+      "sha256": "6047355e010e36ed5c6e61ec6fe00ee5d08ee3bdbb3eba9f8b6380bea3752f03"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/create_unsigned_payment_request/UAI-CONF-v0.1-UPR-NEG-003.json",
+      "sha256": "777df1ae24fcdb11703f44b4bdcbb152810b6d7eeb7b5b7009ee6417421e16cf"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/create_unsigned_payment_request/UAI-CONF-v0.1-UPR-POS-001.json",
+      "sha256": "3e0f5675a668db4293b926194975ea051604cd0a822c61de07ccda22ef639be3"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/discover_capabilities/UAI-CONF-v0.1-CAP-FCL-001.json",
+      "sha256": "fbadeecbedfcfa9a7448faae8df812ca72ad731b5117e17f3424c3c2d0649c3f"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/discover_capabilities/UAI-CONF-v0.1-CAP-NEG-001.json",
+      "sha256": "06858798029127cfd352ff66f9894fd0c6ead68f8781819fb3944d1e034be0c0"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/discover_capabilities/UAI-CONF-v0.1-CAP-NEG-002.json",
+      "sha256": "a6afb7a0d623c247c4413e114935edd663a9ff51a10d93e83d76128ba1204da2"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/discover_capabilities/UAI-CONF-v0.1-CAP-POS-001.json",
+      "sha256": "0c152c896c526b1fbd1df6a94ae0ed780c3a55cf2bdd7d7ea612081b9e1800c7"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/discover_capabilities/UAI-CONF-v0.1-CAP-POS-002.json",
+      "sha256": "3fefd42d3249b70e17b29100e90bcc156504b06bd6133dc1b02949a9222cf88a"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/economic_invariants/UAI-CONF-v0.1-ECO-FCL-001.json",
+      "sha256": "8a23258b808fae94287c56b52f427a38ea719a26082174e4d084edec4e37deea"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/economic_invariants/UAI-CONF-v0.1-ECO-NEG-001.json",
+      "sha256": "650c9735dcc88ba10181697c22244309f646314b7ab8266ce39d924d5a68959d"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/economic_invariants/UAI-CONF-v0.1-ECO-NEG-002.json",
+      "sha256": "b8888a9c005b7e64c420f3ba9d6a7b53933f3ac8351087ba47b2ced423fb71fb"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/economic_invariants/UAI-CONF-v0.1-ECO-POS-001.json",
+      "sha256": "9d37efbd76b389d36154ef5cba26022650bbd0f6cc20b15962913e1a24a14c8d"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/envelope/UAI-CONF-v0.1-ENV-BND-001.json",
+      "sha256": "68f667b0076b209c85d8b818c541cbda9f358693ae1ed1f0d0c73710c9c562cd"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/envelope/UAI-CONF-v0.1-ENV-BND-002.json",
+      "sha256": "13a7e7fdbf317ad4e63e35eef71141a227431a7d561783ba08dc41c6f7f66e83"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/envelope/UAI-CONF-v0.1-ENV-BND-003.json",
+      "sha256": "35f083cf4dbcc0b25ef2416e2bca5e70a1a148d44b34b0d88d50de25308e289a"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/envelope/UAI-CONF-v0.1-ENV-BND-004.json",
+      "sha256": "c2cc12468f629e3f3ade518cf5a4eda79345d91547331dfa8b3de4121a41efc8"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/envelope/UAI-CONF-v0.1-ENV-FCL-001.json",
+      "sha256": "a8ffb2f7275cf0406b3bf862608f6c9e852d2e7c20e56a2c82aee51891c7f526"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/envelope/UAI-CONF-v0.1-ENV-FCL-002.json",
+      "sha256": "71e74f462087e8f564c5de88af70c629f51ab1a0cdbc5bc73648763479c19c84"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/envelope/UAI-CONF-v0.1-ENV-NEG-001.json",
+      "sha256": "21ea4507067a825f6fa32d9ce89d9972487b9eda3ae22eb7608f223919b47ccc"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/envelope/UAI-CONF-v0.1-ENV-NEG-002.json",
+      "sha256": "45e345c34e33e320e22b7cdaf9dda067305eabbb7ca78fafb0cd202a77ea8a1b"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/envelope/UAI-CONF-v0.1-ENV-NEG-003.json",
+      "sha256": "3c2bed9c574b5b485f81c60175af2cd206a159a6964a0fd6082defd3d5237454"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/envelope/UAI-CONF-v0.1-ENV-NEG-004.json",
+      "sha256": "8f85246d47300aed518a91268e400073289f587b97026a7f19c124dec029330a"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/envelope/UAI-CONF-v0.1-ENV-NEG-005.json",
+      "sha256": "6c52a568a2bbe34ca084beeeea9442754085930f5fab90b4d16ab086966754f8"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/envelope/UAI-CONF-v0.1-ENV-NEG-006.json",
+      "sha256": "6def8bb0e2098b8f4b504e082ff64953a98c27b6b8810a83e47621d8d01adf3d"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/envelope/UAI-CONF-v0.1-ENV-POS-001.json",
+      "sha256": "becb649febf7cfea5f13ea49dff118fa03fa984b3ca3d3162452203a7bbf1dc1"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/forbidden_operations/UAI-CONF-v0.1-FOR-FCL-001.json",
+      "sha256": "2962867d808f7d96b8f8767d2d406874eb758c0f98034e4afec07288346de39b"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/forbidden_operations/UAI-CONF-v0.1-FOR-NEG-001.json",
+      "sha256": "7e700aa71a03055a0713ba276536119913c70594433f4bf75f71824429bd4e2a"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/forbidden_operations/UAI-CONF-v0.1-FOR-NEG-002.json",
+      "sha256": "3e5c262604d92d62cd1238c6963fc2189f42a8bf5e08488043ea4f0489c73758"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/get_balance/UAI-CONF-v0.1-BAL-FCL-001.json",
+      "sha256": "1a67c83962f9add9348dbb95e1101b3a7e088686071ed9f0276baa82881bb436"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/get_balance/UAI-CONF-v0.1-BAL-FCL-002.json",
+      "sha256": "5b4200c2ea229e26105e0de1bc47c97c3fa5a4b03d8d91d1a880ff75a207880f"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/get_balance/UAI-CONF-v0.1-BAL-NEG-001.json",
+      "sha256": "d50855cdf38f1129f22c6756a821d9054d427c58ee48147eefd1bd455bab12f3"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/get_balance/UAI-CONF-v0.1-BAL-NEG-002.json",
+      "sha256": "79f7e508bf4e80fc73a55bb33040970a5a69d21382ca910cb0a86340cb991ac7"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/get_balance/UAI-CONF-v0.1-BAL-POS-001.json",
+      "sha256": "8d19e3baad2d35b6aa92747cd992b8c74557af7af4c5160886f8ad62c23a6797"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/get_payment_receipt/UAI-CONF-v0.1-RCP-FCL-001.json",
+      "sha256": "5cb070ac5bd237da19822372d02bd0434ede25dac8a9949c4c951efc8c1f7cfa"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/get_payment_receipt/UAI-CONF-v0.1-RCP-NEG-001.json",
+      "sha256": "feb432e85aef6877a7f75f3edb3ce0ba965404afa54c7387e0433e9bad3226a9"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/get_payment_receipt/UAI-CONF-v0.1-RCP-POS-001.json",
+      "sha256": "5e50a317034ba598562dacefc85242bc2077145cd91821106b88c3fcedd8da3f"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/get_protocol_status/UAI-CONF-v0.1-PST-FCL-001.json",
+      "sha256": "70d336653a51b4292578424b4d8f651592a7617a16e0fe5bf9fa9cd503d85531"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/get_protocol_status/UAI-CONF-v0.1-PST-NEG-001.json",
+      "sha256": "7f633f3e9ece0b13cca8ff33b90bab0e4aeddef013ff774d1ec98fd00b59f007"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/get_protocol_status/UAI-CONF-v0.1-PST-POS-001.json",
+      "sha256": "34a68474840bb5ece7d50d9b659b6ac02fa723c0c37f42d2b225d228afba986d"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/validate_payment/UAI-CONF-v0.1-VAL-FCL-001.json",
+      "sha256": "afccf128c95f9c8140d6f2f8b394617debd6550bcc4e581120124022ace8a489"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/validate_payment/UAI-CONF-v0.1-VAL-FCL-002.json",
+      "sha256": "2a8039e9b6741a57ab1c4ea20341057cf4862e02484f0530ce0a10d2dad586a7"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/validate_payment/UAI-CONF-v0.1-VAL-NEG-001.json",
+      "sha256": "44e1de9e5fcb2df886aca42f3c9a537023954d9bdd0b6a8db50ee6cdec581972"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/validate_payment/UAI-CONF-v0.1-VAL-NEG-002.json",
+      "sha256": "80dfa6423dd38bc7ecfbb3b779db14e38db73ffa2d4b1c77f555fda6ac4e7e74"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/validate_payment/UAI-CONF-v0.1-VAL-POS-001.json",
+      "sha256": "7aaa7aaf005b76ecc8ad75c3b2a69cdcbdfa024b4ac5230ff783b5eb1d1b3c47"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/verify_signed_receipt/UAI-CONF-v0.1-VSR-BND-001.json",
+      "sha256": "1aec97b601c106ce3682d0a8580b825c71a2da60e70ffeb569421b81ba5048a5"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/verify_signed_receipt/UAI-CONF-v0.1-VSR-BND-002.json",
+      "sha256": "87de0088eac8ded5a0d3b603e19dff5f7d6bc61cd113b5f48159dbe3b56d8edc"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/verify_signed_receipt/UAI-CONF-v0.1-VSR-BND-003.json",
+      "sha256": "a63a68fd2f91a2c2a5e7175fdeaaed08851ac78365b6f5f31eb8a170dc19ebfd"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/verify_signed_receipt/UAI-CONF-v0.1-VSR-FCL-001.json",
+      "sha256": "55385cc62c9c9b2a0eba83ddb1ea0e916394e1c8d12ca98201d499c7d4d3965a"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/verify_signed_receipt/UAI-CONF-v0.1-VSR-FCL-002.json",
+      "sha256": "e58fc8fb6b29114a9b656936fcbfbfe811c5d57c3d5f3a5145a1b09f6f8954cc"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/verify_signed_receipt/UAI-CONF-v0.1-VSR-NEG-001.json",
+      "sha256": "ecc5b19e0d3a38ef6b214d0b82cd50dfdd1d8cd73d1284474faadf1694910b1a"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/verify_signed_receipt/UAI-CONF-v0.1-VSR-NEG-002.json",
+      "sha256": "2271820393a09bd14304da429ad09f8c4731bf07de5bf05b5c24241b5e4993f5"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/verify_signed_receipt/UAI-CONF-v0.1-VSR-NEG-003.json",
+      "sha256": "6d60443319cba01d4057fd844e4558ddacdb31c12148476d6bb9932367cac749"
+    },
+    {
+      "path": "conformance/universal_access/v0.1/verify_signed_receipt/UAI-CONF-v0.1-VSR-POS-001.json",
+      "sha256": "880ea8087cee4f2f8a0c45e6d90a08cb8abf9874c84fd95c899b694396b5cdea"
+    }
+  ],
+  "authority": {
+    "protocol": "PROTOCOL.md",
+    "validator": "coin.tx_validation.validate_transaction",
+    "execution_authorized": false,
+    "signing_authorized": false,
+    "spend_authorized": false,
+    "adapters_activated": false
+  }
+}
