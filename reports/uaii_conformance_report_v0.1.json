@@ -1,0 +1,24 @@
+{
+  "canonical_operations": [
+    "discover_capabilities",
+    "get_protocol_status",
+    "get_balance",
+    "create_quote",
+    "create_unsigned_payment_request",
+    "validate_payment",
+    "get_payment_receipt",
+    "verify_signed_receipt"
+  ],
+  "fixture_count": 77,
+  "interface_profile": "l28-universal-ai-access-interface/v0.1",
+  "manifest_sha256": "4efb69c75027846a22b5dc3a1d5004bdc94793abe7a745e81127e8fd48b29ef0",
+  "network_used": false,
+  "protocol_version": "1.0.0",
+  "report_version": "uaii-conformance-report/v0.1",
+  "security_certification": false,
+  "server_started": false,
+  "settlement_authorized": false,
+  "signing_authorized": false,
+  "source_commit": "9a9b082519cd54b00a2ebb2fe2da8889201ae919",
+  "status": "PASS"
+}
