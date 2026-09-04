@@ -1,0 +1,40 @@
+{
+  "authorization": {
+    "broadcast_authorized": false,
+    "mining_authorized": false,
+    "network_authorized": false,
+    "persistent_p2p_runtime_authorized": false,
+    "rpc_authorized": false,
+    "settlement_authorized": false,
+    "signing_authorized": false,
+    "socket_authorized": false,
+    "testnet_authorized": false
+  },
+  "gap_reassessment": {
+    "F37-11": "PARTIAL_OFFLINE_OPTION_A_IMPLEMENTED_PENDING_INDEPENDENT_REVIEW"
+  },
+  "independent_review_passed": false,
+  "independent_review_performed": false,
+  "profile": "l28-option-a-independent-review-checklist/v0.1",
+  "required_checks": [
+    "OPTION_A_SELECTION_SCOPE_IS_NON_NORMATIVE",
+    "PROTOCOL_V1_UNCHANGED",
+    "PROTECTED_ECONOMICS_UNCHANGED",
+    "CANONICAL_VALIDATOR_UNCHANGED",
+    "CONFLICT_DETECTION_DETERMINISTIC",
+    "CONFLICT_HALTS_SYNC",
+    "CURRENT_LOCAL_CANONICAL_STATE_RETAINED",
+    "NO_AUTOMATIC_REORG_PATH",
+    "NO_OPERATOR_FORK_CHOICE_OVERRIDE",
+    "HALT_STATE_STICKY",
+    "RESUME_REQUIRES_GOVERNED_RULE",
+    "EQUIVOCATION_FAILS_CLOSED",
+    "PARTITION_RECONNECT_CANNOT_AUTO_REWRITE",
+    "DEEP_REORG_ATTEMPT_HALTS_OR_REJECTS",
+    "OSCILLATING_EVIDENCE_CANNOT_UNHALT",
+    "MISSING_STATE_FAILS_CLOSED",
+    "NO_NETWORK_OR_RUNTIME_ACTIVATION"
+  ],
+  "self_certification_forbidden": true,
+  "status": "READY_FOR_INDEPENDENT_SECURITY_REVIEW"
+}

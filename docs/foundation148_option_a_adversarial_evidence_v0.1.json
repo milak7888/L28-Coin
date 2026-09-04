@@ -1,0 +1,80 @@
+{
+  "all_expected_results_matched": true,
+  "authority_preservation": {
+    "automatic_reorg_performed": false,
+    "canonical_height_overridden": false,
+    "history_authority_granted": false,
+    "issuance_authority_granted": false,
+    "ledger_mutated": false,
+    "settlement_authority_granted": false,
+    "supply_authority_granted": false,
+    "validation_authority_granted": false,
+    "winner_selected": false
+  },
+  "cases": [
+    {
+      "actual_code": "NO_CONFLICT_EQUAL_HISTORY",
+      "automatic_reorg_authorized": false,
+      "candidate_apply_authorized": false,
+      "conflict": false,
+      "divergence_height": null,
+      "expected_code": "NO_CONFLICT_EQUAL_HISTORY",
+      "halt_sync": false,
+      "id": "F148-EQUAL",
+      "pass": true,
+      "winner_selected": false
+    },
+    {
+      "actual_code": "STALE_NONAUTHORITATIVE_EVIDENCE",
+      "automatic_reorg_authorized": false,
+      "candidate_apply_authorized": false,
+      "conflict": false,
+      "divergence_height": null,
+      "expected_code": "STALE_NONAUTHORITATIVE_EVIDENCE",
+      "halt_sync": false,
+      "id": "F148-STALE",
+      "pass": true,
+      "winner_selected": false
+    },
+    {
+      "actual_code": "EXTENSION_EVIDENCE_ONLY",
+      "automatic_reorg_authorized": false,
+      "candidate_apply_authorized": false,
+      "conflict": false,
+      "divergence_height": null,
+      "expected_code": "EXTENSION_EVIDENCE_ONLY",
+      "halt_sync": false,
+      "id": "F148-EXTENSION",
+      "pass": true,
+      "winner_selected": false
+    },
+    {
+      "actual_code": "HALT_SYNC_CONFLICT",
+      "automatic_reorg_authorized": false,
+      "candidate_apply_authorized": false,
+      "conflict": true,
+      "divergence_height": 1,
+      "expected_code": "HALT_SYNC_CONFLICT",
+      "halt_sync": true,
+      "id": "F148-CONFLICT",
+      "pass": true,
+      "winner_selected": false
+    },
+    {
+      "actual_code": "HALT_SYNC_CONFLICT",
+      "automatic_reorg_authorized": false,
+      "candidate_apply_authorized": false,
+      "conflict": true,
+      "divergence_height": 0,
+      "expected_code": "HALT_SYNC_CONFLICT",
+      "halt_sync": true,
+      "id": "F148-DEEP-CONFLICT",
+      "pass": true,
+      "winner_selected": false
+    }
+  ],
+  "equivocation_detected": true,
+  "offline_only": true,
+  "profile": "l28-foundation148-option-a-adversarial-evidence/v0.1",
+  "status": "PASS"
+}

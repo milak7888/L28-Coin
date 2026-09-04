@@ -1,0 +1,49 @@
+{
+  "authorization": {
+    "broadcast_authorized": false,
+    "canonical_height_override_authorized": false,
+    "ledger_mutation_authorized": false,
+    "mining_authorized": false,
+    "network_authorized": false,
+    "offline_policy_implementation_authorized": true,
+    "persistent_p2p_runtime_authorized": false,
+    "rpc_authorized": false,
+    "runtime_policy_implementation_authorized": false,
+    "settlement_authorized": false,
+    "signing_authorized": false,
+    "socket_authorized": false,
+    "testnet_authorized": false
+  },
+  "gap_reassessment": {
+    "F37-11": "PARTIAL_OFFLINE_OPTION_A_SELECTED"
+  },
+  "policy_selected": true,
+  "profile": "l28-option-a-selected-policy/v0.1",
+  "protocol": {
+    "breaking_change_introduced": false,
+    "breaking_normative_change_requires_v2_0_0": true,
+    "canonical_height_rule_changed": false,
+    "economic_invariants_changed": false,
+    "future_normative_adoption_requires_governed_compatibility_decision": true,
+    "historical_state_changed": false,
+    "normative_protocol_adoption": false,
+    "protocol_invariants_changed": false,
+    "transaction_validation_changed": false,
+    "version": "1.0.0"
+  },
+  "selected_option": "OPTION_A_HALT_ON_CONFLICT",
+  "selection_basis": "EXPLICIT_OPERATOR_EXECUTION_OF_FOUNDATION146_BATCH",
+  "selection_scope": "OFFLINE_IMPLEMENTATION_SAFETY_BOUNDARY",
+  "semantics": {
+    "automatic_reorg_allowed": false,
+    "confirmation_count": null,
+    "conflict_action": "HALT_SYNC_AND_RETAIN_CURRENT_LOCAL_CANONICAL_STATE",
+    "fork_choice_winner_selected": false,
+    "max_reorg_depth": null,
+    "new_finality_claim": false,
+    "operator_discretionary_fork_choice_allowed": false,
+    "peer_can_select_canonical_history": false,
+    "resume_rule": "GOVERNED_DETERMINISTIC_RESOLUTION_RULE_REQUIRED"
+  },
+  "status": "SELECTED_NON_NORMATIVE_OFFLINE_SAFETY_BOUNDARY"
+}
