@@ -1,0 +1,109 @@
+{
+  "authorization": {
+    "broadcast_authorized": false,
+    "deployment_authorized": false,
+    "filesystem_runtime_authorized": false,
+    "key_creation_authorized": false,
+    "mining_authorized": false,
+    "network_authorized": false,
+    "persistent_p2p_runtime_authorized": false,
+    "process_runtime_authorized": false,
+    "public_testnet_authorized": false,
+    "rpc_authorized": false,
+    "settlement_authorized": false,
+    "signing_authorized": false,
+    "socket_authorized": false,
+    "wallet_creation_authorized": false
+  },
+  "baseline": {
+    "commit": "7958995612e8fdf8e8609efa581f35b7e3bfdd18",
+    "protocol_sha256": "eabd5f2a11916781e6a047e5b2c2188fe4e0f1eae2fdcdc2f68e4c19193c397d",
+    "tx_validation_sha256": "ac36bd95c932733a60ffc3acbb10b8a9f57e09c9533d0b64ff83affa876f3004"
+  },
+  "f37_reassessment": {
+    "F37-07": "PARTIAL_ISOLATED_LOOPBACK_TRANSPORT_EVIDENCE",
+    "F37-10": "PARTIAL_ISOLATED_LOOPBACK_PROPAGATION_EVIDENCE",
+    "F37-11": "OFFLINE_OPTION_A_REVIEWED_NON_NORMATIVE"
+  },
+  "historical_status_sources": {
+    "F37-07": "docs/foundation143_isolated_loopback_experiment_evidence_v0.1.json",
+    "F37-10": "docs/foundation143_isolated_loopback_experiment_evidence_v0.1.json",
+    "F37-11": "docs/l28_option_a_independent_review_checklist_v0.1.json"
+  },
+  "option_a_authority": {
+    "automatic_reorg_authorized": false,
+    "canonical_height_override_authorized": false,
+    "confirmation_claim_authorized": false,
+    "fork_winner_selected": false,
+    "history_authority": false,
+    "issuance_authority": false,
+    "ledger_mutation_authorized": false,
+    "settlement_authority": false,
+    "supply_authority": false,
+    "validation_authority": false
+  },
+  "next_possible_gate": {
+    "activation_authorized": false,
+    "decision_only": true,
+    "implementation_authorized": false,
+    "name": "EXPLICIT_BOUNDED_RUNTIME_NETWORK_AUTHORIZATION_DECISION",
+    "required_before_any_implementation": [
+      "SEPARATE_OPERATOR_AUTHORIZATION",
+      "EXACT_RUNTIME_AND_NETWORK_SCOPE",
+      "FAIL_CLOSED_SECURITY_CONTROLS",
+      "FOCUSED_ADVERSARIAL_TEST_PLAN",
+      "INDEPENDENT_SECURITY_REVIEW_PLAN",
+      "ROLLBACK_AND_STOP_CONDITIONS"
+    ],
+    "status": "READY_FOR_EXPLICIT_DECISION"
+  },
+  "profile": "l28-foundation151-option-a-gate-closure/v0.1",
+  "protected_invariants": {
+    "bitcoin_authority": "EXTERNAL_EVIDENCE_ONLY_ZERO_L28_AUTHORITY",
+    "canonical_height_authority": "CONSENSUS_DERIVED_ONLY",
+    "canonical_validator": "coin.tx_validation.validate_transaction",
+    "circulating_snapshot": 2324584,
+    "coinbase_only_issuance": true,
+    "economic_invariants_changed": false,
+    "emission_ceiling": 11130000,
+    "halving_interval": 210000,
+    "hard_cap": 28000000,
+    "historical_evidence_immutable": true,
+    "historical_mined_through_entry": 100877,
+    "historical_state_changed": false,
+    "historically_mined": 2824584,
+    "next_canonical_height": 100878,
+    "protocol_invariants_changed": false,
+    "protocol_version": "1.0.0",
+    "reward_schedule": [
+      28,
+      14,
+      7,
+      3,
+      1,
+      0
+    ],
+    "signer_runtime_authorized": false,
+    "transaction_validation_changed": false,
+    "treasury_locked": 500000
+  },
+  "review_outcome": {
+    "foundation149_independent_security_review": "PASS",
+    "foundation150_remediation": "PASS",
+    "further_independent_review_required_before_runtime": true,
+    "original_f149_findings_fully_remediated": true,
+    "review_disposition": {
+      "BLOCKED": 0,
+      "GAP": 0,
+      "PASS": 15
+    }
+  },
+  "scope": {
+    "network_runtime": false,
+    "normative_protocol_adoption": false,
+    "offline_only": true,
+    "option_a_boundary": "HALT_ON_CONFLICT_RETAIN_CURRENT_LOCAL_CANONICAL_STATE",
+    "status_effect": "CURRENT_FOUNDATION151_READINESS_REASSESSMENT_ONLY"
+  },
+  "status": "PASS"
+}
