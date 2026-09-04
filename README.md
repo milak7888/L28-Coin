@@ -63,6 +63,28 @@ Leap28 Autonomous AI Economy
 Leap28 supplies decision-making and policy. L28 supplies independently
 verifiable settlement. Either system can exist without embedding the other.
 
+## Community validation
+
+L28 includes deterministic offline public validation tooling.
+
+Run the canonical-integrity check:
+
+`PYTHON=python3 tools/uaii_community_conformance.sh integrity-only`
+
+Run the full UAII cross-adapter conformance suite:
+
+`PYTHON=python3 tools/uaii_community_conformance.sh full`
+
+See the published deterministic
+[UAII conformance report](reports/uaii_conformance_report_v0.1.md).
+
+A conformance PASS is evidence of deterministic public-interface behavior.
+It is not production security certification, deployment authorization,
+testnet activation, signer authorization, or settlement authorization.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) before proposing changes and
+[SECURITY.md](SECURITY.md) for vulnerability reporting.
+
 ## Safety
 
 L28 is protocol software, not an investment promise. Do not use historical
