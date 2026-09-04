@@ -26,6 +26,7 @@ if [ "$MODE" = "full" ]; then
   "$PYTHON" -B -m pytest \
     -p no:cacheprovider \
     tests/test_uaii_cross_adapter_parity.py \
+    tests/test_uaii_adversarial_validation.py \
     tests/test_uaii_typescript_sdk.py \
     tests/test_uaii_python_sdk.py \
     tests/test_uaii_rest_adapter.py \
@@ -33,6 +34,7 @@ if [ "$MODE" = "full" ]; then
     tests/test_uaii_reference_core.py \
     tests/test_universal_access_*.py -q || exit 1
 
+  echo "ADVERSARIAL_VALIDATION=PASS"
   echo "CROSS_ADAPTER_CONFORMANCE=PASS"
 fi
 
