@@ -1,0 +1,72 @@
+{
+  "cases": [
+    {
+      "expected_code": "unsupported_protocol",
+      "id": "M3-NEG-001",
+      "mutation": "protocol_version",
+      "value": "2.0.0"
+    },
+    {
+      "expected_code": "network_id_mismatch",
+      "id": "M3-NEG-002",
+      "mutation": "network_id",
+      "value": "L28-DISPOSABLE-OTHER01"
+    },
+    {
+      "expected_code": "genesis_hash_mismatch",
+      "id": "M3-NEG-003",
+      "mutation": "genesis_hash",
+      "value": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "expected_code": "config_hash_mismatch",
+      "id": "M3-NEG-004",
+      "mutation": "config_hash",
+      "value": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "expected_code": "message_type_unsupported",
+      "id": "M3-NEG-005",
+      "mutation": "message_type",
+      "value": "UNKNOWN"
+    },
+    {
+      "expected_code": "nonce_invalid",
+      "id": "M3-NEG-006",
+      "mutation": "nonce",
+      "value": ""
+    },
+    {
+      "expected_code": "payload_length_mismatch",
+      "id": "M3-NEG-007",
+      "mutation": "payload_length",
+      "value": 999
+    },
+    {
+      "expected_code": "payload_digest_mismatch",
+      "id": "M3-NEG-008",
+      "mutation": "payload_digest",
+      "value": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "expected_code": "message_id_mismatch",
+      "id": "M3-NEG-009",
+      "mutation": "message_id",
+      "value": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "expected_code": "timestamp_invalid",
+      "id": "M3-NEG-010",
+      "mutation": "timestamp",
+      "value": false
+    },
+    {
+      "expected_code": "expiry_invalid",
+      "id": "M3-NEG-011",
+      "mutation": "expiry",
+      "value": false
+    }
+  ],
+  "offline_only": true,
+  "profile": "l28-foundation141-m3-adversarial-fixtures/v0.1"
+}

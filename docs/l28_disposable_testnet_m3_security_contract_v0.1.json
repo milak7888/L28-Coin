@@ -1,0 +1,71 @@
+{
+  "broadcast_authorized": false,
+  "connect_authorized": false,
+  "depends_on": [
+    "foundation138-m1-binding",
+    "foundation139-m2-offline-preparation",
+    "foundation140-runtime-boundary",
+    "l28-core-p2p-security/v0.1"
+  ],
+  "frame_binding": {
+    "config_hash": true,
+    "genesis_hash": true,
+    "message_id": true,
+    "network_id": true,
+    "payload_digest": true,
+    "payload_length": true,
+    "protocol_version": true
+  },
+  "gap_reassessment": {
+    "F37-07": "PARTIAL_OFFLINE_CONFORMANCE",
+    "F37-10": "BLOCKED_NETWORK_PROPAGATION",
+    "F37-11": "BLOCKED_REORG_POLICY"
+  },
+  "key_generation_authorized": false,
+  "ledger_mutation_authorized": false,
+  "listen_authorized": false,
+  "m3_offline_conformance_ready": true,
+  "mining_authorized": false,
+  "network_authorized": false,
+  "next_gate": "SEPARATE_EXPLICIT_NETWORKING_AUTHORIZATION_REQUIRED",
+  "p2p_runtime_authorized": false,
+  "peer_controls": {
+    "caller_supplied_time_validation": true,
+    "expiry_validation": true,
+    "identity_evidence_structure_validated": true,
+    "message_replay_validation": true,
+    "nonce_replay_validation": true,
+    "nonce_validation": true,
+    "production_authentication_defined": false,
+    "trusted_production_time_defined": false
+  },
+  "profile": "l28-disposable-testnet-m3-security-contract/v0.1",
+  "resource_limits": {
+    "offline_conformance_max_frame_bytes": 4096,
+    "production_runtime_limits_defined": false
+  },
+  "rpc_authorized": false,
+  "settlement_authorized": false,
+  "signing_authorized": false,
+  "single_writer_sync": {
+    "automatic_apply": false,
+    "confirmation_policy_defined": false,
+    "local_core_only": true,
+    "peer_can_mutate_local_tip": false,
+    "peer_can_override_canonical_height": false,
+    "peer_tip_is_evidence_only": true,
+    "reorg_policy_defined": false
+  },
+  "socket_authorized": false,
+  "status": "OFFLINE_CONFORMANCE_ONLY",
+  "testnet_start_authorized": false,
+  "transport_authority": {
+    "canonical_height_override": false,
+    "history_override": false,
+    "issuance": false,
+    "settlement": false,
+    "supply": false,
+    "validation_override": false
+  },
+  "wallet_creation_authorized": false
+}
