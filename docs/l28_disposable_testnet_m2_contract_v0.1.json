@@ -1,0 +1,36 @@
+{
+  "profile": "l28-disposable-testnet-m2-contract/v0.1",
+  "status": "OFFLINE_MODEL_ONLY",
+  "depends_on": "foundation138-m1-binding",
+  "core_preparation_state": "DISPOSABLE_TEST_READY",
+  "stopped_state_remains_terminal": true,
+  "local_tip_initial_height": 0,
+  "local_tip_network_consensus_authority": false,
+  "issuance_acknowledgement_required": true,
+  "wallet_contract_only": true,
+  "data_dir_contract_only": true,
+  "state_actions_plan_only": [
+    "stop",
+    "reset",
+    "cleanup"
+  ],
+  "gap_reassessment": {
+    "F37-02": "PARTIAL",
+    "F37-05": "PARTIAL",
+    "F37-06": "BLOCKED_RUNTIME",
+    "F37-09": "PARTIAL",
+    "F37-13": "PARTIAL"
+  },
+  "runtime_authorized": false,
+  "process_start_authorized": false,
+  "network_authorized": false,
+  "socket_authorized": false,
+  "wallet_creation_authorized": false,
+  "key_generation_authorized": false,
+  "signing_authorized": false,
+  "mining_authorized": false,
+  "broadcast_authorized": false,
+  "filesystem_mutation_authorized": false,
+  "testnet_start_authorized": false,
+  "settlement_authorized": false
+}
