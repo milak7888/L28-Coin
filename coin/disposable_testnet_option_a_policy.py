@@ -204,6 +204,13 @@ def detect_equivocation(
     first: CandidateHistory,
     second: CandidateHistory,
 ) -> bool:
+    return assess_peer_equivocation(first, second).conflict
+
+
+def assess_peer_equivocation(
+    first: CandidateHistory,
+    second: CandidateHistory,
+) -> OptionAAssessment:
     validate_history(first)
     validate_history(second)
 
@@ -223,20 +230,115 @@ def detect_equivocation(
             first.entries[index].block_id
             != second.entries[index].block_id
         ):
-            return True
+            return OptionAAssessment(
+                code="HALT_SYNC_PEER_EQUIVOCATION",
+                conflict=True,
+                divergence_height=index,
+                local_length=len(first.entries),
+                peer_length=len(second.entries),
+                halt_sync=True,
+                retain_current_local_canonical_state=True,
+            )
 
-    return False
+    return OptionAAssessment(
+        code="NO_PEER_EQUIVOCATION",
+        conflict=False,
+        divergence_height=None,
+        local_length=len(first.entries),
+        peer_length=len(second.entries),
+        halt_sync=False,
+        retain_current_local_canonical_state=True,
+    )
+
+
+def _validate_policy_state(state: Any) -> OptionAPolicyState:
+    if not isinstance(state, OptionAPolicyState):
+        raise OptionAPolicyError("policy_state_required")
+
+    if (
+        state.canonical_state_changed is not False
+        or state.ledger_mutated is not False
+    ):
+        raise OptionAPolicyError("policy_state_mutation_invalid")
+
+    if (
+        type(state.status) is not str
+        or state.status not in {"SYNCING", "HALTED_CONFLICT"}
+    ):
+        raise OptionAPolicyError("policy_state_invalid")
+
+    return state
+
+
+def _validate_assessment(assessment: Any) -> OptionAAssessment:
+    if not isinstance(assessment, OptionAAssessment):
+        raise OptionAPolicyError("assessment_required")
+
+    authority_fields = (
+        assessment.candidate_apply_authorized,
+        assessment.automatic_reorg_authorized,
+        assessment.winner_selected,
+        assessment.confirmation_claimed,
+        assessment.canonical_height_override_authorized,
+        assessment.ledger_mutation_authorized,
+        assessment.issuance_authority,
+        assessment.supply_authority,
+        assessment.validation_authority,
+        assessment.history_authority,
+        assessment.settlement_authority,
+    )
+
+    if any(value is not False for value in authority_fields):
+        raise OptionAPolicyError("assessment_authority_invalid")
+
+    if assessment.retain_current_local_canonical_state is not True:
+        raise OptionAPolicyError("assessment_retain_state_required")
+
+    if (
+        type(assessment.code) is not str
+        or type(assessment.conflict) is not bool
+        or type(assessment.halt_sync) is not bool
+        or type(assessment.local_length) is not int
+        or type(assessment.peer_length) is not int
+        or assessment.local_length < 1
+        or assessment.peer_length < 1
+    ):
+        raise OptionAPolicyError("assessment_invariant_invalid")
+
+    if assessment.conflict:
+        if (
+            assessment.code not in {
+                "HALT_SYNC_CONFLICT",
+                "HALT_SYNC_PEER_EQUIVOCATION",
+            }
+            or assessment.halt_sync is not True
+            or type(assessment.divergence_height) is not int
+            or assessment.divergence_height < 0
+            or assessment.divergence_height
+            >= min(assessment.local_length, assessment.peer_length)
+        ):
+            raise OptionAPolicyError("assessment_invariant_invalid")
+    elif (
+        assessment.code not in {
+            "NO_CONFLICT_EQUAL_HISTORY",
+            "STALE_NONAUTHORITATIVE_EVIDENCE",
+            "EXTENSION_EVIDENCE_ONLY",
+            "NO_PEER_EQUIVOCATION",
+        }
+        or assessment.halt_sync is not False
+        or assessment.divergence_height is not None
+    ):
+        raise OptionAPolicyError("assessment_invariant_invalid")
+
+    return assessment
 
 
 def transition_sync_state(
     state: OptionAPolicyState,
     assessment: OptionAAssessment,
 ) -> OptionAPolicyState:
-    if not isinstance(state, OptionAPolicyState):
-        raise OptionAPolicyError("policy_state_required")
-
-    if not isinstance(assessment, OptionAAssessment):
-        raise OptionAPolicyError("assessment_required")
+    state = _validate_policy_state(state)
+    assessment = _validate_assessment(assessment)
 
     if state.status == "HALTED_CONFLICT":
         return OptionAPolicyState(
@@ -244,9 +346,6 @@ def transition_sync_state(
             code="HALT_STICKY_GOVERNED_RESOLUTION_REQUIRED",
             halt_height=state.halt_height,
         )
-
-    if state.status != "SYNCING":
-        raise OptionAPolicyError("policy_state_invalid")
 
     if assessment.conflict:
         return OptionAPolicyState(
@@ -264,8 +363,7 @@ def transition_sync_state(
 def request_resume(
     state: OptionAPolicyState,
 ) -> ResumeDecision:
-    if not isinstance(state, OptionAPolicyState):
-        raise OptionAPolicyError("policy_state_required")
+    state = _validate_policy_state(state)
 
     if state.status == "HALTED_CONFLICT":
         return ResumeDecision(
