@@ -1,0 +1,170 @@
+{
+  "authorization": {
+    "broadcast_authorized": false,
+    "canonical_height_override_authorized": false,
+    "ledger_mutation_authorized": false,
+    "mining_authorized": false,
+    "network_authorized": false,
+    "persistent_p2p_runtime_authorized": false,
+    "policy_implementation_authorized": false,
+    "rpc_authorized": false,
+    "settlement_authorized": false,
+    "signing_authorized": false,
+    "socket_authorized": false,
+    "testnet_authorized": false
+  },
+  "current_state": {
+    "automatic_reorg_allowed": false,
+    "confirmation_claim_allowed": false,
+    "confirmation_count_defined": false,
+    "confirmation_policy_defined": false,
+    "finality_rule_defined": false,
+    "fork_choice_rule_defined": false,
+    "max_reorg_depth_defined": false,
+    "on_conflict_without_selected_policy": "REJECT_CANONICAL_TRANSITION_AND_RETAIN_CURRENT_LOCAL_STATE",
+    "reorg_policy_defined": false,
+    "selected_policy_option": null
+  },
+  "decision_requirements": {
+    "confirmation_count": null,
+    "deep_reorg_rule": null,
+    "equivocation_rule": null,
+    "finality_rule": null,
+    "fork_choice_rule": null,
+    "max_reorg_depth": null,
+    "partition_recovery_rule": null,
+    "selected_policy_option": null,
+    "tie_break_rule": null
+  },
+  "depends_on": [
+    "foundation141-m3-offline-p2p-conformance",
+    "foundation142-two-agent-transport-security-gate",
+    "foundation143-isolated-loopback-propagation-evidence"
+  ],
+  "gap_reassessment": {
+    "F37-07": "PARTIAL_ISOLATED_LOOPBACK_TRANSPORT_EVIDENCE",
+    "F37-10": "PARTIAL_ISOLATED_LOOPBACK_PROPAGATION_EVIDENCE",
+    "F37-11": "BLOCKED_REORG_POLICY"
+  },
+  "next_gate": "EXPLICIT_CONFIRMATION_REORG_POLICY_SELECTION_AND_IMPLEMENTATION_AUTHORIZATION",
+  "policy_options": [
+    {
+      "confirmation_count": null,
+      "finality_rule": null,
+      "fork_choice_rule": null,
+      "id": "OPTION_A_HALT_ON_CONFLICT",
+      "max_reorg_depth": null,
+      "required_decisions": [
+        "conflict_definition",
+        "deterministic_resume_rule",
+        "finality_semantics",
+        "recovery_test_requirements"
+      ],
+      "selected": false,
+      "summary": "No automatic reorganization. Conflicting canonical evidence halts synchronization until a governed deterministic protocol rule resolves the condition."
+    },
+    {
+      "confirmation_count": null,
+      "finality_rule": null,
+      "fork_choice_rule": null,
+      "id": "OPTION_B_BOUNDED_REORG",
+      "max_reorg_depth": null,
+      "required_decisions": [
+        "fork_choice_rule",
+        "confirmation_count",
+        "max_reorg_depth",
+        "tie_break_rule",
+        "partition_recovery_rule",
+        "deep_reorg_rejection_rule"
+      ],
+      "selected": false,
+      "summary": "A future deterministic fork-choice rule may permit rollback only within an explicitly bounded depth."
+    },
+    {
+      "confirmation_count": null,
+      "finality_rule": null,
+      "fork_choice_rule": null,
+      "id": "OPTION_C_FINALITY_FLOOR",
+      "max_reorg_depth": null,
+      "required_decisions": [
+        "confirmation_count",
+        "finality_floor_rule",
+        "fork_choice_rule_above_finality",
+        "tie_break_rule",
+        "partition_recovery_rule",
+        "finality_violation_behavior"
+      ],
+      "selected": false,
+      "summary": "A future deterministic confirmation threshold establishes a finality floor while conflicts above that floor use a separately defined fork-choice rule."
+    }
+  ],
+  "profile": "l28-confirmation-reorg-policy-decision-gate/v0.1",
+  "protected_invariants": [
+    "CANONICAL_HEIGHT_FROM_CONSENSUS_STATE_ONLY",
+    "MISSING_REQUIRED_STATE_FAILS_CLOSED",
+    "PEER_EVIDENCE_HAS_NO_LEDGER_MUTATION_AUTHORITY",
+    "PEER_EVIDENCE_HAS_NO_CANONICAL_HEIGHT_OVERRIDE_AUTHORITY",
+    "PEER_EVIDENCE_HAS_NO_ISSUANCE_OR_SUPPLY_AUTHORITY",
+    "CANONICAL_TRANSACTION_VALIDATION_REMAINS_COIN_TX_VALIDATION_VALIDATE_TRANSACTION",
+    "HISTORICAL_RECORDS_REMAIN_IMMUTABLE",
+    "SAME_PUBLIC_VALIDATION_RULES_FOR_ALL",
+    "NO_OPERATOR_OR_SUBSYSTEM_CONSENSUS_OVERRIDE",
+    "NO_SETTLEMENT_CLAIM_WITH_UNDEFINED_CONFIRMATION_REORG_POLICY"
+  ],
+  "readiness": "READY_FOR_EXPLICIT_CONFIRMATION_REORG_POLICY_DECISION",
+  "required_future_evidence": [
+    "DETERMINISTIC_POLICY_UNIT_TESTS",
+    "CONFLICTING_TIP_ADVERSARIAL_TESTS",
+    "PARTITION_AND_RECONNECT_TESTS",
+    "EQUIVOCATION_TESTS",
+    "DEEP_REORG_BOUNDARY_TESTS",
+    "OSCILLATION_RESISTANCE_TESTS",
+    "MISSING_STATE_FAIL_CLOSED_TESTS",
+    "PROTECTED_ECONOMIC_FACT_PRESERVATION",
+    "CANONICAL_VALIDATOR_PRESERVATION",
+    "INDEPENDENT_SECURITY_REVIEW"
+  ],
+  "status": "DECISION_PACKAGE_ONLY",
+  "threat_models": [
+    {
+      "id": "THREAT_STALE_PEER",
+      "required_behavior": "TREAT_AS_NONAUTHORITATIVE_EVIDENCE_ONLY",
+      "scenario": "peer presents an older tip"
+    },
+    {
+      "id": "THREAT_CONFLICTING_TIPS",
+      "required_behavior": "FAIL_CLOSED_WITHOUT_SELECTED_FORK_CHOICE_POLICY",
+      "scenario": "peers present incompatible candidate histories"
+    },
+    {
+      "id": "THREAT_EQUIVOCATION",
+      "required_behavior": "REJECT_CONFLICTING_EVIDENCE_AND_RECORD_DETERMINISTIC_FAILURE",
+      "scenario": "same peer presents conflicting evidence"
+    },
+    {
+      "id": "THREAT_PARTITION",
+      "required_behavior": "NO_AUTOMATIC_CANONICAL_REWRITE_WITHOUT_SELECTED_POLICY",
+      "scenario": "network views diverge and later reconnect"
+    },
+    {
+      "id": "THREAT_DEEP_REORG_ATTEMPT",
+      "required_behavior": "REJECT_WHILE_MAX_REORG_DEPTH_AND_FINALITY_RULE_ARE_UNDEFINED",
+      "scenario": "candidate history requires substantial rollback"
+    },
+    {
+      "id": "THREAT_OSCILLATING_TIPS",
+      "required_behavior": "NO_CANONICAL_OSCILLATION_WITHOUT_DETERMINISTIC_POLICY",
+      "scenario": "candidate preference repeatedly changes"
+    },
+    {
+      "id": "THREAT_MISSING_LEDGER_STATE",
+      "required_behavior": "FAIL_CLOSED",
+      "scenario": "required local consensus or ledger state is unavailable"
+    },
+    {
+      "id": "THREAT_INVALID_CANDIDATE",
+      "required_behavior": "REJECT_BEFORE_ANY_CONFIRMATION_OR_REORG_DECISION",
+      "scenario": "candidate contains transaction or structural invalidity"
+    }
+  ]
+}
