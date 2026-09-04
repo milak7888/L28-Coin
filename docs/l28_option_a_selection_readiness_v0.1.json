@@ -1,0 +1,106 @@
+{
+  "authorization": {
+    "broadcast_authorized": false,
+    "canonical_height_override_authorized": false,
+    "ledger_mutation_authorized": false,
+    "mining_authorized": false,
+    "network_authorized": false,
+    "persistent_p2p_runtime_authorized": false,
+    "rpc_authorized": false,
+    "settlement_authorized": false,
+    "signing_authorized": false,
+    "socket_authorized": false,
+    "testnet_authorized": false
+  },
+  "candidate_semantics": {
+    "automatic_reorg_allowed": false,
+    "confirmation_claim_allowed": false,
+    "confirmation_count": null,
+    "conflict_action": "HALT_SYNC_AND_RETAIN_CURRENT_LOCAL_CANONICAL_STATE",
+    "finality_claim_created": false,
+    "fork_choice_rule": null,
+    "max_reorg_depth": null,
+    "operator_discretionary_fork_choice_allowed": false,
+    "peer_can_select_canonical_history": false,
+    "resume_rule": "ONLY_AFTER_GOVERNED_DETERMINISTIC_RESOLUTION_RULE_IS_SELECTED_IMPLEMENTED_TESTED_REVIEWED_AND_AUTHORIZED"
+  },
+  "compatibility": {
+    "breaking_change_requires_v2_0_0": true,
+    "canonical_height_rule_changed": false,
+    "economic_invariants_changed": false,
+    "historical_state_changed": false,
+    "non_normative_fail_closed_boundary_compatible": true,
+    "normative_adoption_requires_governed_compatibility_decision": true,
+    "normative_protocol_adoption_automatically_v1_compatible": false,
+    "protocol_invariants_changed": false,
+    "protocol_version_reviewed": "1.0.0",
+    "transaction_validation_changed": false
+  },
+  "future_gate": {
+    "explicit_option_a_selection_required": true,
+    "governed_protocol_compatibility_decision_required_if_normative": true,
+    "implementation_authorization_required_after_selection": true,
+    "independent_security_review_required_before_runtime": true
+  },
+  "gap_reassessment": {
+    "F37-07": "PARTIAL_ISOLATED_LOOPBACK_TRANSPORT_EVIDENCE",
+    "F37-10": "PARTIAL_ISOLATED_LOOPBACK_PROPAGATION_EVIDENCE",
+    "F37-11": "BLOCKED_REORG_POLICY_PENDING_EXPLICIT_OPTION_A_SELECTION"
+  },
+  "option_evaluation": [
+    {
+      "automatic_reorg": false,
+      "id": "OPTION_A_HALT_ON_CONFLICT",
+      "recommended": true,
+      "requires_confirmation_count": false,
+      "requires_fork_choice_winner": false,
+      "requires_max_reorg_depth": false,
+      "selected": false
+    },
+    {
+      "automatic_reorg": true,
+      "id": "OPTION_B_BOUNDED_REORG",
+      "recommended": false,
+      "requires_confirmation_count": true,
+      "requires_fork_choice_winner": true,
+      "requires_max_reorg_depth": true,
+      "selected": false
+    },
+    {
+      "automatic_reorg": true,
+      "id": "OPTION_C_FINALITY_FLOOR",
+      "recommended": false,
+      "requires_confirmation_count": true,
+      "requires_fork_choice_winner": true,
+      "requires_max_reorg_depth": false,
+      "selected": false
+    }
+  ],
+  "policy_implementation_authorized": false,
+  "policy_selected": false,
+  "profile": "l28-option-a-selection-readiness/v0.1",
+  "protected_authority": {
+    "operator_consensus_override_authority": false,
+    "peer_canonical_height_authority": false,
+    "peer_history_authority": false,
+    "peer_issuance_authority": false,
+    "peer_ledger_mutation_authority": false,
+    "peer_settlement_authority": false,
+    "peer_supply_authority": false,
+    "peer_validation_authority": false
+  },
+  "readiness": "READY_FOR_EXPLICIT_OPTION_A_POLICY_SELECTION",
+  "recommended_option": "OPTION_A_HALT_ON_CONFLICT",
+  "selected_option": null,
+  "status": "SELECTION_READINESS_ONLY",
+  "threat_resolution": {
+    "conflicting_tips": "HALT_SYNC",
+    "deep_reorg_attempt": "REJECT",
+    "equivocation": "REJECT_AND_HALT_AFFECTED_SYNC",
+    "invalid_candidate": "REJECT_BEFORE_POLICY_EVALUATION",
+    "missing_consensus_state": "FAIL_CLOSED",
+    "oscillating_tips": "NO_CANONICAL_OSCILLATION",
+    "partition_reconnect": "NO_AUTOMATIC_CANONICAL_REWRITE",
+    "stale_peer": "NONAUTHORITATIVE_EVIDENCE_ONLY"
+  }
+}
