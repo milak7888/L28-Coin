@@ -1,0 +1,52 @@
+{
+  "cases": [
+    {
+      "expected_code": "loopback_scope_invalid",
+      "id": "F142-NEG-001",
+      "scenario": "NON_LOOPBACK_HOST"
+    },
+    {
+      "expected_code": "topology_agent_count_invalid",
+      "id": "F142-NEG-002",
+      "scenario": "THIRD_AGENT"
+    },
+    {
+      "expected_code": "topology_port_collision",
+      "id": "F142-NEG-003",
+      "scenario": "PORT_COLLISION"
+    },
+    {
+      "expected_code": "fixture_identity_invalid",
+      "id": "F142-NEG-004",
+      "scenario": "FIXTURE_IDENTITY_MISMATCH"
+    },
+    {
+      "expected_code": "message_replayed",
+      "id": "F142-NEG-005",
+      "scenario": "MESSAGE_REPLAY_ACROSS_RECONNECT"
+    },
+    {
+      "expected_code": "network_id_mismatch",
+      "id": "F142-NEG-006",
+      "scenario": "WRONG_NETWORK_FRAME"
+    },
+    {
+      "expected_code": "session_message_limit_exceeded",
+      "id": "F142-NEG-007",
+      "scenario": "SESSION_MESSAGE_LIMIT"
+    },
+    {
+      "expected_code": "experiment_payload_too_large",
+      "id": "F142-NEG-008",
+      "scenario": "EXPERIMENT_PAYLOAD_LIMIT"
+    },
+    {
+      "expected_code_prefix": "runtime_binding_invalid:",
+      "id": "F142-NEG-009",
+      "scenario": "STALE_RUNTIME_BINDING"
+    }
+  ],
+  "network_execution_authorized": false,
+  "offline_only": true,
+  "profile": "l28-foundation142-security-cases/v0.1"
+}

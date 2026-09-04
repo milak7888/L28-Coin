@@ -1,0 +1,101 @@
+{
+  "authorization": {
+    "authorization_state": "NOT_AUTHORIZED",
+    "broadcast_authorized": false,
+    "canonical_height_override_authorized": false,
+    "connect_authorized": false,
+    "explicit_operator_authorization_required": true,
+    "key_generation_authorized": false,
+    "ledger_mutation_authorized": false,
+    "listen_authorized": false,
+    "mining_authorized": false,
+    "network_authorized": false,
+    "p2p_runtime_authorized": false,
+    "process_start_authorized": false,
+    "rpc_authorized": false,
+    "settlement_authorized": false,
+    "signing_authorized": false,
+    "socket_authorized": false,
+    "testnet_start_authorized": false,
+    "wallet_creation_authorized": false
+  },
+  "depends_on": [
+    "foundation138-m1-binding",
+    "foundation139-m2-offline-preparation",
+    "foundation140-runtime-boundary",
+    "foundation141-m3-offline-p2p-conformance"
+  ],
+  "experiment_limits": {
+    "max_frame_bytes": 4096,
+    "max_messages_per_session": 32,
+    "max_payload_bytes": 2048,
+    "max_reconnects": 1,
+    "max_sessions": 2,
+    "production_resource_limits_defined": false
+  },
+  "gap_reassessment": {
+    "F37-07": "PARTIAL_PRENETWORK_GATE_READY",
+    "F37-10": "BLOCKED_NETWORK_PROPAGATION_EVIDENCE_REQUIREMENTS_DEFINED",
+    "F37-11": "BLOCKED_REORG_POLICY"
+  },
+  "identity": {
+    "mechanism": "PUBLIC_DETERMINISTIC_FIXTURE_DIGEST",
+    "production_authentication_defined": false,
+    "secret_based": false,
+    "test_only": true
+  },
+  "lifecycle": {
+    "execution_authorized": false,
+    "reset_scope": "DISPOSABLE_TEST_STATE_ONLY",
+    "startup_shutdown_reset_plan_defined": true
+  },
+  "next_gate": "EXPLICIT_FOUNDATION143_ISOLATED_NETWORK_AUTHORIZATION",
+  "profile": "l28-isolated-two-agent-transport-authorization-gate/v0.1",
+  "propagation_gate": {
+    "actual_propagation_performed": false,
+    "confirmation_policy_defined": false,
+    "reorg_policy_defined": false,
+    "success_abort_criteria_defined": true
+  },
+  "readiness": "READY_FOR_EXPLICIT_ISOLATED_TWO_AGENT_NETWORK_AUTHORIZATION",
+  "replay_policy": {
+    "abort_on_replay": true,
+    "message_ids_persist_across_reconnect": true,
+    "peer_nonce_keys_persist_across_reconnect": true
+  },
+  "single_writer": {
+    "automatic_candidate_apply": false,
+    "peer_can_mutate_local_tip": false,
+    "peer_can_override_canonical_height": false,
+    "peer_tip_evidence_only": true,
+    "writer": "agent-a"
+  },
+  "status": "PRENETWORK_SECURITY_GATE_ONLY",
+  "time_model": {
+    "experiment_model": "CALLER_SUPPLIED_DETERMINISTIC_FIXTURE_TIME",
+    "trusted_production_time_defined": false
+  },
+  "topology": {
+    "agent_a": {
+      "host": "127.0.0.1",
+      "id": "agent-a",
+      "port": 28428,
+      "role": "DESIGNATED_LOCAL_CORE_WRITER"
+    },
+    "agent_b": {
+      "host": "127.0.0.1",
+      "id": "agent-b",
+      "port": 28429,
+      "role": "PEER_EVIDENCE_ONLY"
+    },
+    "agent_count": 2,
+    "external_connectivity_authorized": false,
+    "loopback_only": true
+  },
+  "value_scope": {
+    "disposable_worthless_test_only": true,
+    "historical_state_import_authorized": false,
+    "production_wallets_authorized": false,
+    "real_value_authorized": false
+  }
+}
