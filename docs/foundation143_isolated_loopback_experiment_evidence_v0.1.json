@@ -1,0 +1,96 @@
+{
+  "actual_transport": {
+    "listener_started": true,
+    "outbound_connection_started": true,
+    "production_p2p_runtime_started": false,
+    "reconnect_completed": true,
+    "rpc_started": false,
+    "socket_opened": true,
+    "sockets_closed_after_experiment": true,
+    "source_endpoint_verified": true,
+    "subprocess_started": false,
+    "tcp_connection_established": true,
+    "valid_session_completed": true
+  },
+  "authority_preservation": {
+    "canonical_height_overridden": false,
+    "historical_state_imported": false,
+    "history_authority_granted": false,
+    "issuance_authority_granted": false,
+    "key_generated": false,
+    "ledger_mutated": false,
+    "local_tip_after": 0,
+    "local_tip_before": 0,
+    "mining_performed": false,
+    "public_broadcast_performed": false,
+    "real_value_used": false,
+    "settlement_performed": false,
+    "signing_performed": false,
+    "supply_authority_granted": false,
+    "validation_authority_granted": false,
+    "wallet_created": false
+  },
+  "authorization_persistent": false,
+  "gap_reassessment": {
+    "F37-07": "PARTIAL_ISOLATED_LOOPBACK_TRANSPORT_EVIDENCE",
+    "F37-10": "PARTIAL_ISOLATED_LOOPBACK_PROPAGATION_EVIDENCE",
+    "F37-11": "BLOCKED_REORG_POLICY"
+  },
+  "operator_authorization_scope": "FOUNDATION143_ISOLATED_LOOPBACK_NETWORK_EXPERIMENT",
+  "policy_state": {
+    "confirmation_policy_defined": false,
+    "production_peer_authentication_defined": false,
+    "production_resource_limits_defined": false,
+    "reorg_policy_defined": false,
+    "trusted_production_time_defined": false
+  },
+  "profile": "l28-foundation143-isolated-loopback-experiment/v0.1",
+  "propagation": {
+    "agent_a_to_agent_b": [
+      "HELLO"
+    ],
+    "agent_b_to_agent_a": [
+      "HELLO",
+      "TIP_EVIDENCE",
+      "CANDIDATE_EVIDENCE"
+    ],
+    "all_valid_frames_admitted": true,
+    "frame_ids": {
+      "candidate_b": "957f778fecdb4e17fbf94875fec67621f1115a3855cfed319ff58eea17c4abf2",
+      "hello_a": "01d3ca3e592dfe6d424548e7a11c5ebd915912a8d1a0926226511cf353db1f37",
+      "hello_b": "0dadd74242adc156e690b354278930d17d5c4048b29dc191108dd733cec5d838",
+      "tip_b": "254e9e33b40c604acc977db016190b5901fac509c9383074e13d2c17160646db"
+    },
+    "frame_sha256": {
+      "candidate_b": "ad9925ac4c20c99c2f3cdf6d7b7bb3e1e792056bb1f2c680c944eb9186cd74f3",
+      "hello_a": "6770d0bf468a57ef16ebae967426bc9321fd7402ee8f11793c228267af9ac3ed",
+      "hello_b": "7de2e6f6afff441f648f140dd32fb3c0e6a06fd3a0ec517b90edcf9f2cf98c47",
+      "tip_b": "efec27523f0652030d6953de53067087b2ea2b0a63a5bd08daa0fdd7452b2a89"
+    }
+  },
+  "reconnect_replay": {
+    "disconnect_required": true,
+    "replay_state_preserved": true,
+    "replayed_message_rejected": true,
+    "stable_code": "message_replayed"
+  },
+  "result": "PASS",
+  "status": "ISOLATED_TWO_AGENT_PROPAGATION_EVIDENCE=PASS",
+  "topology": {
+    "agent_a": {
+      "host": "127.0.0.1",
+      "id": "agent-a",
+      "port": 28428,
+      "role": "DESIGNATED_LOCAL_CORE_WRITER"
+    },
+    "agent_b": {
+      "host": "127.0.0.1",
+      "id": "agent-b",
+      "port": 28429,
+      "role": "PEER_EVIDENCE_ONLY"
+    },
+    "agent_count": 2,
+    "external_network_used": false,
+    "ipv4_loopback_only": true
+  }
+}
