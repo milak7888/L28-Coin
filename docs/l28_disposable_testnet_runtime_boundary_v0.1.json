@@ -1,0 +1,52 @@
+{
+  "broadcast_authorized": false,
+  "depends_on": [
+    "foundation138-m1-binding",
+    "foundation139-m2-offline-preparation"
+  ],
+  "ephemeral_state_lifecycle": {
+    "cleanup_tested": true,
+    "create_tested": true,
+    "implementation_scope": "TEST_SANDBOX_ONLY",
+    "production_filesystem_authorized": false,
+    "reset_tested": true
+  },
+  "gap_reassessment": {
+    "F37-05": "PARTIAL_TEST_SANDBOX_ONLY",
+    "F37-06": "BLOCKED_RUNTIME",
+    "F37-13": "PARTIAL_TEST_SANDBOX_ONLY"
+  },
+  "genesis_artifact": {
+    "filesystem_write_authorized": false,
+    "materialization": "BYTES_ONLY"
+  },
+  "key_generation_authorized": false,
+  "mining_authorized": false,
+  "network_authorized": false,
+  "p2p_authorized": false,
+  "process_control_authorized": false,
+  "process_hooks": {
+    "interface_only": true,
+    "invocation_authorized": false
+  },
+  "process_start_authorized": false,
+  "production_filesystem_mutation_authorized": false,
+  "profile": "l28-foundation140-runtime-boundary/v0.1",
+  "reserved_runtime_states_reachable": false,
+  "rpc_authorized": false,
+  "runtime_authorized": false,
+  "runtime_binding": {
+    "fail_closed_on_mismatch": true,
+    "fail_closed_on_stale_tip": true,
+    "requires_config_hash": true,
+    "requires_genesis_hash": true,
+    "requires_local_tip_binding": true,
+    "requires_network_id": true
+  },
+  "settlement_authorized": false,
+  "signing_authorized": false,
+  "socket_authorized": false,
+  "status": "OFFLINE_TESTED_BOUNDARY_ONLY",
+  "testnet_start_authorized": false,
+  "wallet_creation_authorized": false
+}
