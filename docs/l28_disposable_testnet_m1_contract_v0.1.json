@@ -1,0 +1,39 @@
+{
+  "profile": "l28-disposable-testnet-m1-contract/v0.1",
+  "status": "SPECIFICATION_ONLY",
+  "protocol_version": "1.0.0",
+  "network_scope": "DISPOSABLE_TEST_ONLY",
+  "network_id_required": true,
+  "network_id_must_differ_from_main": true,
+  "genesis_binding_required": true,
+  "genesis_hash_required": true,
+  "ephemeral_data_dir_required": true,
+  "historical_checkpoint_import_allowed": false,
+  "historical_balances_live_genesis_allowed": false,
+  "main_identity_reuse_allowed": false,
+  "production_keys_allowed": false,
+  "runtime_authorized": false,
+  "network_authorized": false,
+  "signing_authorized": false,
+  "settlement_authorized": false,
+  "mining_authorized": false,
+  "testnet_start_authorized": false,
+  "protected_economic_facts": {
+    "hard_cap": 28000000,
+    "emission_ceiling": 11130000,
+    "historically_mined": 2824584,
+    "treasury_locked": 500000,
+    "circulating_snapshot": 2324584,
+    "halving_interval": 210000,
+    "reward_sequence": [
+      28,
+      14,
+      7,
+      3,
+      1,
+      0
+    ],
+    "historical_mined_through_entry": 100877,
+    "next_canonical_height": 100878
+  }
+}
