@@ -1,0 +1,27 @@
+{
+  "authorization_id": "L28-F157-CORRECTED-RECONNECT-ONE-SHOT-001",
+  "baseline_commit": "25d3bdc8ec77b96c0af717b1864650388559da5e",
+  "cleanup": {
+    "child_processes_remaining": 0,
+    "cleanup_success": true,
+    "errors": [],
+    "persistent_runtime_created": false,
+    "port_28428_free": true,
+    "processes_terminated": true,
+    "sockets_closed": true,
+    "startup_supervisors_remaining": 0,
+    "temporary_state_removed": true
+  },
+  "execution_error": "Empty:",
+  "profile": "l28-foundation158-corrected-one-shot-execution-state/v1.0",
+  "result": "ABORT",
+  "state": {
+    "AUTHORIZATION_CONSUMED": true,
+    "AUTHORIZATION_GRANTED": true,
+    "CONSUMED_FOR_REUSE": true,
+    "EXECUTION_GATE_OPEN": false,
+    "EXPERIMENT_EXECUTED": true,
+    "RESTART_ALLOWED": false,
+    "VALID_FOR_ACTIVE_EXECUTION": false
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "profile": "l28-foundation159-corrected-one-shot-execution-state/v1.0",
+  "result": "ABORT",
+  "authorization_id": "L28-F157-CORRECTED-RECONNECT-ONE-SHOT-001",
+  "repository_execution_baseline": "ea209aab0717283cbed43493366fff81f02bb52f",
+  "f158_bound_baseline": "25d3bdc8ec77b96c0af717b1864650388559da5e",
+  "state_before_start": {
+    "AUTHORIZATION_GRANTED": true,
+    "AUTHORIZATION_CONSUMED": false,
+    "CONSUMED_FOR_REUSE": false,
+    "VALID_FOR_ACTIVE_EXECUTION": false,
+    "EXECUTION_GATE_OPEN": false,
+    "EXPERIMENT_EXECUTED": false
+  },
+  "successful_claim_transition": {
+    "AUTHORIZATION_GRANTED": true,
+    "AUTHORIZATION_CONSUMED": true,
+    "CONSUMED_FOR_REUSE": true,
+    "VALID_FOR_ACTIVE_EXECUTION": true,
+    "EXECUTION_GATE_OPEN": true,
+    "EXPERIMENT_EXECUTED": true
+  },
+  "final_state": {
+    "AUTHORIZATION_GRANTED": true,
+    "AUTHORIZATION_CONSUMED": true,
+    "CONSUMED_FOR_REUSE": true,
+    "VALID_FOR_ACTIVE_EXECUTION": false,
+    "EXECUTION_GATE_OPEN": false,
+    "EXPERIMENT_EXECUTED": true,
+    "RESTART_ALLOWED": false
+  },
+  "termination": {
+    "result": "ABORT",
+    "reason_code": "CHILD_SPAWN_SEMLOCK_REBUILD_FAILED",
+    "reason_code_provenance": "OPERATOR_OBSERVED_EXECUTION_OUTPUT",
+    "child_error_type": "FileNotFoundError",
+    "child_errno": 2,
+    "child_failure_location": "multiprocessing.synchronize.SemLock._rebuild",
+    "controller_error_type": "Empty",
+    "retry_permitted": false,
+    "authorization_reusable": false
+  },
+  "persisted_machine_evidence": {
+    "result": "ABORT",
+    "controller_execution_error": "Empty:",
+    "semlock_traceback_persisted": false
+  },
+  "hypothesis": {
+    "status": "NOT_PROVEN",
+    "shared_ready_event_parent_lifetime_may_not_cover_child_bootstrap": true,
+    "deeper_os_or_multiprocessing_root_cause_claimed": false
+  },
+  "future_authority_requirements": {
+    "NEW_AUTHORIZATION_REQUIRED": true,
+    "SEPARATE_SECURITY_REVIEW_REQUIRED": true,
+    "SEPARATE_EXPLICIT_EXECUTION_INVOCATION_REQUIRED": true,
+    "F159_RETRY_FORBIDDEN": true,
+    "F157_F158_F159_CONSUMPTION_STATE_REUSABLE": false
+  },
+  "authoritative_consumption_marker": {
+    "path": "docs/l28_foundation158_corrected_one_shot_execution_state_v1.0.json",
+    "sha256": "1a9343a8ca2835c9125c2f80c6a3a91275bd6d498a27ee0039d603417b666605",
+    "retained_required": true
+  }
+}

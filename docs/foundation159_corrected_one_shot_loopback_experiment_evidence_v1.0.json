@@ -1,0 +1,176 @@
+{
+  "profile": "l28-foundation159-corrected-one-shot-loopback-experiment-evidence/v1.0",
+  "result": "ABORT",
+  "authorization_id": "L28-F157-CORRECTED-RECONNECT-ONE-SHOT-001",
+  "repository": "milak7888/L28-Coin",
+  "branch": "foundation159-corrected-one-shot-execution",
+  "repository_execution_baseline": "ea209aab0717283cbed43493366fff81f02bb52f",
+  "origin_main_verified_at_execution_baseline": true,
+  "f158_execution_binding": {
+    "baseline_commit": "25d3bdc8ec77b96c0af717b1864650388559da5e",
+    "preflight_gate_sha256": "1a7f21c69f4169d4714df1c18d082e0cc52647aafb945d7636e7381050a4b62f",
+    "helper_sha256": "56d3a8b796ff245cf29124886c0da64b3ab605a640fc45d14a0a26e20ea8e9b6",
+    "focused_pre_start_tests_passed": 35
+  },
+  "authorization_pre_state": {
+    "AUTHORIZATION_GRANTED": true,
+    "AUTHORIZATION_CONSUMED": false,
+    "CONSUMED_FOR_REUSE": false,
+    "VALID_FOR_ACTIVE_EXECUTION": false,
+    "EXECUTION_GATE_OPEN": false,
+    "EXPERIMENT_EXECUTED": false
+  },
+  "consumption_transition_observed": true,
+  "provenance_classification": {
+    "persisted_machine_evidence": {
+      "source": "docs/l28_foundation158_corrected_one_shot_execution_state_v1.0.json",
+      "result": "ABORT",
+      "controller_execution_error": "Empty:",
+      "terminal_consumed_nonrestartable_state": true,
+      "cleanup_success": true
+    },
+    "operator_observed_execution_output": {
+      "classification": "OPERATOR_OBSERVED_NOT_MACHINE_PERSISTED",
+      "reason_code": "CHILD_SPAWN_SEMLOCK_REBUILD_FAILED",
+      "child_error_type": "FileNotFoundError",
+      "child_errno": 2,
+      "child_failure_location": "multiprocessing.synchronize.SemLock._rebuild",
+      "observed_child_traceback_count": 2,
+      "agent_targets_initialized": 0,
+      "retry_observed_in_operator_session": false
+    },
+    "inferred_or_hypothesized_cause": {
+      "status": "NOT_PROVEN",
+      "hypothesis": "SHARED_READY_EVENT_PARENT_LIFETIME_MAY_NOT_COVER_CHILD_BOOTSTRAP",
+      "deeper_os_or_multiprocessing_root_cause_claimed": false
+    },
+    "raw_stderr_retained_or_hash_bound": false
+  },
+  "timing": {
+    "start_time_utc": null,
+    "terminal_state_persisted_at_utc": "2026-09-05T13:10:55Z",
+    "active_duration_seconds": null,
+    "maximum_active_duration_seconds": 60,
+    "exact_start_and_duration_persisted_by_runner": false,
+    "deadline_violation_observed": false
+  },
+  "topology_and_runtime_observations": {
+    "agents_authorized": 2,
+    "isolated_processes_authorized": 2,
+    "child_processes_spawn_attempted": 2,
+    "agent_targets_initialized": 0,
+    "agent_a_listener_observed": false,
+    "ipv4_loopback_listener": "127.0.0.1:28428",
+    "agent_b_required_bind": "127.0.0.1:0",
+    "fixed_agent_b_source_port_28429_used": false,
+    "session_1_agent_b_source_port": null,
+    "session_2_agent_b_source_port": null,
+    "session_count_completed": 0,
+    "reconnect_count_completed": 0,
+    "external_network_used": false
+  },
+  "required_scenario_observations": {
+    "application_identity_continuity_exercised": false,
+    "replay_state_preservation_exercised": false,
+    "replay_rejection_exercised": false,
+    "conflict_or_equivocation_exercised": false,
+    "option_a_halted_conflict_observed": false,
+    "required_runtime_scenario_complete": false
+  },
+  "failure": {
+    "reason_code": "CHILD_SPAWN_SEMLOCK_REBUILD_FAILED",
+    "reason_code_provenance": "OPERATOR_OBSERVED_EXECUTION_OUTPUT",
+    "child_error_type": "FileNotFoundError",
+    "child_errno": 2,
+    "child_failure_location": "multiprocessing.synchronize.SemLock._rebuild",
+    "child_failure_count": 2,
+    "controller_terminal_error_type": "Empty",
+    "controller_terminal_error_location": "multiprocessing.queues.Queue.get",
+    "operator_session_retry_observed": false,
+    "machine_proves_no_retry_attempted": false,
+    "machine_proves_second_execution_can_run": false,
+    "retry_permitted": false
+  },
+  "cleanup": {
+    "cleanup_success": true,
+    "sockets_closed": true,
+    "processes_terminated": true,
+    "child_processes_remaining": 0,
+    "startup_supervisors_remaining": 0,
+    "port_28428_free": true,
+    "temporary_state_removed": true,
+    "persistent_runtime_created": false,
+    "errors": []
+  },
+  "terminal_authorization_state": {
+    "AUTHORIZATION_GRANTED": true,
+    "AUTHORIZATION_CONSUMED": true,
+    "CONSUMED_FOR_REUSE": true,
+    "VALID_FOR_ACTIVE_EXECUTION": false,
+    "EXECUTION_GATE_OPEN": false,
+    "EXPERIMENT_EXECUTED": true,
+    "RESTART_ALLOWED": false
+  },
+  "state_invariants": {
+    "worker_target_code_executed": false,
+    "canonical_rewrite_observed": false,
+    "ledger_mutation_observed": false,
+    "canonical_height_override_observed": false,
+    "issuance_or_supply_authority_exercised": false,
+    "validation_or_history_authority_exercised": false,
+    "automatic_reorg_or_winner_selection_exercised": false
+  },
+  "authority_invariants": {
+    "persistent_p2p_runtime_created": false,
+    "rpc_used": false,
+    "wallet_created": false,
+    "key_created": false,
+    "signing_performed": false,
+    "mining_performed": false,
+    "broadcast_performed": false,
+    "settlement_performed": false,
+    "public_testnet_used": false,
+    "deployment_performed": false
+  },
+  "protected_invariants": {
+    "protocol_version": "1.0.0",
+    "protocol_sha256": "eabd5f2a11916781e6a047e5b2c2188fe4e0f1eae2fdcdc2f68e4c19193c397d",
+    "canonical_validator": "coin.tx_validation.validate_transaction",
+    "tx_validation_sha256": "ac36bd95c932733a60ffc3acbb10b8a9f57e09c9533d0b64ff83affa876f3004",
+    "hard_cap": 28000000,
+    "emission_ceiling": 11130000,
+    "historically_mined": 2824584,
+    "treasury_locked": 500000,
+    "circulating_snapshot": 2324584,
+    "halving_interval": 210000,
+    "reward_schedule": [28, 14, 7, 3, 1, 0],
+    "historical_mined_through_entry": 100877,
+    "next_canonical_height": 100878,
+    "bitcoin_boundary": "EXTERNAL_EVIDENCE_ONLY_ZERO_L28_AUTHORITY",
+    "signer_runtime_authorized": false,
+    "option_a_scope": "REVIEWED_NON_NORMATIVE_SAFETY_BOUNDARY_ONLY"
+  },
+  "f37_reassessment": {
+    "foundation159_advancement": false,
+    "F37-07": "PARTIAL_ISOLATED_LOOPBACK_TRANSPORT_EVIDENCE",
+    "F37-10": "PARTIAL_ISOLATED_LOOPBACK_PROPAGATION_EVIDENCE",
+    "F37-11": "OFFLINE_OPTION_A_REVIEWED_NON_NORMATIVE",
+    "runtime_network_testnet_or_production_authority_granted": false
+  },
+  "future_authority_requirements": {
+    "NEW_AUTHORIZATION_REQUIRED": true,
+    "SEPARATE_SECURITY_REVIEW_REQUIRED": true,
+    "SEPARATE_EXPLICIT_EXECUTION_INVOCATION_REQUIRED": true,
+    "F159_RETRY_FORBIDDEN": true,
+    "F157_F158_F159_CONSUMPTION_STATE_REUSABLE": false
+  },
+  "evidence_limitations": {
+    "exact_start_time_unavailable": true,
+    "exact_duration_unavailable": true,
+    "ephemeral_ports_unavailable_because_no_session_established": true,
+    "runtime_replay_or_option_a_success_must_not_be_claimed": true,
+    "public_testnet_or_production_readiness_claimed": false,
+    "semlock_traceback_is_machine_persisted": false,
+    "no_retry_attempt_is_machine_proven": false
+  }
+}
