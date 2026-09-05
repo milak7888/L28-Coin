@@ -1,0 +1,288 @@
+{
+  "profile": "l28-foundation152-runtime-network-decision-gate/v0.1",
+  "status": "ONE_SHOT_RUNTIME_NETWORK_AUTHORIZATION_GRANTED_NOT_CONSUMED",
+  "baseline": {
+    "commit": "84f7b05ecf10f91dbfcdd5d8909b0df4a673f1f2",
+    "protocol_sha256": "eabd5f2a11916781e6a047e5b2c2188fe4e0f1eae2fdcdc2f68e4c19193c397d",
+    "tx_validation_sha256": "ac36bd95c932733a60ffc3acbb10b8a9f57e09c9533d0b64ff83affa876f3004"
+  },
+  "decision_gate": {
+    "decision_ready": true,
+    "authorized_to_execute": true,
+    "selected_option": "AUTHORIZE_ONE_BOUNDED_ISOLATED_RUNTIME_EXPERIMENT",
+    "options": [
+      {
+        "id": "A",
+        "value": "AUTHORIZE_ONE_BOUNDED_ISOLATED_RUNTIME_EXPERIMENT",
+        "selected": true
+      },
+      {
+        "id": "B",
+        "value": "DEFER",
+        "selected": false
+      },
+      {
+        "id": "C",
+        "value": "REJECT_AND_REVISE",
+        "selected": false
+      }
+    ],
+    "separate_explicit_operator_decision_required": false,
+    "authorization_artifact_present": true,
+    "authorization_artifact": "docs/l28_foundation153_option_a_one_shot_runtime_authorization_v1.0.json",
+    "authorization_granted": true,
+    "authorization_consumed": false,
+    "consumed_for_reuse": false,
+    "valid_for_active_execution": false,
+    "experiment_executed": false
+  },
+  "evidence_boundary": {
+    "F37-07": "PARTIAL_ISOLATED_LOOPBACK_TRANSPORT_EVIDENCE",
+    "F37-10": "PARTIAL_ISOLATED_LOOPBACK_PROPAGATION_EVIDENCE",
+    "F37-11": "OFFLINE_OPTION_A_REVIEWED_NON_NORMATIVE",
+    "foundation143_authorization_persistent": false,
+    "foundation151_next_gate": "EXPLICIT_BOUNDED_RUNTIME_NETWORK_AUTHORIZATION_DECISION"
+  },
+  "proposed_experiment": {
+    "proposal_only": true,
+    "scope": "ONE_DISPOSABLE_TWO_PROCESS_IPV4_LOOPBACK_OPTION_A_CONFLICT_EXPERIMENT",
+    "agent_count": 2,
+    "process_count": 2,
+    "same_local_machine_required": true,
+    "external_connectivity_permitted": false,
+    "topology": {
+      "agent_a": {
+        "id": "agent-a",
+        "role": "DESIGNATED_LOCAL_CORE_WRITER",
+        "address": "127.0.0.1",
+        "port": 28428,
+        "process": "process-a"
+      },
+      "agent_b": {
+        "id": "agent-b",
+        "role": "PEER_EVIDENCE_ONLY",
+        "address": "127.0.0.1",
+        "port": 28429,
+        "process": "process-b"
+      }
+    },
+    "transport_limits": {
+      "max_frame_bytes": 4096,
+      "max_payload_bytes": 2048,
+      "max_messages_per_session": 32,
+      "max_sessions": 2,
+      "max_reconnects": 1,
+      "maximum_wall_duration_seconds": 60
+    },
+    "permitted_message_types": [
+      "HELLO",
+      "TIP_EVIDENCE",
+      "CANDIDATE_EVIDENCE"
+    ],
+    "required_scenarios": [
+      "BOUND_HELLO_AND_EVIDENCE_EXCHANGE",
+      "RECONNECT_REPLAY_REJECTION",
+      "PEER_EQUIVOCATION_HALTS_SYNC_AND_RETAINS_LOCAL_CANONICAL_STATE"
+    ],
+    "lifecycle": {
+      "startup_order": [
+        "VALIDATE_UNCONSUMED_UNEXPIRED_ONE_SHOT_AUTHORIZATION",
+        "CREATE_TWO_ISOLATED_DISPOSABLE_DATA_DIRECTORIES",
+        "VERIFY_ALL_EXECUTION_PREREQUISITES",
+        "ATOMIC_SUCCESSFUL_EXECUTION_START_CONSUMES_FOR_REUSE",
+        "START_PROCESS_A",
+        "START_PROCESS_B",
+        "OPEN_ONLY_DECLARED_LOOPBACK_ENDPOINTS"
+      ],
+      "stop_order": [
+        "STOP_MESSAGE_ADMISSION",
+        "CLOSE_BOTH_LOOPBACK_ENDPOINTS",
+        "STOP_PROCESS_B",
+        "STOP_PROCESS_A",
+        "FINALIZE_EVIDENCE",
+        "REMOVE_DISPOSABLE_STATE"
+      ],
+      "reset_scope": "ONLY_CURRENT_AUTHORIZATION_DISPOSABLE_STATE",
+      "restart_after_stop_permitted": false,
+      "persistent_service_permitted": false
+    },
+    "data_isolation": {
+      "run_root_pattern": "SYSTEM_TEMPORARY_DIRECTORY/foundation152/<authorization_id>/",
+      "agent_a_relative_data_dir": "agent-a/",
+      "agent_b_relative_data_dir": "agent-b/",
+      "shared_data_directory_permitted": false,
+      "preexisting_directory_permitted": false,
+      "historical_state_import_permitted": false,
+      "real_value_state_permitted": false
+    },
+    "message_replay_isolation": {
+      "state_scope": "CURRENT_AUTHORIZATION_ID_AND_PEER_ID",
+      "message_ids_persist_across_allowed_reconnect": true,
+      "peer_nonce_keys_persist_across_allowed_reconnect": true,
+      "state_reuse_across_authorizations_permitted": false,
+      "duplicate_message_action": "ABORT_AND_HALT_FAIL_CLOSED"
+    }
+  },
+  "future_one_shot_authorization": {
+    "option_a_selected": true,
+    "separate_artifact_required": true,
+    "must_bind_exact_foundation152_profile": true,
+    "must_bind_exact_baseline_commit": true,
+    "must_bind_exact_experiment_scope": true,
+    "must_bind_operator_identity_and_decision_record": true,
+    "maximum_execution_window_seconds": 60,
+    "consume_atomically_on_successful_execution_start": true,
+    "maximum_execution_count": 1,
+    "reuse_permitted": false,
+    "authorization_granted": true,
+    "authorization_consumed": false,
+    "consumed_for_reuse": false,
+    "valid_for_active_execution": false,
+    "experiment_executed": false,
+    "lifecycle_states": {
+      "pre_start": {
+        "authorization_consumed": false,
+        "consumed_for_reuse": false,
+        "valid_for_active_execution": false,
+        "first_start_consumption_available": true
+      },
+      "active_execution": {
+        "authorization_consumed": true,
+        "consumed_for_reuse": true,
+        "valid_for_active_execution": true,
+        "first_start_consumption_available": false
+      },
+      "terminated_execution": {
+        "authorization_consumed": true,
+        "consumed_for_reuse": true,
+        "valid_for_active_execution": false,
+        "first_start_consumption_available": false
+      }
+    },
+    "active_execution_validity_ends_at_earliest_of": [
+      "EXPERIMENT_COMPLETED",
+      "EXPERIMENT_ABORTED",
+      "SIXTY_SECOND_MAXIMUM_DEADLINE"
+    ],
+    "consumption_does_not_invalidate_active_execution": true,
+    "consumed_authorization_restart_action": "REJECT_RESTART_FAIL_CLOSED",
+    "missing_invalid_or_previously_consumed_start_action": "DO_NOT_START_FAIL_CLOSED"
+  },
+  "option_a_integration": {
+    "policy": "HALT_ON_CONFLICT_RETAIN_CURRENT_LOCAL_CANONICAL_STATE",
+    "scope": "REVIEWED_NON_NORMATIVE_SAFETY_BOUNDARY_ONLY",
+    "peer_equivocation_assessment_required": true,
+    "required_transition": "SYNCING_TO_HALTED_CONFLICT",
+    "retain_current_local_canonical_state": true,
+    "halt_is_sticky": true,
+    "resume_during_experiment_permitted": false,
+    "governed_deterministic_resolution_required_for_any_future_resume": true
+  },
+  "abort_criteria": [
+    "AUTHORIZATION_MISSING_INVALID_OR_PREVIOUSLY_CONSUMED_START_ATTEMPT",
+    "NON_LOOPBACK_BIND_OR_CONNECT_ATTEMPT",
+    "UNDECLARED_ADDRESS_PORT_PROCESS_OR_MESSAGE_TYPE",
+    "RESOURCE_LIMIT_EXCEEDED",
+    "IDENTITY_BINDING_MISMATCH",
+    "REPLAY_OR_NONCE_REUSE",
+    "PEER_EQUIVOCATION_OR_CONFLICT",
+    "OPTION_A_HALT_OR_RETENTION_INVARIANT_FAILURE",
+    "ANY_CANONICAL_STATE_OR_LEDGER_MUTATION_CLAIM",
+    "ANY_AUTHORITY_OVERRIDE_CLAIM",
+    "UNEXPECTED_PROCESS_EXIT_OR_PARTIAL_FAILURE",
+    "EVIDENCE_CAPTURE_FAILURE",
+    "CLEANUP_BOUNDARY_VIOLATION"
+  ],
+  "evidence_capture": {
+    "required": true,
+    "report_profile": "l28-foundation152-bounded-experiment-evidence/v0.1",
+    "capture": [
+      "AUTHORIZATION_SCOPE_DIGEST_AND_CONSUMPTION_RESULT",
+      "PROCESS_COUNT_IDENTITIES_START_AND_STOP_OUTCOMES",
+      "BOUND_AND_CONNECTED_ENDPOINTS",
+      "ORDERED_PUBLIC_FRAME_IDS_AND_SHA256_DIGESTS",
+      "REPLAY_STATE_SCOPE_AND_REJECTION_CODE",
+      "OPTION_A_ASSESSMENT_AND_SYNC_STATE_TRANSITION",
+      "LOCAL_CANONICAL_STATE_BEFORE_AND_AFTER",
+      "ABORT_REASON_AND_CLEANUP_RESULT"
+    ],
+    "private_or_secret_evidence_permitted": false,
+    "pass_requires_complete_evidence": true
+  },
+  "cleanup_requirements": {
+    "both_endpoints_closed": true,
+    "both_processes_stopped": true,
+    "disposable_data_directories_removed": true,
+    "authorization_irreversibly_consumed": true,
+    "persistent_listener_or_peer_session_permitted": false,
+    "cleanup_failure_result": "EXPERIMENT_FAILED_CLEANUP_INCOMPLETE"
+  },
+  "current_task_execution_authority": {
+    "network_authorized": false,
+    "socket_authorized": false,
+    "persistent_p2p_runtime_authorized": false,
+    "filesystem_runtime_authorized": false,
+    "process_runtime_authorized": false,
+    "rpc_authorized": false,
+    "wallet_creation_authorized": false,
+    "key_creation_authorized": false,
+    "signing_authorized": false,
+    "mining_authorized": false,
+    "broadcast_authorized": false,
+    "settlement_authorized": false,
+    "deployment_authorized": false,
+    "public_testnet_authorized": false
+  },
+  "authorized_future_bounded_capabilities": {
+    "scope": "ONE_FOUNDATION152_EXPERIMENT_ONLY",
+    "network_authorized": true,
+    "socket_authorized": true,
+    "filesystem_runtime_authorized": true,
+    "process_runtime_authorized": true,
+    "persistent_authority": false,
+    "transferable": false,
+    "reusable": false
+  },
+  "authority_firewall": {
+    "ledger_mutation_authorized": false,
+    "canonical_height_override_authorized": false,
+    "issuance_authority": false,
+    "supply_authority": false,
+    "validation_authority": false,
+    "consensus_authority": false,
+    "history_authority": false,
+    "settlement_authority": false,
+    "confirmation_claim_authorized": false,
+    "automatic_reorg_authorized": false,
+    "fork_winner_selected": false
+  },
+  "protected_invariants": {
+    "protocol_version": "1.0.0",
+    "protocol_invariants_changed": false,
+    "canonical_validator": "coin.tx_validation.validate_transaction",
+    "transaction_validation_changed": false,
+    "coinbase_only_issuance": true,
+    "hard_cap": 28000000,
+    "emission_ceiling": 11130000,
+    "historically_mined": 2824584,
+    "treasury_locked": 500000,
+    "circulating_snapshot": 2324584,
+    "halving_interval": 210000,
+    "reward_schedule": [
+      28,
+      14,
+      7,
+      3,
+      1,
+      0
+    ],
+    "historical_mined_through_entry": 100877,
+    "next_canonical_height": 100878,
+    "canonical_height_authority": "CONSENSUS_DERIVED_ONLY",
+    "historical_evidence_immutable": true,
+    "historical_state_changed": false,
+    "bitcoin_authority": "EXTERNAL_EVIDENCE_ONLY_ZERO_L28_AUTHORITY",
+    "signer_runtime_authorized": false,
+    "option_a_normative_protocol_adoption": false
+  }
+}
