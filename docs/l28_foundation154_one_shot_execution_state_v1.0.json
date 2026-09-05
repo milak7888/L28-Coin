@@ -1,0 +1,37 @@
+{
+  "profile": "l28-foundation154-one-shot-execution-state/v1.0",
+  "authorization_id": "L28-F153-OPTION-A-ONE-SHOT-001",
+  "parent_commit": "fd3bf5d08bea5ec57b4f127b6f5e47a56d790ab6",
+  "selected_decision": "AUTHORIZE_ONE_BOUNDED_ISOLATED_RUNTIME_EXPERIMENT",
+  "state_before_start": {
+    "AUTHORIZATION_GRANTED": true,
+    "AUTHORIZATION_CONSUMED": false,
+    "CONSUMED_FOR_REUSE": false,
+    "VALID_FOR_ACTIVE_EXECUTION": false,
+    "EXPERIMENT_EXECUTED": false
+  },
+  "successful_start_transition": {
+    "AUTHORIZATION_GRANTED": true,
+    "AUTHORIZATION_CONSUMED": true,
+    "CONSUMED_FOR_REUSE": true,
+    "VALID_FOR_ACTIVE_EXECUTION": true,
+    "EXPERIMENT_EXECUTED": true
+  },
+  "final_state": {
+    "AUTHORIZATION_GRANTED": true,
+    "AUTHORIZATION_CONSUMED": true,
+    "CONSUMED_FOR_REUSE": true,
+    "VALID_FOR_ACTIVE_EXECUTION": false,
+    "EXPERIMENT_EXECUTED": true,
+    "RESTART_ALLOWED": false
+  },
+  "termination": {
+    "result": "ABORT",
+    "reason_code": "RECONNECT_SOURCE_PORT_REBIND_FAILED",
+    "observed_error_type": "OSError",
+    "observed_errno": 48,
+    "observed_error": "Address already in use",
+    "retry_permitted": false,
+    "authorization_reusable": false
+  }
+}
