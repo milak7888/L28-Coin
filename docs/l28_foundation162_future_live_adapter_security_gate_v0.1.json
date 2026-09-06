@@ -1,0 +1,120 @@
+{
+  "profile": "l28-foundation162-future-live-adapter-security-gate/v0.1",
+  "status": "PASS_OFFLINE_ADAPTER_BOUNDARY_NO_EXECUTION_AUTHORITY",
+  "baseline_commit": "a5938d72f28e369f956e012da3acbbd609c6654b",
+  "source_bindings": {
+    "f158_helper": {
+      "path": "tests/foundation158_corrected_one_shot_execution_helper.py",
+      "sha256": "56d3a8b796ff245cf29124886c0da64b3ab605a640fc45d14a0a26e20ea8e9b6"
+    },
+    "f158_consumption_marker": {
+      "path": "docs/l28_foundation158_corrected_one_shot_execution_state_v1.0.json",
+      "sha256": "1a9343a8ca2835c9125c2f80c6a3a91275bd6d498a27ee0039d603417b666605"
+    },
+    "f160_model": {
+      "path": "tests/foundation160_spawn_bootstrap_lifetime_model.py",
+      "sha256": "89c27177420a7fe4a6f8016498e2b44e923e75106013670fa724bf0186d31b2c"
+    },
+    "f160_gate": {
+      "path": "docs/l28_foundation160_spawn_bootstrap_lifetime_gate_v0.1.json",
+      "sha256": "408fe4264253a2940b93a051cdace49fda325019c8178def003ff695632e23d5"
+    },
+    "f161_helper": {
+      "path": "tests/foundation161_future_runtime_lifecycle_helper.py",
+      "sha256": "ddbb09e794ae284c836d67b3ad6755b30930b6dee5819018325910dcce9540b3"
+    },
+    "f161_tests": {
+      "path": "tests/test_foundation161_future_runtime_lifecycle_helper.py",
+      "sha256": "69c9eb9cf3471e85fb18f12560d01a78d7c7a0ea679b0b5795b073b9a4b502cf"
+    },
+    "f161_gate": {
+      "path": "docs/l28_foundation161_future_runtime_lifecycle_gate_v0.1.json",
+      "sha256": "24e839fc0707c64ea4c0d957730368bb404e1f45b16d842cd383d1ba76de0e8c"
+    },
+    "f161_design": {
+      "path": "docs/foundation161_future_runtime_lifecycle_design_v0.1.md",
+      "sha256": "f4e8a24eb0e840a8d03ca15f45587260f8dcc31dd1f64100614b6aca46ad3d95"
+    }
+  },
+  "historical_state": {
+    "F159_RESULT": "ABORT",
+    "ROOT_CAUSE": "NOT_PROVEN",
+    "SEMLOCK_EVIDENCE_CLASSIFICATION": "OPERATOR_OBSERVED_NOT_MACHINE_PERSISTED",
+    "F159_RETRY_FORBIDDEN": true
+  },
+  "adapter_contract": {
+    "F161_FIRST_PARENT_OWNERSHIP_REQUIRED": true,
+    "COMPLETE_RESOURCE_SET_REQUIRED": true,
+    "EXACT_REGISTERED_RESOURCE_IDENTITY_REQUIRED": true,
+    "DUPLICATE_RESOURCE_IDENTITY_REJECTED": true,
+    "RESOURCE_SET_FROZEN_BEFORE_HYPOTHETICAL_ELIGIBILITY": true,
+    "REPLACEMENTS_LOOKALIKES_OR_SUBSTITUTES_REJECTED": true,
+    "lifecycle_mapping": [
+      "PROCESS_OBJECT_CONSTRUCTION",
+      "PROCESS_START_SUPERVISION",
+      "CHILD_BOOTSTRAP_WINDOW",
+      "ACTIVE_EXECUTION",
+      "CLEANUP_UNTIL_ALL_CHILDREN_TERMINAL",
+      "RELEASED"
+    ],
+    "single_deadline_required": true,
+    "deadline_coverage": [
+      "RESOURCE_CONSTRUCTION",
+      "STARTUP_SUPERVISION",
+      "CHILD_BOOTSTRAP",
+      "ACTIVE_WORK",
+      "CLEANUP_INITIATION"
+    ],
+    "timer_or_thread_implemented": false,
+    "all_children_terminal_before_release": true,
+    "all_startup_supervisors_quiescent_before_release": true,
+    "F161_CLEANUP_PREDICATES_REQUIRED": true,
+    "failure_preserves_parent_ownership_for_cleanup": true,
+    "boundary_references_clear_only_after_f161_release": true,
+    "terminal_states": [
+      "SUCCESS",
+      "EXECUTION_ABORT",
+      "CLEANUP_FAILURE",
+      "TERMINALIZATION_FAILURE"
+    ]
+  },
+  "authority": {
+    "NEW_AUTHORIZATION_REQUIRED": true,
+    "SEPARATE_SECURITY_REVIEW_REQUIRED": true,
+    "SEPARATE_EXPLICIT_EXECUTION_INVOCATION_REQUIRED": true,
+    "F159_RETRY_FORBIDDEN": true,
+    "F157_F158_F159_CONSUMPTION_STATE_REUSABLE": false,
+    "F161_EXECUTION_AUTHORIZED": false,
+    "F162_EXECUTION_AUTHORIZED": false
+  },
+  "offline_boundary": {
+    "NO_EXECUTION_OCCURRED": true,
+    "PROCESSES_STARTED": false,
+    "THREADS_STARTED": false,
+    "SOCKETS_OPENED": false,
+    "NETWORK_TRAFFIC_USED": false,
+    "AUTHORIZATION_GRANTED": false,
+    "AUTHORIZATION_CONSUMED": false
+  },
+  "protected_authority": {
+    "issuance": false,
+    "supply": false,
+    "height": false,
+    "validation": false,
+    "consensus": false,
+    "history": false,
+    "ledger": false,
+    "settlement": false,
+    "signing": false,
+    "wallet": false,
+    "bitcoin_authority": false
+  },
+  "protected_invariants": {
+    "protocol_version": "1.0.0",
+    "protocol_sha256": "eabd5f2a11916781e6a047e5b2c2188fe4e0f1eae2fdcdc2f68e4c19193c397d",
+    "canonical_validator": "coin.tx_validation.validate_transaction",
+    "tx_validation_sha256": "ac36bd95c932733a60ffc3acbb10b8a9f57e09c9533d0b64ff83affa876f3004",
+    "economics_history_genesis_supply_snapshot_or_allocation_changed": false,
+    "ledger_height_signer_or_bitcoin_boundary_changed": false
+  }
+}
