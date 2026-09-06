@@ -1,0 +1,88 @@
+{
+  "profile": "l28-foundation160-spawn-bootstrap-lifetime-gate/v0.1",
+  "status": "PASS_OFFLINE_DESIGN_NO_EXECUTION_AUTHORITY",
+  "baseline_commit": "0cbf51e7884127a9b8fea7261c67556ef75c1020",
+  "historical_bindings": {
+    "f158_helper_path": "tests/foundation158_corrected_one_shot_execution_helper.py",
+    "f158_helper_sha256": "56d3a8b796ff245cf29124886c0da64b3ab605a640fc45d14a0a26e20ea8e9b6",
+    "f158_consumption_marker_path": "docs/l28_foundation158_corrected_one_shot_execution_state_v1.0.json",
+    "f158_consumption_marker_sha256": "1a9343a8ca2835c9125c2f80c6a3a91275bd6d498a27ee0039d603417b666605",
+    "f159_result": "ABORT",
+    "f159_root_cause_status": "NOT_PROVEN",
+    "f159_semlock_evidence_classification": "OPERATOR_OBSERVED_NOT_MACHINE_PERSISTED"
+  },
+  "parent_owned_bundle_contract": {
+    "strongly_retained_resources": [
+      "SYNCHRONIZATION_READY_OBJECT",
+      "RESULT_CHANNEL_OBJECT",
+      "CHILD_PROCESS_LIFECYCLE_OBJECTS",
+      "STARTUP_SUPERVISOR_LIFECYCLE_OBJECTS"
+    ],
+    "required_phases": [
+      "PROCESS_OBJECT_CONSTRUCTION",
+      "PROCESS_START_SUPERVISION",
+      "CHILD_BOOTSTRAP_WINDOW",
+      "ACTIVE_EXECUTION",
+      "CLEANUP_UNTIL_ALL_CHILDREN_TERMINAL"
+    ],
+    "child_argument_release_removes_parent_ready_reference": false,
+    "release_with_nonterminal_child_permitted": false,
+    "release_with_active_startup_supervisor_permitted": false,
+    "release_before_cleanup_phase_permitted": false,
+    "release_after_all_children_terminal_and_supervisors_quiescent_permitted": true,
+    "cleanup_release_fail_closed": true,
+    "repeated_or_invalid_transition_permitted": false,
+    "result_channel_retained_through_cleanup": true,
+    "future_live_implementation_must_adopt_contract_before_new_experiment_review": true
+  },
+  "root_cause_boundary": {
+    "shared_ready_lifetime_is_proven_f159_root_cause": false,
+    "classification": "HYPOTHESIS_ONLY",
+    "deeper_os_or_multiprocessing_root_cause_claimed": false
+  },
+  "future_authority_requirements": {
+    "NEW_AUTHORIZATION_REQUIRED": true,
+    "SEPARATE_SECURITY_REVIEW_REQUIRED": true,
+    "SEPARATE_EXPLICIT_EXECUTION_INVOCATION_REQUIRED": true,
+    "F159_RETRY_FORBIDDEN": true,
+    "F157_F158_F159_CONSUMPTION_STATE_REUSABLE": false,
+    "F160_EXECUTION_AUTHORIZED": false
+  },
+  "offline_capability_firewall": {
+    "NO_EXECUTION_OCCURRED": true,
+    "SOCKETS_OPENED": false,
+    "PROCESSES_STARTED": false,
+    "NETWORK_TRAFFIC_USED": false,
+    "F160_AUTHORIZATION_GRANTED_OR_CONSUMED": false,
+    "TESTNET_EXECUTED": false,
+    "LIVE_RUNTIME_IMPLEMENTATION_ADDED": false,
+    "forbidden_imports": [
+      "multiprocessing",
+      "socket",
+      "subprocess",
+      "threading",
+      "asyncio"
+    ],
+    "forbidden_calls": [
+      "start",
+      "connect",
+      "bind",
+      "listen",
+      "accept",
+      "send",
+      "recv",
+      "Popen",
+      "run_authorized_experiment_once"
+    ]
+  },
+  "protected_boundaries": {
+    "protocol_version": "1.0.0",
+    "protocol_sha256": "eabd5f2a11916781e6a047e5b2c2188fe4e0f1eae2fdcdc2f68e4c19193c397d",
+    "canonical_validator": "coin.tx_validation.validate_transaction",
+    "tx_validation_sha256": "ac36bd95c932733a60ffc3acbb10b8a9f57e09c9533d0b64ff83affa876f3004",
+    "economic_history_or_consensus_changed": false,
+    "bitcoin_authority_changed": false,
+    "signer_authority_changed": false,
+    "f37_status_changed": false
+  }
+}
