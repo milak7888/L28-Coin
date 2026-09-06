@@ -1,0 +1,96 @@
+{
+  "profile": "l28-foundation161-future-runtime-lifecycle-gate/v0.1",
+  "status": "PASS_OFFLINE_FUTURE_HELPER_NO_EXECUTION_AUTHORITY",
+  "baseline_commit": "75be0f89a8758e6b24db54bdc1be039b53f3edb0",
+  "source_bindings": {
+    "f160_model_path": "tests/foundation160_spawn_bootstrap_lifetime_model.py",
+    "f160_model_sha256": "89c27177420a7fe4a6f8016498e2b44e923e75106013670fa724bf0186d31b2c",
+    "f160_gate_path": "docs/l28_foundation160_spawn_bootstrap_lifetime_gate_v0.1.json",
+    "f160_gate_sha256": "408fe4264253a2940b93a051cdace49fda325019c8178def003ff695632e23d5",
+    "f158_helper_path": "tests/foundation158_corrected_one_shot_execution_helper.py",
+    "f158_helper_sha256": "56d3a8b796ff245cf29124886c0da64b3ab605a640fc45d14a0a26e20ea8e9b6",
+    "f158_consumption_marker_path": "docs/l28_foundation158_corrected_one_shot_execution_state_v1.0.json",
+    "f158_consumption_marker_sha256": "1a9343a8ca2835c9125c2f80c6a3a91275bd6d498a27ee0039d603417b666605"
+  },
+  "F159_RESULT": "ABORT",
+  "F159_RETRY_FORBIDDEN": true,
+  "ROOT_CAUSE_STATUS": "NOT_PROVEN",
+  "SEMLOCK_EVIDENCE_CLASSIFICATION": "OPERATOR_OBSERVED_NOT_MACHINE_PERSISTED",
+  "lifecycle_contract": {
+    "parent_owned_resources": [
+      "READY_SYNCHRONIZATION_REFERENCE",
+      "RESULT_CHANNEL_REFERENCE",
+      "EXACT_CHILD_LIFECYCLE_REFERENCES",
+      "EXACT_STARTUP_SUPERVISOR_LIFECYCLE_REFERENCES"
+    ],
+    "exact_phases": [
+      "PROCESS_OBJECT_CONSTRUCTION",
+      "PROCESS_START_SUPERVISION",
+      "CHILD_BOOTSTRAP_WINDOW",
+      "ACTIVE_EXECUTION",
+      "CLEANUP_UNTIL_ALL_CHILDREN_TERMINAL",
+      "RELEASED"
+    ],
+    "exact_registered_object_identity_required": true,
+    "unknown_or_lookalike_resource_rejected": true,
+    "duplicate_registration_rejected": true,
+    "ordered_transitions_required": true,
+    "skipped_backward_repeated_or_post_release_transition_permitted": false,
+    "cleanup_phase_required_before_release": true,
+    "all_children_terminal_required_before_release": true,
+    "all_startup_supervisors_quiescent_required_before_release": true,
+    "failed_release_preserves_all_parent_references": true,
+    "successful_release_clears_all_parent_references_together": true,
+    "child_argument_release_affects_parent_ownership": false,
+    "ready_and_result_channel_retained_through_cleanup": true,
+    "deterministic_failure_codes_required": true
+  },
+  "future_adapter_boundary": {
+    "F161_INSTANTIATES_PROCESSES": false,
+    "F161_INSTANTIATES_SYNCHRONIZATION_PRIMITIVES": false,
+    "F161_INSTANTIATES_QUEUES_OR_CHANNELS": false,
+    "F161_STARTS_RUNTIME_OBJECTS": false,
+    "FUTURE_ADAPTER_MUST_INJECT_EXACT_OWNED_RESOURCES": true,
+    "FUTURE_LIVE_ADAPTER_REQUIRES_SEPARATE_SECURITY_REVIEW": true,
+    "FUTURE_LIVE_ADAPTER_REQUIRES_SEPARATE_AUTHORIZATION": true
+  },
+  "authority": {
+    "NEW_AUTHORIZATION_REQUIRED": true,
+    "SEPARATE_SECURITY_REVIEW_REQUIRED": true,
+    "SEPARATE_EXPLICIT_EXECUTION_INVOCATION_REQUIRED": true,
+    "F159_RETRY_FORBIDDEN": true,
+    "F157_F158_F159_CONSUMPTION_STATE_REUSABLE": false,
+    "F161_EXECUTION_AUTHORIZED": false
+  },
+  "offline_boundary": {
+    "NO_EXECUTION_OCCURRED": true,
+    "SOCKETS_OPENED": false,
+    "PROCESSES_STARTED": false,
+    "THREADS_STARTED": false,
+    "NETWORK_TRAFFIC_USED": false,
+    "AUTHORIZATION_GRANTED": false,
+    "AUTHORIZATION_CONSUMED": false
+  },
+  "protected_authority": {
+    "issuance": false,
+    "supply": false,
+    "height": false,
+    "validation": false,
+    "consensus": false,
+    "history": false,
+    "ledger": false,
+    "settlement": false,
+    "signing": false,
+    "wallet": false,
+    "bitcoin_authority": false
+  },
+  "protected_invariants": {
+    "protocol_version": "1.0.0",
+    "protocol_sha256": "eabd5f2a11916781e6a047e5b2c2188fe4e0f1eae2fdcdc2f68e4c19193c397d",
+    "canonical_validator": "coin.tx_validation.validate_transaction",
+    "tx_validation_sha256": "ac36bd95c932733a60ffc3acbb10b8a9f57e09c9533d0b64ff83affa876f3004",
+    "economics_history_genesis_supply_or_allocation_changed": false,
+    "ledger_or_height_changed": false,
+    "signer_or_bitcoin_boundary_changed": false
+  }
+}
