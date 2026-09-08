@@ -1,0 +1,93 @@
+{
+  "profile": "l28-foundation167-bounded-execution-preflight-gate/v0.1",
+  "baseline_commit": "5c8e803a4faa58493046f98b0184d21eaf6d05e6",
+  "source_bindings": {
+    "f160_gate": {"path": "docs/l28_foundation160_spawn_bootstrap_lifetime_gate_v0.1.json", "sha256": "408fe4264253a2940b93a051cdace49fda325019c8178def003ff695632e23d5"},
+    "f161_gate": {"path": "docs/l28_foundation161_future_runtime_lifecycle_gate_v0.1.json", "sha256": "24e839fc0707c64ea4c0d957730368bb404e1f45b16d842cd383d1ba76de0e8c"},
+    "f162_gate": {"path": "docs/l28_foundation162_future_live_adapter_security_gate_v0.1.json", "sha256": "112008e5b4fc2d14b0b7239038f21006493f668ffff21f224e2633377bc8c8fc"},
+    "f163_gate": {"path": "docs/l28_foundation163_live_adapter_implementation_readiness_gate_v0.1.json", "sha256": "6322cbfca6260e36e445c8f110f420be2b161168e2e234ebcecbac50e56b4985"},
+    "f164_gate": {"path": "docs/l28_foundation164_live_adapter_candidate_gate_v0.1.json", "sha256": "a05dd02527b2cd20ca1636ec2a6b48c62719957a32140f55a83ceb3f6ab788e6"},
+    "f164_candidate": {"path": "coin/future_live_adapter_candidate.py", "sha256": "1921fb28103e0240c9fac6f0e1c3e17f6c0a2b5824a1609ed3cbdf91f1e4d2db"},
+    "f165_gate": {"path": "docs/l28_foundation165_runtime_authorization_decision_gate_v0.1.json", "sha256": "a9e1c6b791eb7031bcd81024a163c4ddafddb9bb844ab9f24324bc5dfc80d942"},
+    "f166_model": {"path": "tests/foundation166_runtime_authorization_decision.py", "sha256": "bb31c7d70d859ba0009a3328c6a23199fac6e4c83c2767cf7e539df87d289f5c"},
+    "f166_tests": {"path": "tests/test_foundation166_runtime_authorization_decision.py", "sha256": "3b33e875c336633b64eaa5e14f0ff289523c5944bb614752469297cdc8cd2b50"},
+    "f166_gate": {"path": "docs/l28_foundation166_runtime_authorization_decision_gate_v0.1.json", "sha256": "f5433efd24f051b188d6e937f0debf651ddf61543089c10a8443745bb1c1b526"},
+    "f166_review": {"path": "docs/foundation166_runtime_authorization_decision_review_v0.1.md", "sha256": "b4492bf95a7339bc86de16283da914601af8a56ab18e491986440d7cb028ef00"}
+  },
+  "proposed_experiment_id": "L28-F165-PROPOSED-BOUNDED-RUNTIME-001",
+  "scope_binding": "EXACT_F165_PROPOSED_MAXIMUM_SCOPE",
+  "preflight_state": {
+    "F166_DECISION": "PENDING_OPERATOR_DECISION",
+    "READY_FOR_EXECUTION": false,
+    "EXECUTION_GATE_OPEN": false,
+    "EXECUTION_AUTHORIZED": false,
+    "F168_EXECUTION_OCCURRED": false
+  },
+  "future_eligibility_rule": {
+    "explicit_f166_authorize_record_required": true,
+    "separate_explicit_f168_invocation_required": true,
+    "both_are_necessary": true,
+    "this_template_is_authority": false,
+    "this_template_is_an_invocation": false
+  },
+  "bounded_scope": {
+    "disposable": true,
+    "isolated": true,
+    "agent_count": 2,
+    "child_process_count": 2,
+    "network_family": "IPv4_LOOPBACK_ONLY",
+    "external_network_allowed": false,
+    "agent_a_listener": ["127.0.0.1", 28428],
+    "agent_b_bind": ["127.0.0.1", 0],
+    "fixed_client_source_port_28429_forbidden": true,
+    "session_count": 2,
+    "reconnect_count": 1,
+    "maximum_duration_seconds": 60,
+    "deadline_kind": "ONE_SINGLE_BOUNDED_DEADLINE",
+    "deadline_coverage": ["PROCESS_OBJECT_CONSTRUCTION", "PROCESS_START_SUPERVISION", "CHILD_BOOTSTRAP_WINDOW", "ACTIVE_EXECUTION", "CLEANUP_INITIATION"],
+    "strong_parent_resource_ownership_required": true,
+    "parent_ownership_contracts": ["F160", "F161"],
+    "provenance_freeze_security_contracts": ["F162", "F163"],
+    "f164_candidate_required": true,
+    "f164_candidate_activating": false,
+    "f164_candidate_sha256": "1921fb28103e0240c9fac6f0e1c3e17f6c0a2b5824a1609ed3cbdf91f1e4d2db",
+    "cleanup_requires_all_children_terminal": true,
+    "cleanup_requires_all_supervisors_quiescent": true,
+    "terminal_states": ["SUCCESS", "EXECUTION_ABORT", "CLEANUP_FAILURE", "TERMINALIZATION_FAILURE"]
+  },
+  "offline_boundary": {
+    "NO_ACTIVITY_OCCURRED": true,
+    "RUNTIME_ACTIVITY": false,
+    "PROCESS_ACTIVITY": false,
+    "THREAD_ACTIVITY": false,
+    "SOCKET_ACTIVITY": false,
+    "NETWORK_ACTIVITY": false,
+    "SIGNING_ACTIVITY": false
+  },
+  "protected_authority": {
+    "issuance": false,
+    "supply": false,
+    "height": false,
+    "validation": false,
+    "consensus": false,
+    "history": false,
+    "ledger": false,
+    "settlement": false,
+    "signing": false,
+    "wallet": false,
+    "bitcoin_authority": false
+  },
+  "protected_invariants": {
+    "protocol_version": "1.0.0",
+    "protocol_sha256": "eabd5f2a11916781e6a047e5b2c2188fe4e0f1eae2fdcdc2f68e4c19193c397d",
+    "canonical_validator": "coin.tx_validation.validate_transaction",
+    "tx_validation_sha256": "ac36bd95c932733a60ffc3acbb10b8a9f57e09c9533d0b64ff83affa876f3004"
+  },
+  "cross_batch_security_review": {
+    "PASS": 12,
+    "GAP": 0,
+    "BLOCKED": 0,
+    "COMMIT_READY": true,
+    "OFFLINE_ONLY": true
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "profile": "l28-foundation166-runtime-authorization-decision-gate/v0.1",
+  "baseline_commit": "5c8e803a4faa58493046f98b0184d21eaf6d05e6",
+  "source_bindings": {
+    "f165_package": {"path": "tests/foundation165_runtime_authorization_package.py", "sha256": "04fcbf991af579fe17831324706e5a2c251e8ca34dfd57dca631852ca48f4df0"},
+    "f165_evaluator": {"path": "tests/foundation165_runtime_authorization_evaluator.py", "sha256": "b31d45e8da72f6019ee6c59cc89f2aa18dcf92403c363493845fb17f5e4de304"},
+    "f165_package_tests": {"path": "tests/test_foundation165_runtime_authorization_package.py", "sha256": "4bc2c64eb411a1c395986af73b9cb34d1f0587b8fd2a6c72daddd9a37ad78ce8"},
+    "f165_evaluator_tests": {"path": "tests/test_foundation165_runtime_authorization_evaluator.py", "sha256": "ee48e5a56f75697df7dfbf5d31aac6717d104531bbf23154edbe0b3d1de55a69"},
+    "f165_gate": {"path": "docs/l28_foundation165_runtime_authorization_decision_gate_v0.1.json", "sha256": "a9e1c6b791eb7031bcd81024a163c4ddafddb9bb844ab9f24324bc5dfc80d942"},
+    "f165_review": {"path": "docs/foundation165_runtime_authorization_decision_review_v0.1.md", "sha256": "dda555be29f99deed4ac4045617789f06df40984e9e21322df7e0e4050049767"}
+  },
+  "proposed_experiment_id": "L28-F165-PROPOSED-BOUNDED-RUNTIME-001",
+  "required_f165_state": {
+    "decision_result": "READY_FOR_OPERATOR_AUTHORIZATION_DECISION",
+    "new_authorization_required": true,
+    "f159_retry_forbidden": true,
+    "old_authorization_reusable": false,
+    "authorization_granted": false,
+    "execution_authorized": false,
+    "execution_invocation_present": false
+  },
+  "decision_states": ["PENDING_OPERATOR_DECISION", "AUTHORIZE_ONE_NEW_BOUNDED_EXPERIMENT", "DEFER"],
+  "decision_state": {
+    "decision": "PENDING_OPERATOR_DECISION",
+    "decision_valid": true,
+    "authorization_granted": false,
+    "execution_authorized": false,
+    "execution_invocation_present": false,
+    "future_operator_evidence_present": false
+  },
+  "authority": {
+    "NEW_AUTHORIZATION_REQUIRED": true,
+    "F159_RETRY_FORBIDDEN": true,
+    "OLD_AUTHORIZATION_REUSABLE": false,
+    "SEPARATE_FUTURE_OPERATOR_AUTHORIZATION_EVIDENCE_REQUIRED": true,
+    "SEPARATE_SECURITY_REVIEW_REQUIRED": true,
+    "SEPARATE_EXPLICIT_F168_INVOCATION_REQUIRED": true,
+    "F166_AUTHORIZATION_GRANTED": false,
+    "F166_EXECUTION_AUTHORIZED": false
+  },
+  "offline_boundary": {
+    "NO_ACTIVITY_OCCURRED": true,
+    "RUNTIME_ACTIVITY": false,
+    "PROCESS_ACTIVITY": false,
+    "THREAD_ACTIVITY": false,
+    "SOCKET_ACTIVITY": false,
+    "NETWORK_ACTIVITY": false,
+    "SIGNING_ACTIVITY": false
+  },
+  "protected_authority": {
+    "issuance": false,
+    "supply": false,
+    "height": false,
+    "validation": false,
+    "consensus": false,
+    "history": false,
+    "ledger": false,
+    "settlement": false,
+    "signing": false,
+    "wallet": false,
+    "bitcoin_authority": false
+  },
+  "protected_invariants": {
+    "protocol_version": "1.0.0",
+    "protocol_sha256": "eabd5f2a11916781e6a047e5b2c2188fe4e0f1eae2fdcdc2f68e4c19193c397d",
+    "canonical_validator": "coin.tx_validation.validate_transaction",
+    "tx_validation_sha256": "ac36bd95c932733a60ffc3acbb10b8a9f57e09c9533d0b64ff83affa876f3004"
+  }
+}
