@@ -1,0 +1,91 @@
+{
+  "profile": "l28-foundation168-execution-gate/v1.0",
+  "baseline_commit": "8add82820e3d62692ecf7da4afc7327ec6ae740a",
+  "experiment_id": "L28-F165-PROPOSED-BOUNDED-RUNTIME-001",
+  "source_bindings": {
+    "f160_gate": {"path": "docs/l28_foundation160_spawn_bootstrap_lifetime_gate_v0.1.json", "sha256": "408fe4264253a2940b93a051cdace49fda325019c8178def003ff695632e23d5"},
+    "f161_gate": {"path": "docs/l28_foundation161_future_runtime_lifecycle_gate_v0.1.json", "sha256": "24e839fc0707c64ea4c0d957730368bb404e1f45b16d842cd383d1ba76de0e8c"},
+    "f162_gate": {"path": "docs/l28_foundation162_future_live_adapter_security_gate_v0.1.json", "sha256": "112008e5b4fc2d14b0b7239038f21006493f668ffff21f224e2633377bc8c8fc"},
+    "f163_gate": {"path": "docs/l28_foundation163_live_adapter_implementation_readiness_gate_v0.1.json", "sha256": "6322cbfca6260e36e445c8f110f420be2b161168e2e234ebcecbac50e56b4985"},
+    "f164_candidate": {"path": "coin/future_live_adapter_candidate.py", "sha256": "1921fb28103e0240c9fac6f0e1c3e17f6c0a2b5824a1609ed3cbdf91f1e4d2db"},
+    "f164_gate": {"path": "docs/l28_foundation164_live_adapter_candidate_gate_v0.1.json", "sha256": "a05dd02527b2cd20ca1636ec2a6b48c62719957a32140f55a83ceb3f6ab788e6"},
+    "f165_gate": {"path": "docs/l28_foundation165_runtime_authorization_decision_gate_v0.1.json", "sha256": "a9e1c6b791eb7031bcd81024a163c4ddafddb9bb844ab9f24324bc5dfc80d942"},
+    "f166_gate": {"path": "docs/l28_foundation166_runtime_authorization_decision_gate_v0.1.json", "sha256": "f5433efd24f051b188d6e937f0debf651ddf61543089c10a8443745bb1c1b526"},
+    "f167_gate": {"path": "docs/l28_foundation167_bounded_execution_preflight_gate_v0.1.json", "sha256": "e569f395327db19deff63cc8228339e48f50ea2ece447cadbc35eba5daa82ca0"},
+    "f168_authorization_state": {"path": "docs/l28_foundation168_execution_authorization_state_v1.0.json", "sha256": "c186397d7002853232d27cf9e0d5f87568b9e705f6baa00cdc8778fda732c03a"}
+  },
+  "authorization_state": {
+    "F166_DECISION": "PENDING_OPERATOR_DECISION",
+    "F166_AUTHORIZATION_GRANTED": false,
+    "F168_EXECUTION_AUTHORIZED": false,
+    "F168_INVOCATION_PRESENT": false,
+    "F168_AUTHORIZATION_CONSUMED": false,
+    "F168_EXECUTION_OCCURRED": false,
+    "F168_RETRY_ALLOWED": false,
+    "F159_RETRY_FORBIDDEN": true,
+    "OLD_AUTHORIZATION_REUSABLE": false,
+    "claim_count": 0
+  },
+  "execution_gate": {
+    "EXECUTION_GATE_OPEN": false,
+    "RUNTIME_ACTIVATION_ALLOWED": false,
+    "SEPARATE_F166_AUTHORIZE_EVIDENCE_REQUIRED": true,
+    "SEPARATE_F168_INVOCATION_EVIDENCE_REQUIRED": true,
+    "ATOMIC_PERSISTENT_ONE_SHOT_CLAIM_REQUIRED": true,
+    "AUTO_RETRY_ALLOWED": false
+  },
+  "bounded_scope": {
+    "disposable": true,
+    "isolated": true,
+    "agent_count": 2,
+    "child_process_count": 2,
+    "network_family": "IPv4_LOOPBACK_ONLY",
+    "external_network": false,
+    "agent_a_listener": ["127.0.0.1", 28428],
+    "agent_b_source_bind": ["127.0.0.1", 0],
+    "fixed_client_source_port_28429_forbidden": true,
+    "session_count": 2,
+    "reconnect_count": 1,
+    "maximum_duration_seconds": 60,
+    "deadline_kind": "ONE_ABSOLUTE_MONOTONIC_DEADLINE",
+    "deadline_coverage": ["PROCESS_OBJECT_CONSTRUCTION", "PROCESS_START_SUPERVISION", "CHILD_BOOTSTRAP_WINDOW", "ACTIVE_EXECUTION", "RECONNECT", "CLEANUP_INITIATION"],
+    "strong_parent_resource_retention": true,
+    "f160_f161_lifecycle_required": true,
+    "f162_f163_provenance_freeze_required": true,
+    "f164_candidate_required": true,
+    "cleanup_requires_all_children_terminal": true,
+    "cleanup_requires_supervisors_quiescent": true,
+    "terminal_states": ["SUCCESS", "EXECUTION_ABORT", "CLEANUP_FAILURE", "TERMINALIZATION_FAILURE"]
+  },
+  "offline_boundary": {
+    "RUNTIME_ACTIVITY": false,
+    "PROCESS_ACTIVITY": false,
+    "THREAD_ACTIVITY": false,
+    "SOCKET_ACTIVITY": false,
+    "EXPERIMENT_NETWORK_ACTIVITY": false,
+    "SIGNING_ACTIVITY": false
+  },
+  "protected_authority": {
+    "issuance": false,
+    "supply": false,
+    "height": false,
+    "transaction_validation": false,
+    "consensus": false,
+    "history": false,
+    "ledger": false,
+    "settlement": false,
+    "bitcoin": false,
+    "wallet": false,
+    "signing": false,
+    "mining": false,
+    "broadcast": false,
+    "rpc_spv_p2p": false
+  },
+  "protected_invariants": {
+    "protocol_version": "1.0.0",
+    "protocol_sha256": "eabd5f2a11916781e6a047e5b2c2188fe4e0f1eae2fdcdc2f68e4c19193c397d",
+    "canonical_validator": "coin.tx_validation.validate_transaction",
+    "tx_validation_sha256": "ac36bd95c932733a60ffc3acbb10b8a9f57e09c9533d0b64ff83affa876f3004"
+  },
+  "security_review": {"PASS": 16, "GAP": 0, "BLOCKED": 0, "COMMIT_READY": true}
+}

@@ -1,0 +1,24 @@
+{
+  "profile": "l28-foundation168-execution-authorization-state/v1.0",
+  "experiment_id": "L28-F165-PROPOSED-BOUNDED-RUNTIME-001",
+  "baseline_commit": "8add82820e3d62692ecf7da4afc7327ec6ae740a",
+  "state": {
+    "F166_DECISION": "PENDING_OPERATOR_DECISION",
+    "F166_AUTHORIZATION_GRANTED": false,
+    "F168_EXECUTION_AUTHORIZED": false,
+    "F168_INVOCATION_PRESENT": false,
+    "F168_AUTHORIZATION_CONSUMED": false,
+    "F168_EXECUTION_OCCURRED": false,
+    "F168_RETRY_ALLOWED": false,
+    "F159_RETRY_FORBIDDEN": true,
+    "OLD_AUTHORIZATION_REUSABLE": false,
+    "claim_count": 0
+  },
+  "future_dual_evidence": {
+    "operator_decision_required": "AUTHORIZE_ONE_NEW_BOUNDED_EXPERIMENT",
+    "separate_invocation_required": "AUTHORIZE_FOUNDATION168_EXECUTION_ONCE",
+    "neither_implies_the_other": true,
+    "one_shot_only": true,
+    "retry_after_success_or_abort": false
+  }
+}

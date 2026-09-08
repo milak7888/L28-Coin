@@ -1,0 +1,33 @@
+{
+  "profile": "l28-foundation168-post-run-review-gate/v1.0",
+  "experiment_id": "L28-F165-PROPOSED-BOUNDED-RUNTIME-001",
+  "POST_RUN_REVIEW_STATE": "NOT_RUN",
+  "F168_EXECUTION_OCCURRED": false,
+  "evidence_present": false,
+  "allowed_future_results": ["PASS", "ABORT_ACCEPTED", "SECURITY_FAILURE", "EVIDENCE_INVALID"],
+  "pass_requirements": {
+    "terminal_success": true,
+    "scope_exact": true,
+    "session_count": 2,
+    "reconnect_count": 1,
+    "agent_b_ephemeral_nonzero_not_28429_and_distinct": true,
+    "loopback_only": true,
+    "deadline_respected": true,
+    "all_children_terminal": true,
+    "supervisors_quiescent": true,
+    "cleanup_complete": true,
+    "authorization_consumed_exactly_once": true,
+    "external_network": false,
+    "protocol_economic_signing_authority": false
+  },
+  "abort_accepted_requires_bounded_fail_closed_cleanup": true,
+  "cleanup_or_authority_breach_is_security_failure": true,
+  "malformed_contradictory_or_hash_mismatched_evidence_is_invalid": true,
+  "current_authority": {
+    "F166_DECISION": "PENDING_OPERATOR_DECISION",
+    "F168_EXECUTION_AUTHORIZED": false,
+    "F168_INVOCATION_PRESENT": false,
+    "F168_AUTHORIZATION_CONSUMED": false,
+    "F168_EXECUTION_OCCURRED": false
+  }
+}
