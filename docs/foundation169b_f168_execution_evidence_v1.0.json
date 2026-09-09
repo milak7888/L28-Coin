@@ -1,0 +1,63 @@
+{
+  "agent_a_effective_listener": [
+    "127.0.0.1",
+    28428
+  ],
+  "agent_b_effective_source_ports": [
+    54875,
+    54876
+  ],
+  "all_children_terminal": true,
+  "authorization_claim_count": 1,
+  "authorization_consumed": true,
+  "authorization_fingerprint": "9fdb79508e721444e1efa7102577a42e33c5a9ddcf42b523e9cbdfb698ede273",
+  "child_lifecycle_states": [
+    {
+      "name": "SpawnProcess-1",
+      "terminal": true
+    },
+    {
+      "name": "SpawnProcess-2",
+      "terminal": true
+    }
+  ],
+  "cleanup_complete": true,
+  "cleanup_result": "PASS",
+  "deadline_monotonic": 244429.748008875,
+  "economic_authority": false,
+  "end_monotonic": 244369.850217458,
+  "evidence_sha256": "0e8c1c0b849fac4ca2bc7df7c1c44886b11c6fbb971f96bd1b1dfd40705c657b",
+  "exception_repr": null,
+  "exception_type": null,
+  "experiment_id": "L28-F165-PROPOSED-BOUNDED-RUNTIME-001",
+  "external_network": false,
+  "lifecycle_phases": [
+    "AUTHORIZATION_CONSUMED",
+    "PROCESS_OBJECT_CONSTRUCTION",
+    "PROCESS_START_SUPERVISION",
+    "CHILD_BOOTSTRAP_WINDOW",
+    "ACTIVE_EXECUTION",
+    "RECONNECT",
+    "CLEANUP_INITIATION"
+  ],
+  "maximum_duration_seconds": 60,
+  "phase_reached": "CLEANUP_INITIATION",
+  "protected_hashes": {
+    "base_commit": "8add82820e3d62692ecf7da4afc7327ec6ae740a",
+    "f164_candidate_sha256": "1921fb28103e0240c9fac6f0e1c3e17f6c0a2b5824a1609ed3cbdf91f1e4d2db",
+    "f166_gate_sha256": "f5433efd24f051b188d6e937f0debf651ddf61543089c10a8443745bb1c1b526",
+    "f167_gate_sha256": "e569f395327db19deff63cc8228339e48f50ea2ece447cadbc35eba5daa82ca0",
+    "protocol_sha256": "eabd5f2a11916781e6a047e5b2c2188fe4e0f1eae2fdcdc2f68e4c19193c397d",
+    "tx_validation_sha256": "ac36bd95c932733a60ffc3acbb10b8a9f57e09c9533d0b64ff83affa876f3004"
+  },
+  "protocol_authority": false,
+  "reconnect_count": 1,
+  "retry_occurred": false,
+  "session_count": 2,
+  "signing": false,
+  "start_monotonic": 244369.748008875,
+  "supervisors_quiescent": true,
+  "terminal_state": "SUCCESS",
+  "terminalization_complete": true,
+  "terminalization_result": "COMPLETE"
+}
