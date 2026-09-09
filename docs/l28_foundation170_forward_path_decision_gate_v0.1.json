@@ -1,0 +1,91 @@
+{
+  "profile": "l28-foundation170-forward-path-decision-gate/v0.1",
+  "baseline_commit": "c888b148ec867614897c28d9cfc5364b856416e2",
+  "source_bindings": {
+    "f169b_execution_evidence": {"path": "docs/foundation169b_f168_execution_evidence_v1.0.json", "sha256": "9d61a79a8761102384202c8b9700ce0e93cbfab8be7a916f5829418e55cc3c01", "embedded_evidence_sha256": "0e8c1c0b849fac4ca2bc7df7c1c44886b11c6fbb971f96bd1b1dfd40705c657b"},
+    "f169b_post_run_gate": {"path": "docs/l28_foundation169b_f168_post_run_gate_v0.1.json", "sha256": "5fb4ee72a28ab69809d62f1d490098e278d41335a0fe623dd28d30720b9168e1"}
+  },
+  "post_proof_state": {
+    "F168_POST_RUN_RESULT": "PASS",
+    "F168_EXECUTION_OCCURRED": true,
+    "F168_AUTHORIZATION_CONSUMED": true,
+    "F168_RETRY_ALLOWED": false,
+    "F159_RETRY_FORBIDDEN": true,
+    "authorization_claim_count": 1
+  },
+  "proof_achieved": [
+    "BOUNDED_LIFECYCLE_EXECUTION",
+    "EXPLICIT_AUTHORIZATION_SEPARATION",
+    "ONE_SHOT_CONSUMPTION",
+    "CLEANUP_VALIDATION",
+    "TERMINALIZATION_VALIDATION",
+    "LOOPBACK_ONLY_COMMUNICATION",
+    "NO_PROTOCOL_AUTHORITY",
+    "NO_ECONOMIC_AUTHORITY",
+    "NO_SIGNING_AUTHORITY",
+    "NO_SETTLEMENT_AUTHORITY"
+  ],
+  "remaining_boundaries": {
+    "signer_and_economic_control_gates": "UNRESOLVED_REQUIRES_SEPARATE_REVIEW",
+    "broader_testnet": "REQUIRES_NEW_REVIEW",
+    "interoperability": "REQUIRES_SEPARATE_DESIGN",
+    "public_testnet": "REQUIRES_FUTURE_AUTHORIZATION"
+  },
+  "forward_options": {
+    "OPTION_A": "broader isolated two-agent testnet",
+    "OPTION_B": "signer and economic-control security gates",
+    "OPTION_C": "interoperability preparation",
+    "OPTION_D": "bounded public testnet planning"
+  },
+  "decision_state": {
+    "F170_DECISION": "PENDING_OPERATOR_SELECTION",
+    "OPERATOR_SELECTION_RECORDED": false,
+    "SELECTED_DIRECTION": null,
+    "NO_AUTOMATIC_ADVANCEMENT": true
+  },
+  "activation_boundary": {
+    "SEPARATE_FUTURE_REVIEW_REQUIRED": true,
+    "SEPARATE_FUTURE_AUTHORIZATION_REQUIRED": true,
+    "RUNTIME_ACTIVITY": false,
+    "SIGNER_ACTIVATION": false,
+    "TESTNET_ACTIVITY": false,
+    "PUBLIC_TESTNET_ACTIVATION": false,
+    "DEPLOYMENT": false,
+    "PRODUCTION_NETWORK": false
+  },
+  "security_rules": {
+    "protocol_version": "1.0.0",
+    "protocol_frozen": true,
+    "coinbase_only_issuance": true,
+    "canonical_validator": "coin.tx_validation.validate_transaction",
+    "immutable_economics_and_history": true,
+    "bitcoin_role": "EXTERNAL_EVIDENCE_ONLY",
+    "signer_activation_allowed": false,
+    "deployment_allowed": false,
+    "production_network_allowed": false
+  },
+  "protected_hashes": {
+    "protocol_sha256": "eabd5f2a11916781e6a047e5b2c2188fe4e0f1eae2fdcdc2f68e4c19193c397d",
+    "tx_validation_sha256": "ac36bd95c932733a60ffc3acbb10b8a9f57e09c9533d0b64ff83affa876f3004"
+  },
+  "protected_authority": {
+    "issuance": false,
+    "supply": false,
+    "height": false,
+    "validation": false,
+    "consensus": false,
+    "history": false,
+    "ledger": false,
+    "settlement": false,
+    "signing": false,
+    "wallet": false,
+    "bitcoin": false
+  },
+  "candidate_scope": [
+    "docs/foundation170_post_proof_assessment_v0.1.md",
+    "docs/l28_foundation170_forward_path_decision_gate_v0.1.json",
+    "tests/foundation170_forward_path_decision.py",
+    "tests/test_foundation170_forward_path_decision.py"
+  ],
+  "security_review": {"PASS": 5, "GAP": 0, "BLOCKED": 0, "COMMIT_READY": true}
+}
