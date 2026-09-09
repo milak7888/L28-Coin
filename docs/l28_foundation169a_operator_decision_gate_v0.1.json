@@ -1,0 +1,12 @@
+{
+  "experiment_id": "L28-F165-PROPOSED-BOUNDED-RUNTIME-001",
+  "decision": "AUTHORIZE_ONE_NEW_BOUNDED_EXPERIMENT",
+  "authorization_id": "L28-F168-BOUND-RUNTIME-001-AUTH-001",
+  "base_commit": "8add82820e3d62692ecf7da4afc7327ec6ae740a",
+  "f164_candidate_sha256": "1921fb28103e0240c9fac6f0e1c3e17f6c0a2b5824a1609ed3cbdf91f1e4d2db",
+  "f166_gate_sha256": "f5433efd24f051b188d6e937f0debf651ddf61543089c10a8443745bb1c1b526",
+  "f167_gate_sha256": "e569f395327db19deff63cc8228339e48f50ea2ece447cadbc35eba5daa82ca0",
+  "one_shot": true,
+  "f159_retry_forbidden": true,
+  "old_authorization_reusable": false
+}
