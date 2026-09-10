@@ -1,0 +1,142 @@
+{
+  "profile": "l28-foundation177-signer-gate-completion/v0.1",
+  "baseline_commit": "85116da953505a0d784b9c234ae1e3ae1e615bf0",
+  "source_bindings": {
+    "runtime_hardening_evidence": {
+      "path": "coin/signer_runtime_hardening_evidence.py",
+      "sha256": "bb24515d2b13a9feccb88af46514dc63de5ffc11b10351905e4b924168531bfe"
+    },
+    "fault_recovery_evidence": {
+      "path": "coin/signer_fault_recovery_evidence.py",
+      "sha256": "17918439674d3569e3e2df4bf4add359b5fc5369c6df1211af9c0ed67bc0cb86"
+    },
+    "signer_gate_readiness": {
+      "path": "coin/signer_gate_readiness.py",
+      "sha256": "70bc5e99e902420735d82bdf1c8b3ff0911f070b63e684b9b4521a671ef10888"
+    },
+    "runtime_hardening_tests": {
+      "path": "tests/test_foundation177_runtime_hardening_evidence.py",
+      "sha256": "d45c5d6341536df571e95140dd77d6cdac7e011e4ff0038d6d422f5a26548b9f"
+    },
+    "fault_recovery_tests": {
+      "path": "tests/test_foundation177_fault_recovery_evidence.py",
+      "sha256": "e04c7a8ccb167634c79daa84ba4f9d421844f79355367da14095489e3a368bf4"
+    },
+    "signer_gate_readiness_tests": {
+      "path": "tests/test_foundation177_signer_gate_readiness.py",
+      "sha256": "3331a9d61b489d4af4533df88a298101aca773dbc3070675a0030e12e0c4f009"
+    }
+  },
+  "canonical_results": {
+    "runtime_hardening": [
+      "RUNTIME_HARDENING_EVIDENCE_COMPLETE",
+      "RUNTIME_HARDENING_EVIDENCE_INCOMPLETE",
+      "RUNTIME_HARDENING_EVIDENCE_INVALID",
+      "BLOCKED_BY_RUNTIME_HARDENING_GAPS"
+    ],
+    "fault_recovery": [
+      "FAULT_RECOVERY_EVIDENCE_COMPLETE",
+      "FAULT_RECOVERY_EVIDENCE_INCOMPLETE",
+      "FAULT_RECOVERY_EVIDENCE_INVALID",
+      "BLOCKED_BY_FAULT_RECOVERY_GAPS"
+    ],
+    "gate_readiness": [
+      "GATE_READINESS_BLOCKED",
+      "GATE_READINESS_INVALID"
+    ]
+  },
+  "current_policy_bindings": {
+    "LSOD-CUS-002": "none",
+    "generation_permitted": false,
+    "import_permitted": false,
+    "LSOD-CUS-008": "backup prohibited",
+    "backup_permitted": false,
+    "LSOD-CUS-012": "A",
+    "custody_evidence_scope": "PUBLIC_NON_SECRET_ONLY"
+  },
+  "unresolved_custody_decisions": [
+    "LSOD-CUS-001",
+    "LSOD-CUS-003",
+    "LSOD-CUS-004",
+    "LSOD-CUS-005",
+    "LSOD-CUS-006",
+    "LSOD-CUS-007",
+    "LSOD-CUS-009",
+    "LSOD-CUS-010",
+    "LSOD-CUS-011"
+  ],
+  "cus009_decision_class": "IMPLEMENTATION_EVIDENCE_REQUIRED_FIRST",
+  "remaining_security_expert_decisions": [
+    "LSOD-CUS-001",
+    "LSOD-CUS-003",
+    "LSOD-CUS-004",
+    "LSOD-CUS-005",
+    "LSOD-CUS-006",
+    "LSOD-CUS-007",
+    "LSOD-CUS-010",
+    "LSOD-CUS-011"
+  ],
+  "secret_material_allowed": false,
+  "key_operations_allowed": false,
+  "activation_authority": false,
+  "F172_PRODUCTION_AUDIT_BACKEND": "RESOLVED",
+  "F173_PRODUCTION_TIME_BACKEND": "RESOLVED",
+  "F176_PUBLIC_CUSTODY_EVIDENCE_BOUNDARY": "IMPLEMENTED",
+  "F177_RUNTIME_HARDENING_EVIDENCE_BOUNDARY": "IMPLEMENTED",
+  "F177_FAULT_RECOVERY_EVIDENCE_BOUNDARY": "IMPLEMENTED",
+  "CUSTODY_READINESS": "UNRESOLVED",
+  "RUNTIME_HARDENING": "UNRESOLVED",
+  "FAULT_RECOVERY": "UNRESOLVED",
+  "F171_SIGNER_ELIGIBILITY_RESULT": "BLOCKED",
+  "SIGNER_RUNTIME_ACTIVE": false,
+  "SIGNING": false,
+  "BROADCAST": false,
+  "SETTLEMENT": false,
+  "KEY_GENERATION_PERMITTED": false,
+  "KEY_IMPORT_PERMITTED": false,
+  "BACKUP_PERMITTED": false,
+  "ASSURANCE_MODEL": "OPEN_SOURCE_PUBLIC_REVIEW",
+  "NOT_INDEPENDENTLY_AUDITED": true,
+  "unresolved_defects": [],
+  "protected_hashes": {
+    "protocol_sha256": "eabd5f2a11916781e6a047e5b2c2188fe4e0f1eae2fdcdc2f68e4c19193c397d",
+    "tx_validation_sha256": "ac36bd95c932733a60ffc3acbb10b8a9f57e09c9533d0b64ff83affa876f3004"
+  },
+  "protected_authority": {
+    "issuance": false,
+    "supply": false,
+    "height": false,
+    "validation": false,
+    "consensus": false,
+    "history": false,
+    "ledger": false,
+    "settlement": false,
+    "signing": false,
+    "wallet": false,
+    "bitcoin": false
+  },
+  "security_review": {
+    "PASS": 7,
+    "GAP": 0,
+    "BLOCKED": 0,
+    "COMMIT_READY": true
+  },
+  "security_review_items": {
+    "secret_exclusion": "PASS",
+    "no_unresolved_cus_auto_approve": "PASS",
+    "runtime_hardening_fail_closed": "PASS",
+    "fault_recovery_fail_closed": "PASS",
+    "f171_not_weakened": "PASS",
+    "protocol_firewall": "PASS",
+    "no_signing_network_runtime_capability": "PASS"
+  },
+  "candidate_scope": [
+    "coin/signer_runtime_hardening_evidence.py",
+    "coin/signer_fault_recovery_evidence.py",
+    "coin/signer_gate_readiness.py",
+    "tests/test_foundation177_runtime_hardening_evidence.py",
+    "tests/test_foundation177_fault_recovery_evidence.py",
+    "tests/test_foundation177_signer_gate_readiness.py",
+    "docs/l28_foundation177_signer_gate_completion_v0.1.json"
+  ]
+}
