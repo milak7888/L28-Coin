@@ -1,0 +1,77 @@
+{
+  "profile": "l28-foundation172-signer-audit-backend-gate/v0.1",
+  "baseline_commit": "273a3594136136b8c446e756f9237d5419fb3c39",
+  "source_bindings": {
+    "implementation": {"path": "coin/signer_audit_log.py", "sha256": "80913d7427d3cb691523ad166a9928f19546cdad3a853416fbb119621046f5f5"},
+    "tests": {"path": "tests/test_foundation172_signer_audit_log.py", "sha256": "f0793a990993db594f56a844415e128482cbd4291c6681548643a9839331222b"}
+  },
+  "audit_profile": "l28-signer-audit-log/v0.1",
+  "production_audit_backend": "RESOLVED",
+  "F171_SIGNER_ELIGIBILITY_RESULT": "BLOCKED",
+  "durability_mechanism": {
+    "store": "self_hosted_append_only_jsonl",
+    "exclusive_lock": "fcntl.LOCK_EX",
+    "commit": "flush_plus_os.fsync_before_success",
+    "rewrite_delete_truncate_api": false
+  },
+  "hash_chain_mechanism": {
+    "algorithm": "SHA-256",
+    "encoding": "canonical_deterministic_json_sort_keys",
+    "sequence": "monotonic_integer_from_1",
+    "genesis_previous_hash_domain": "L28-SIGNER-AUDIT-LOG-V0.1-GENESIS",
+    "binds_previous_entry_hash": true
+  },
+  "verification_result": "PASS",
+  "production_dependencies": {
+    "production_time_backend": "UNRESOLVED",
+    "production_audit_backend": "RESOLVED",
+    "custody_readiness": "UNRESOLVED",
+    "runtime_hardening": "UNRESOLVED",
+    "fault_recovery": "UNRESOLVED"
+  },
+  "activation_boundary": {
+    "SIGNER_RUNTIME_ACTIVE": false,
+    "SIGNING": false,
+    "BROADCAST": false,
+    "SETTLEMENT": false,
+    "NETWORK": false,
+    "PROTOCOL_AUTHORITY": false
+  },
+  "protected_hashes": {
+    "protocol_sha256": "eabd5f2a11916781e6a047e5b2c2188fe4e0f1eae2fdcdc2f68e4c19193c397d",
+    "tx_validation_sha256": "ac36bd95c932733a60ffc3acbb10b8a9f57e09c9533d0b64ff83affa876f3004"
+  },
+  "protected_authority": {
+    "issuance": false,
+    "supply": false,
+    "height": false,
+    "validation": false,
+    "consensus": false,
+    "history": false,
+    "ledger": false,
+    "settlement": false,
+    "signing": false,
+    "wallet": false,
+    "bitcoin": false
+  },
+  "security_review": {
+    "PASS": 7,
+    "GAP": 0,
+    "BLOCKED": 0,
+    "COMMIT_READY": true
+  },
+  "security_review_items": {
+    "append_only_behavior": "PASS",
+    "hash_chain_integrity": "PASS",
+    "persistence_fsync": "PASS",
+    "concurrent_writer_exclusion": "PASS",
+    "corruption_fail_closed": "PASS",
+    "secret_exclusion": "PASS",
+    "protocol_signer_authority_isolation": "PASS"
+  },
+  "candidate_scope": [
+    "coin/signer_audit_log.py",
+    "tests/test_foundation172_signer_audit_log.py",
+    "docs/l28_foundation172_signer_audit_backend_gate_v0.1.json"
+  ]
+}
