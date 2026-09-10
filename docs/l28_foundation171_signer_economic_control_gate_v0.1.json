@@ -1,0 +1,86 @@
+{
+  "profile": "l28-foundation171-signer-economic-control-gate/v0.1",
+  "baseline_commit": "30cf49540e91c3f09ecd08bf98470c21fbec0999",
+  "source_bindings": {
+    "f170_forward_path_decision": {"path": "tests/foundation170_forward_path_decision.py", "sha256": "7da3afff91a6c1ae2a7d71bc84a2ea3fa7febb591af86215ff00609b46954c4b"},
+    "f171_eligibility_gate": {"path": "tests/foundation171_signer_economic_control_gate.py", "sha256": "ea6b4fae6f53e16ba02898b61c7f4d262bf2411b0c52fade05ccb267f2e7a775"}
+  },
+  "decision_state": {
+    "F170_OPERATOR_SELECTION": "OPTION_B",
+    "F171_SIGNER_ELIGIBILITY_RESULT": "BLOCKED",
+    "F171_SIGNER_RUNTIME_ACTIVE": false,
+    "F171_SIGNING": false,
+    "F171_BROADCAST": false,
+    "F171_SETTLEMENT": false,
+    "F171_PROTOCOL_AUTHORITY": false
+  },
+  "production_dependencies": {
+    "production_time_backend": "UNRESOLVED",
+    "production_audit_backend": "UNRESOLVED",
+    "custody_readiness": "UNRESOLVED",
+    "runtime_hardening": "UNRESOLVED",
+    "fault_recovery": "UNRESOLVED"
+  },
+  "eligibility_results": [
+    "ELIGIBLE_FOR_FUTURE_SIGNER_AUTHORIZATION_REVIEW",
+    "NOT_ELIGIBLE",
+    "BLOCKED"
+  ],
+  "activation_boundary": {
+    "eligibility_equals_validation": false,
+    "authorization_equals_validation": false,
+    "signer_invoked": false,
+    "signing_allowed": false,
+    "broadcast_allowed": false,
+    "settlement_allowed": false,
+    "runtime_activation_allowed": false,
+    "key_load_allowed": false
+  },
+  "security_rules": {
+    "protocol_version": "1.0.0",
+    "protocol_frozen": true,
+    "coinbase_only_issuance": true,
+    "canonical_validator": "coin.tx_validation.validate_transaction",
+    "immutable_economics_and_history": true,
+    "bitcoin_role": "EXTERNAL_EVIDENCE_ONLY",
+    "signer_activation_allowed": false,
+    "signing_allowed": false,
+    "broadcast_allowed": false,
+    "settlement_allowed": false
+  },
+  "protected_hashes": {
+    "protocol_sha256": "eabd5f2a11916781e6a047e5b2c2188fe4e0f1eae2fdcdc2f68e4c19193c397d",
+    "tx_validation_sha256": "ac36bd95c932733a60ffc3acbb10b8a9f57e09c9533d0b64ff83affa876f3004"
+  },
+  "protected_authority": {
+    "issuance": false,
+    "supply": false,
+    "height": false,
+    "validation": false,
+    "consensus": false,
+    "history": false,
+    "ledger": false,
+    "settlement": false,
+    "signing": false,
+    "wallet": false,
+    "bitcoin": false
+  },
+  "protected_economics": {
+    "hard_cap_l28": 28000000,
+    "emission_ceiling_l28": 11130000,
+    "historically_mined_l28": 2824584,
+    "treasury_locked_l28": 500000,
+    "circulating_snapshot_l28": 2324584,
+    "halving_interval": 210000,
+    "reward_schedule": [28, 14, 7, 3, 1, 0],
+    "historical_mined_through_entry": 100877,
+    "next_canonical_height_after_bootstrap": 100878
+  },
+  "candidate_scope": [
+    "docs/foundation171_signer_economic_control_gate_v0.1.md",
+    "docs/l28_foundation171_signer_economic_control_gate_v0.1.json",
+    "tests/foundation171_signer_economic_control_gate.py",
+    "tests/test_foundation171_signer_economic_control_gate.py"
+  ],
+  "security_review": {"PASS": 5, "GAP": 0, "BLOCKED": 0, "COMMIT_READY": true}
+}
