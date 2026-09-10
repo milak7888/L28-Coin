@@ -1,0 +1,83 @@
+{
+  "profile": "l28-foundation173-trusted-time-backend-gate/v0.1",
+  "baseline_commit": "9b9f3ae48261a713947835d40cf1285cfd9a6c59",
+  "source_bindings": {
+    "implementation": {"path": "coin/signer_trusted_time.py", "sha256": "3b40ae813d0685c1dfd45d82f3778f5af084dd574c691367144b360b74a40408"},
+    "tests": {"path": "tests/test_foundation173_signer_trusted_time.py", "sha256": "d86c27388ba54f6290281d09281a8755553af99805551f9ba3b550de15782a3b"}
+  },
+  "time_profile": "l28-signer-trusted-time/v0.1",
+  "trust_root": "HOST_OS_CLOCK",
+  "ROOT_HOST_COMPROMISE_RESISTANCE": false,
+  "F172_PRODUCTION_AUDIT_BACKEND": "RESOLVED",
+  "F173_PRODUCTION_TIME_BACKEND": "RESOLVED",
+  "F171_SIGNER_ELIGIBILITY_RESULT": "BLOCKED",
+  "rollback_protections": {
+    "persisted_unix_time_high_water_mark": true,
+    "in_process_monotonic_increase": true,
+    "caller_supplied_timestamp_accepted": false,
+    "network_ntp_rpc": false
+  },
+  "persistence_mechanism": {
+    "store": "self_hosted_single_head_json",
+    "exclusive_lock": "fcntl.LOCK_EX",
+    "commit": "temporary_file_fsync_replace_parent_fsync"
+  },
+  "hash_chain_mechanism": {
+    "algorithm": "SHA-256",
+    "encoding": "canonical_deterministic_json_sort_keys",
+    "sequence": "monotonic_integer_from_1",
+    "genesis_previous_hash_domain": "L28-SIGNER-TRUSTED-TIME-V0.1-GENESIS"
+  },
+  "production_dependencies": {
+    "production_time_backend": "RESOLVED",
+    "production_audit_backend": "RESOLVED",
+    "custody_readiness": "UNRESOLVED",
+    "runtime_hardening": "UNRESOLVED",
+    "fault_recovery": "UNRESOLVED"
+  },
+  "activation_boundary": {
+    "SIGNER_RUNTIME_ACTIVE": false,
+    "SIGNING": false,
+    "BROADCAST": false,
+    "SETTLEMENT": false
+  },
+  "protected_hashes": {
+    "protocol_sha256": "eabd5f2a11916781e6a047e5b2c2188fe4e0f1eae2fdcdc2f68e4c19193c397d",
+    "tx_validation_sha256": "ac36bd95c932733a60ffc3acbb10b8a9f57e09c9533d0b64ff83affa876f3004"
+  },
+  "protected_authority": {
+    "issuance": false,
+    "supply": false,
+    "height": false,
+    "validation": false,
+    "consensus": false,
+    "history": false,
+    "ledger": false,
+    "settlement": false,
+    "signing": false,
+    "wallet": false,
+    "bitcoin": false
+  },
+  "security_review": {
+    "PASS": 9,
+    "GAP": 0,
+    "BLOCKED": 0,
+    "COMMIT_READY": true
+  },
+  "security_review_items": {
+    "clock_trust_boundary": "PASS",
+    "rollback_resistance": "PASS",
+    "monotonic_continuity": "PASS",
+    "persistence_fsync": "PASS",
+    "hash_chain_integrity": "PASS",
+    "corruption_fail_closed": "PASS",
+    "no_caller_controlled_trusted_timestamp": "PASS",
+    "no_network_signing_wallet_capability": "PASS",
+    "no_overclaim_root_host_compromise": "PASS"
+  },
+  "candidate_scope": [
+    "coin/signer_trusted_time.py",
+    "tests/test_foundation173_signer_trusted_time.py",
+    "docs/l28_foundation173_trusted_time_backend_gate_v0.1.json"
+  ]
+}
