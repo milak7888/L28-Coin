@@ -1,0 +1,90 @@
+{
+  "profile": "l28-foundation176-custody-evidence-gate/v0.1",
+  "baseline_commit": "f0140c7cade9ef621db5ac833721c8958bc565f7",
+  "source_bindings": {
+    "implementation": {"path": "coin/signer_custody_evidence.py", "sha256": "070788ec4d8807034b7d0efb5fe528c34a57b3749aad886ef52809e801cc8e34"},
+    "tests": {"path": "tests/test_foundation176_signer_custody_evidence.py", "sha256": "1a3408aab9d3203cefe10ad757bea6e12e592ec6642501799599e15c918026c1"}
+  },
+  "custody_evidence_profile": "l28-signer-custody-evidence/v0.1",
+  "canonical_results": [
+    "EVIDENCE_COMPLETE",
+    "EVIDENCE_INCOMPLETE",
+    "EVIDENCE_INVALID",
+    "BLOCKED_BY_UNRESOLVED_CUSTODY_DECISIONS"
+  ],
+  "current_policy_bindings": {
+    "LSOD-CUS-002": "none",
+    "generation_permitted": false,
+    "import_permitted": false,
+    "LSOD-CUS-008": "backup prohibited",
+    "backup_permitted": false,
+    "recovery_from_backup_permitted": false,
+    "LSOD-CUS-012": "A",
+    "custody_evidence_scope": "PUBLIC_NON_SECRET_ONLY"
+  },
+  "unresolved_custody_decisions": [
+    "LSOD-CUS-001",
+    "LSOD-CUS-003",
+    "LSOD-CUS-004",
+    "LSOD-CUS-005",
+    "LSOD-CUS-006",
+    "LSOD-CUS-007",
+    "LSOD-CUS-009",
+    "LSOD-CUS-010",
+    "LSOD-CUS-011"
+  ],
+  "audit_binding_required": true,
+  "trusted_time_binding_required": true,
+  "secret_material_allowed": false,
+  "key_operations_allowed": false,
+  "F172_PRODUCTION_AUDIT_BACKEND": "RESOLVED",
+  "F173_PRODUCTION_TIME_BACKEND": "RESOLVED",
+  "F176_PUBLIC_CUSTODY_EVIDENCE_BOUNDARY": "IMPLEMENTED",
+  "CUSTODY_READINESS": "UNRESOLVED",
+  "RUNTIME_HARDENING": "UNRESOLVED",
+  "FAULT_RECOVERY": "UNRESOLVED",
+  "F171_SIGNER_ELIGIBILITY_RESULT": "BLOCKED",
+  "SIGNER_RUNTIME_ACTIVE": false,
+  "SIGNING": false,
+  "BROADCAST": false,
+  "SETTLEMENT": false,
+  "ASSURANCE_MODEL": "OPEN_SOURCE_PUBLIC_REVIEW",
+  "NOT_INDEPENDENTLY_AUDITED": true,
+  "protected_hashes": {
+    "protocol_sha256": "eabd5f2a11916781e6a047e5b2c2188fe4e0f1eae2fdcdc2f68e4c19193c397d",
+    "tx_validation_sha256": "ac36bd95c932733a60ffc3acbb10b8a9f57e09c9533d0b64ff83affa876f3004"
+  },
+  "protected_authority": {
+    "issuance": false,
+    "supply": false,
+    "height": false,
+    "validation": false,
+    "consensus": false,
+    "history": false,
+    "ledger": false,
+    "settlement": false,
+    "signing": false,
+    "wallet": false,
+    "bitcoin": false
+  },
+  "security_review": {
+    "PASS": 7,
+    "GAP": 0,
+    "BLOCKED": 0,
+    "COMMIT_READY": true
+  },
+  "security_review_items": {
+    "secret_exclusion": "PASS",
+    "no_key_path_leakage": "PASS",
+    "fail_closed_unresolved_decisions": "PASS",
+    "exact_cus002_008_012_bindings": "PASS",
+    "audit_time_hash_references": "PASS",
+    "protocol_firewall": "PASS",
+    "no_signing_network_runtime_capability": "PASS"
+  },
+  "candidate_scope": [
+    "coin/signer_custody_evidence.py",
+    "tests/test_foundation176_signer_custody_evidence.py",
+    "docs/l28_foundation176_custody_evidence_gate_v0.1.json"
+  ]
+}
