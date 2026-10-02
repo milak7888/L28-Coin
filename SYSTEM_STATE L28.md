@@ -20,7 +20,7 @@ Product path:
 2. two-agent useful service transaction — COMPLETE/PUBLISHED
 3. HTTP/JSON + MCP external access — COMPLETE/PUBLISHED
 4. cross-AI interoperability — COMPLETE/PUBLISHED
-5. isolated local network — LOCAL COMPLETION CANDIDATE / PUSH PENDING
+5. isolated local network — COMPLETE/PUBLISHED
 6. limited testnet
 7. public testnet
 8. production
@@ -30,23 +30,23 @@ Local: `/Users/pjaydondup/Projects/L28-Coin`
 Remote: `https://github.com/milak7888/L28-Coin.git`
 Public: `milak7888/L28-Coin`
 
-Last completed product implementation commit before the active isolated-network slice:
+Latest independently verified remote `main`:
 
-`b64dad0dbc14c7a5732fcc1b9ff34079152b38b2`
+`cb20eec3110dfa5a26b06736ef8c4e8bc6748482`
 
 Commit:
 
-`Add cross-AI L28 interoperability demo`
+`Implement isolated local network service transaction`
 
 Parent:
 
-`4016cd180643c515865438575ad603d60b54c6e2`
+`91297fabd134b196049204f2b4d966f98bd139dc`
 
 Changed paths in that commit:
 
-- `coin/cross_ai_interoperability_demo.py`
-- `tests/test_cross_ai_interoperability_demo.py`
-
+- `SYSTEM_STATE L28.md`
+- `coin/isolated_local_network_service_demo.py`
+- `tests/test_isolated_local_network_service_demo.py`
 ## CANONICAL PROTOCOL
 L28 Protocol v1.0.0 is frozen.
 
@@ -397,9 +397,7 @@ Bitcoin has zero authority over L28 issuance, supply, canonical height, validati
 Observation ≠ settlement.
 
 ## WORKING CAPABILITY — ISOLATED LOCAL NETWORK
-Local completion candidate. Push pending. Not yet on remote `main`.
-
-Command:
+Published capability:
 
 `python -m coin.isolated_local_network_service_demo --input "L28 enables machine payments between autonomous systems."`
 
@@ -407,64 +405,40 @@ Service:
 
 `l28.service.structured_text_analysis/v0.1`
 
-Verified two-process behavior:
+Verified:
 
-- exactly two child processes, Agent A requester/payer and Agent B provider/payee
-- Agent B binds IPv4 `127.0.0.1` only
-- provider hello, signed request, signed 28 L28 quote, signed payment package, and signed result/receipt cross TCP
-- parent IPC carries startup/port coordination and sanitized evidence only
-- Agent B verifies the request, validates payment with `coin.tx_validation.validate_transaction`, and applies it with `BlocklessLedger`
-- disposable balances change 100/0 → 72/28
-- useful structured-text work runs only after payment verification
-- Agent A verifies the result and signed receipt
-- both child processes terminate and sockets close
-- canonical history remains untouched
-- no public/LAN network, production keys, or production settlement
-
-Actual-product evidence:
-
-- `demo_profile=l28-isolated-local-network-service/v0.1`
-- `agent_process_count=2`
-- `distinct_agent_processes=true`
-- `network_transport=tcp_ipv4_loopback`
-- `provider_bound_host=127.0.0.1`
-- `canonical_validation=PASS`
-- `payment_applied=true`
-- `payment_verified=true`
-- `agent_a_balance_before=100`
-- `agent_b_balance_before=0`
-- `agent_a_balance_after=72`
-- `agent_b_balance_after=28`
-- `service_executed=true`
-- `service_result_verified=true`
-- `receipt_created=true`
-- `receipt_verified=true`
-- `both_processes_terminal=true`
-- `sockets_closed=true`
-- `canonical_history_touched=false`
-- `public_network_used=false`
-- `production_keys_used=false`
-- `production_settlement=false`
+- exactly two child agent processes
+- IPv4 TCP loopback only on `127.0.0.1`
+- request, 28 L28 quote, payment, result, and receipt cross TCP
+- canonical validator reused
+- `BlocklessLedger` reused
+- balances transition 100/0 → 72/28
+- work executes only after verified payment
+- Agent A verifies result and receipt
+- both processes terminate and sockets close
+- canonical history untouched
+- no public network
+- no production keys
+- no production settlement
 
 Automated verification:
 
-- focused isolated-network tests: 10 passed
+- focused tests: 10 passed
 - affected regressions: 41 passed
 
-Consolidated security review:
+Actual-product verification: PASS
 
-- loopback-only TCP: PASS
-- exactly two child agent processes: PASS
-- no unresolved Critical/High finding
+Security review: PASS
 
-Parent of this local slice:
+Unresolved Critical/High findings: 0
 
-`91297fabd134b196049204f2b4d966f98bd139dc`
+Published commit:
 
-Status:
+`cb20eec3110dfa5a26b06736ef8c4e8bc6748482`
 
-LOCAL COMPLETION CANDIDATE / PUSH PENDING
+Slice result:
 
+PASS and published to remote `main`.
 ## CURRENT FROZEN SLICE
 `FROZEN_SLICE L28.md`
 
@@ -474,13 +448,22 @@ Slice:
 
 Status:
 
-LOCAL COMPLETION CANDIDATE / PUSH PENDING
+PASS / STOP CONDITION REACHED / PUBLISHED
 
-The bounded two-process loopback purchase has been implemented and verified locally. It is not published. Limited testnet, LAN/public networking, production keys, production settlement, deployment, and exchange work remain unauthorized.
+Completion gate:
 
+IMPLEMENTATION — PASS
+→ AUTOMATED TESTS — PASS
+→ ACTUAL-PRODUCT VERIFICATION — PASS
+→ EVIDENCE — PASS
+→ ACCEPTANCE CRITERIA — PASS
+→ STOP
+
+Do not perform additional implementation work under this frozen slice.
 ## NEXT AFTER COMPLETED SLICE
-If the active isolated-local-network slice completes and stops, the next
-recorded product stage is:
+The isolated-local-network slice is complete and stopped.
+
+Next product stage:
 
 **Limited testnet**
 
@@ -498,8 +481,7 @@ Do not automatically start:
 - deployment
 - exchange/listing/liquidity work
 
-A new frozen slice and any required operator authorization are required first.
-
+A new frozen slice and explicit operator authorization are required first.
 ## SOURCE-OF-TRUTH RULE
 This file records current verified project state.
 
