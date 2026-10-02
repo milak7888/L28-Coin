@@ -11,7 +11,7 @@ Review only when selecting the next frozen slice.
 ## CURRENT SLICE — DO NOT DUPLICATE HERE
 The active frozen slice is:
 
-**Isolcess Paid Service Transaction**
+**Isolated Local Network — Two-Process Paid Service Transaction**
 
 Agent A requester/payer
 → bounded IPv4 loopback TCP
