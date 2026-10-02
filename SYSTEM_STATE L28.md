@@ -1,6 +1,6 @@
 # L28 — SYSTEM_STATE.md
 
-Last updated: 2026-09-30
+Last updated: 2026-10-02
 
 ## PROJECT STATE
 PROJECT_STATE: ACTIVE
@@ -20,7 +20,7 @@ Product path:
 2. two-agent useful service transaction — COMPLETE/PUBLISHED
 3. HTTP/JSON + MCP external access — COMPLETE/PUBLISHED
 4. cross-AI interoperability — COMPLETE/PUBLISHED
-5. isolated local network — ACTIVE / AUTHORIZED
+5. isolated local network — LOCAL COMPLETION CANDIDATE / PUSH PENDING
 6. limited testnet
 7. public testnet
 8. production
@@ -396,6 +396,75 @@ Bitcoin has zero authority over L28 issuance, supply, canonical height, validati
 
 Observation ≠ settlement.
 
+## WORKING CAPABILITY — ISOLATED LOCAL NETWORK
+Local completion candidate. Push pending. Not yet on remote `main`.
+
+Command:
+
+`python -m coin.isolated_local_network_service_demo --input "L28 enables machine payments between autonomous systems."`
+
+Service:
+
+`l28.service.structured_text_analysis/v0.1`
+
+Verified two-process behavior:
+
+- exactly two child processes, Agent A requester/payer and Agent B provider/payee
+- Agent B binds IPv4 `127.0.0.1` only
+- provider hello, signed request, signed 28 L28 quote, signed payment package, and signed result/receipt cross TCP
+- parent IPC carries startup/port coordination and sanitized evidence only
+- Agent B verifies the request, validates payment with `coin.tx_validation.validate_transaction`, and applies it with `BlocklessLedger`
+- disposable balances change 100/0 → 72/28
+- useful structured-text work runs only after payment verification
+- Agent A verifies the result and signed receipt
+- both child processes terminate and sockets close
+- canonical history remains untouched
+- no public/LAN network, production keys, or production settlement
+
+Actual-product evidence:
+
+- `demo_profile=l28-isolated-local-network-service/v0.1`
+- `agent_process_count=2`
+- `distinct_agent_processes=true`
+- `network_transport=tcp_ipv4_loopback`
+- `provider_bound_host=127.0.0.1`
+- `canonical_validation=PASS`
+- `payment_applied=true`
+- `payment_verified=true`
+- `agent_a_balance_before=100`
+- `agent_b_balance_before=0`
+- `agent_a_balance_after=72`
+- `agent_b_balance_after=28`
+- `service_executed=true`
+- `service_result_verified=true`
+- `receipt_created=true`
+- `receipt_verified=true`
+- `both_processes_terminal=true`
+- `sockets_closed=true`
+- `canonical_history_touched=false`
+- `public_network_used=false`
+- `production_keys_used=false`
+- `production_settlement=false`
+
+Automated verification:
+
+- focused isolated-network tests: 10 passed
+- affected regressions: 41 passed
+
+Consolidated security review:
+
+- loopback-only TCP: PASS
+- exactly two child agent processes: PASS
+- no unresolved Critical/High finding
+
+Parent of this local slice:
+
+`91297fabd134b196049204f2b4d966f98bd139dc`
+
+Status:
+
+LOCAL COMPLETION CANDIDATE / PUSH PENDING
+
 ## CURRENT FROZEN SLICE
 `FROZEN_SLICE L28.md`
 
@@ -405,33 +474,9 @@ Slice:
 
 Status:
 
-ACTIVE / AUTHORIZED / IMPLEMENTAOT YET STARTED
+LOCAL COMPLETION CANDIDATE / PUSH PENDING
 
-Objective:
-
-Move the already-working L28 paid-service transaction across a real bounded
-IPv4 loopback TCP boundary between exactly two separate child agent processes.
-
-Required product flow:
-
-Agent A requester/payer
-→ TCP loopback
-→ Agent B provider/payee
-→ request
-→ signed quote for 28 L28
-→ signed disposable payment
-→ canonical validation + BlocklessLedger application
-→ payment verification
-→ useful structured-text work
-→ signed result + machine-readable receipt
-→ TCP return
-→ Agent A verifies result + receipt
-
-The active slice explicitly authorizes only the bounded two-process local
-network execution described in `FROZEN_SLICE L28.md`.
-
-Public/LAN networking, testnet, production keys, production settlement,
-deployment, and exchange work remain unauthorized.
+The bounded two-process loopback purchase has been implemented and verified locally. It is not published. Limited testnet, LAN/public networking, production keys, production settlement, deployment, and exchange work remain unauthorized.
 
 ## NEXT AFTER COMPLETED SLICE
 If the active isolated-local-network slice completes and stops, the next
