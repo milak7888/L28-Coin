@@ -1,6 +1,6 @@
 # L28 — SYSTEM_STATE.md
 
-Last updated: 2026-10-02
+Last updated: 2026-10-04
 
 ## PROJECT STATE
 PROJECT_STATE: ACTIVE
@@ -21,7 +21,7 @@ Product path:
 3. HTTP/JSON + MCP external access — COMPLETE/PUBLISHED
 4. cross-AI interoperability — COMPLETE/PUBLISHED
 5. isolated local network — COMPLETE/PUBLISHED
-6. limited testnet
+6. limited testnet — PASS / ACTUAL-PRODUCT VERIFIED
 7. public testnet
 8. production
 
@@ -439,49 +439,94 @@ Published commit:
 Slice result:
 
 PASS and published to remote `main`.
+
+## WORKING CAPABILITY — LIMITED TESTNET
+Verified capability:
+
+`python -m coin.limited_testnet_service_demo --role provider --requester-host 192.168.1.129 --provider-host 192.168.1.138 --port 28428`
+
+`python -m coin.limited_testnet_service_demo --role requester --requester-host 192.168.1.129 --provider-host 192.168.1.138 --port 28428`
+
+Service:
+
+`l28.service.structured_text_analysis/v0.1`
+
+Network identity:
+
+`L28-DISPOSABLE-LIMITED001`
+
+Verified two-host behavior:
+
+- requester `192.168.1.129`
+- provider `192.168.1.138:28428`
+- distinct explicit RFC1918 endpoints
+- signed request, quote for exactly 28 L28, disposable payment, result, and receipt
+- canonical validator reused
+- `BlocklessLedger` reused
+- payment tx id `cf1e700befd46e413218af74120f1edbb3140c11a830b0078ca8d52d5881a537`
+- balances transition 100/0 → 72/28
+- requester verified the result and the receipt
+- duplicate payment rejected with `reason=replay`
+- original payment remained applied exactly once
+- balances remained 72/28 after replay rejection
+- canonical history untouched
+- historical state not imported
+- no public network
+- no production keys
+- no mining
+- no broadcast
+- no production settlement
+- sockets closed
+
+Automated verification:
+
+- focused tests: 9 passed
+- affected regressions: 52 passed
+
+Actual-product verification: PASS
+
+Security review: PASS
+
+Unresolved Critical/High findings: 0
+
+Identity-module flags `RUNTIME_AUTHORIZED`, `NETWORK_AUTHORIZED`, `TESTNET_START_AUTHORIZED`, `SIGNING_AUTHORIZED`, `MINING_AUTHORIZED`, `BROADCAST_AUTHORIZED`, and `SETTLEMENT_AUTHORIZED` stay false.
+
+Slice result:
+
+PASS / ACTUAL-PRODUCT VERIFIED
+
+The Limited Testnet frozen slice has reached its STOP condition. It is not yet published.
+
 ## CURRENT FROZEN SLICE
 `FROZEN_SLICE L28.md`
 
 Slice:
 
-**Isolated Local Network — Two-Process Paid Service Transaction**
+**Limited Testnet — Two-Node Private-Network Paid Service**
 
 Status:
 
-PASS / STOP CONDITION REACHED / PUBLISHED
+PASS / ACTUAL-PRODUCT VERIFIED
 
-Completion gate:
+STOP CONDITION REACHED
 
-IMPLEMENTATION — PASS
-→ AUTOMATED TESTS — PASS
-→ ACTUAL-PRODUCT VERIFICATION — PASS
-→ EVIDENCE — PASS
-→ ACCEPTANCE CRITERIA — PASS
-→ STOP
+Operator authorization:
 
-Do not perform additional implementation work under this frozen slice.
-## NEXT AFTER COMPLETED SLICE
-The isolated-local-network slice is complete and stopped.
+`AUTHORIZE NEXT FROZEN SLICE: L28 LIMITED TESTNET`
 
-Next product stage:
+Baseline:
 
-**Limited testnet**
+`93b61bbf9e515ef4e68acb56fe02a5a3fb34a962`
+
+The verified experiment used two distinct explicit RFC1918 endpoints. Public testnet, production, deployment, and exchange work remain unauthorized.
+## NEXT AFTER THIS SLICE
+**Public testnet**
 
 Status:
 
 NOT AUTHORIZED / NOT STARTED
 
-Do not automatically start:
-
-- limited testnet
-- public testnet
-- LAN/public networking
-- persistent P2P runtime
-- production signer/custody
-- deployment
-- exchange/listing/liquidity work
-
-A new frozen slice and explicit operator authorization are required first.
+Do not automatically start public testnet, production signer/custody, deployment, or exchange/listing/liquidity work.
 ## SOURCE-OF-TRUTH RULE
 This file records current verified project state.
 

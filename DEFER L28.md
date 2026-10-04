@@ -1,6 +1,6 @@
 # L28 — DEFER.md
 
-Last updated: 2026-09-27
+Last updated: 2026-10-04
 
 Purpose:
 Store useful ideas and future work that are NOT required to complete the current frozen slice.
@@ -9,24 +9,13 @@ Nothing in this file is automatically approved.
 Review only when selecting the next frozen slice.
 
 ## CURRENT SLICE — DO NOT DUPLICATE HERE
-The active frozen slice is:
+The completed frozen slice is:
 
-**Isolated Local Network — Two-Process Paid Service Transaction**
+**Limited Testnet — Two-Node Private-Network Paid Service**
 
-Agent A requester/payer
-→ bounded IPv4 loopback TCP
-→ Agent B provider/payee
-→ request
-→ 28 L28 quote
-→ disposable signed payment
-→ canonical validation/application
-→ useful structured-text work
-→ result
-→ signed machine-readable receipt
-→ Agent A verification
+Status: PASS / ACTUAL-PRODUCT VERIFIED. STOP CONDITION REACHED.
 
-Do not create parallel networking milestones, readiness foundations, or
-additional gate-only work for this capability.
+Do not recreate this limited testnet. Public testnet remains deferred and NOT AUTHORIZED.
 
 ## COMPLETED PRODUCT STAGES — NOT DEFERRED
 Already complete/published:
@@ -35,6 +24,8 @@ Already complete/published:
 2. two-agent useful service transaction
 3. HTTP/JSON + MCP external access
 4. cross-AI interoperability
+5. isolated local network
+6. limited testnet — two-node private-network paid service
 
 Do not recreate these as new milestones.
 
@@ -50,21 +41,16 @@ When authorized later:
 - keep payment validation local/canonical
 
 ## NETWORKING — FUTURE AUTHORIZATION
-The isolated two-process local network transaction is the ACTIVE frozen slice
-and is therefore not deferred.
+The limited two-node private-network transaction is complete and is not deferred.
 
-Still deferred:
+Still deferred / NOT AUTHORIZED:
 
-- durable disposable local state beyond current slice requirements
-- broader controlled peer communication
-- limited testnet
 - public testnet
+- durable disposable local state beyond completed slice requirements
+- broader controlled peer communication
 - persistent P2P runtime
 
-Public networking/testnet requires separate explicit authorization.
-
-Do not treat prior consumed loopback experiments or the current bounded slice
-as persistent public-network authority.
+Public testnet requires separate explicit authorization. Do not start it from this completed slice.
 
 ## PRODUCTION — FUTURE
 - real custody architecture
@@ -129,4 +115,6 @@ If proposed work would create another document/gate whose result is still the sa
 The active work must change what L28 can actually DO.
 
 ## CURRENT FROZEN-SLICE RULE
-If an idea does not directly help complete the Isolated Local Network — Two-Process Paid Service Transaction, leave it here.
+The Limited Testnet — Two-Node Private-Network Paid Service has reached its stop condition.
+
+Public testnet remains deferred and NOT AUTHORIZED. Leave public-testnet, production, deployment, and exchange ideas here.
