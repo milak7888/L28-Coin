@@ -21,7 +21,7 @@ Product path:
 3. HTTP/JSON + MCP external access — COMPLETE/PUBLISHED
 4. cross-AI interoperability — COMPLETE/PUBLISHED
 5. isolated local network — COMPLETE/PUBLISHED
-6. limited testnet — PASS / ACTUAL-PRODUCT VERIFIED
+6. limited testnet — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
 7. public testnet
 8. production
 
@@ -493,9 +493,9 @@ Identity-module flags `RUNTIME_AUTHORIZED`, `NETWORK_AUTHORIZED`, `TESTNET_START
 
 Slice result:
 
-PASS / ACTUAL-PRODUCT VERIFIED
+PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
 
-The Limited Testnet frozen slice has reached its STOP condition. It is not yet published.
+The Limited Testnet frozen slice reached its STOP condition and is published on remote main at commit `586362ef17138e8e82ddfa4ac954e3f54d33ea9d`.
 
 ## CURRENT FROZEN SLICE
 `FROZEN_SLICE L28.md`
@@ -506,7 +506,7 @@ Slice:
 
 Status:
 
-PASS / ACTUAL-PRODUCT VERIFIED
+PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
 
 STOP CONDITION REACHED
 
