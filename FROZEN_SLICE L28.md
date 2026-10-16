@@ -103,4 +103,4 @@ Payment tx id:
 
 `c95bbee5d1e9b5d8dadf66db319099f2930bd7edc624335f3a0f4e2beec579d2`
 
-The Surface requester and the Mac provider showed that same id. Balances moved 100/0 → 72/28. The result is PASS / ACTUAL-PRODUCT VERIFIED and is not yet published.
+The Surface requester and the Mac provider showed that same id. Balances moved 100/0 → 72/28. The result is PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED on remote main at commit `3fa23117aafbc1ee78c7bec0e52259008a2783ff`.

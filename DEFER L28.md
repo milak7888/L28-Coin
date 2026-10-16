@@ -15,7 +15,7 @@ The completed frozen slice is:
 
 Status: PASS / ACTUAL-PRODUCT VERIFIED. STOP CONDITION REACHED.
 
-It is not yet published. Do not recreate this public testnet. Production remains NOT AUTHORIZED / NOT STARTED.
+It is published on remote main. Do not recreate this public testnet. Production remains NOT AUTHORIZED / NOT STARTED.
 
 ## COMPLETED PRODUCT STAGES — NOT DEFERRED
 Already complete/published:
@@ -26,7 +26,7 @@ Already complete/published:
 4. cross-AI interoperability
 5. isolated local network
 6. limited testnet — two-node private-network paid service
-7. public testnet — internet-reachable paid AI service, verified, not yet published
+7. public testnet — internet-reachable paid AI service
 
 Do not recreate these as new milestones.
 

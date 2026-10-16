@@ -22,7 +22,7 @@ Product path:
 4. cross-AI interoperability — COMPLETE/PUBLISHED
 5. isolated local network — COMPLETE/PUBLISHED
 6. limited testnet — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
-7. public testnet — PASS / ACTUAL-PRODUCT VERIFIED
+7. public testnet — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
 8. production
 
 ## REPOSITORY
@@ -554,9 +554,9 @@ Identity-module authorization flags stay false. Protocol v1.0.0 and protected ec
 
 Slice result:
 
-PASS / ACTUAL-PRODUCT VERIFIED
+PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
 
-The Public Testnet frozen slice has reached its STOP condition. It is not yet published.
+The Public Testnet frozen slice reached its STOP condition and is published on remote main at commit `3fa23117aafbc1ee78c7bec0e52259008a2783ff`.
 
 ## CURRENT FROZEN SLICE
 `FROZEN_SLICE L28.md`
@@ -567,7 +567,7 @@ Slice:
 
 Status:
 
-PASS / ACTUAL-PRODUCT VERIFIED
+PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
 
 STOP CONDITION REACHED
 
