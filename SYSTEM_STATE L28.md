@@ -23,7 +23,7 @@ Product path:
 5. isolated local network — COMPLETE/PUBLISHED
 6. limited testnet — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
 7. public testnet — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
-8. production entry — durable restart-safe paid AI service — PASS / ACTUAL-PRODUCT VERIFIED
+8. production entry — durable restart-safe paid AI service — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
 
 ## REPOSITORY
 Local: `/Users/pjaydondup/Projects/L28-Coin`
@@ -569,7 +569,9 @@ Slice:
 
 Status:
 
-PASS / ACTUAL-PRODUCT VERIFIED
+PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
+
+The Production Entry — Durable Restart-Safe Paid AI Service slice reached its STOP condition and is published on remote main at commit `c0f5467bb2f58a2f59a47cbc2920dcb2e5b3f1a6`.
 
 Baseline:
 

@@ -48,7 +48,11 @@ It does not authorize production private keys, real custody, signer activation, 
 
 ## RESULT
 
-PASS / ACTUAL-PRODUCT VERIFIED
+PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
+
+Published commit:
+
+`c0f5467bb2f58a2f59a47cbc2920dcb2e5b3f1a6`
 
 The real provider process completed the 28 L28 purchase, stopped, and restarted on the same disposable state directory. Replay of payment `896222f3a3e07752e91ad9dd1b2f1edec4897b15e8b19505b6eebbad5e939b1e` was rejected and balances stayed 72/28. Fresh payment `5a008e8e2ee662c2f9079a19e7fccb0700438d8a45e2369ecab9a354f15d08ad` completed, with the original provider balance still 28.
 
