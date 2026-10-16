@@ -11,11 +11,11 @@ Review only when selecting the next frozen slice.
 ## CURRENT SLICE — DO NOT DUPLICATE HERE
 The completed frozen slice is:
 
-**Public Testnet — Internet-Reachable Paid AI Service**
+**Production Entry — Durable Restart-Safe Paid AI Service**
 
 Status: PASS / ACTUAL-PRODUCT VERIFIED. STOP CONDITION REACHED.
 
-It is published on remote main. Do not recreate this public testnet. Production remains NOT AUTHORIZED / NOT STARTED.
+Do not recreate this disposable restart runtime. Production signing, custody, deployment, and settlement remain NOT AUTHORIZED / NOT STARTED.
 
 ## COMPLETED PRODUCT STAGES — NOT DEFERRED
 Already complete/published:
@@ -48,10 +48,11 @@ The public-testnet experiment is complete and is not deferred.
 
 Still deferred:
 
-- durable disposable local state beyond current slice requirements
 - broader controlled peer communication
 - persistent P2P runtime
 - production deployment
+- production signing and settlement
+- REA, Bitcoin Core, and BTCPay study
 
 Production remains NOT AUTHORIZED. Do not treat localhost or LAN evidence as this public-testnet result.
 
@@ -118,6 +119,6 @@ If proposed work would create another document/gate whose result is still the sa
 The active work must change what L28 can actually DO.
 
 ## CURRENT FROZEN-SLICE RULE
-The Public Testnet — Internet-Reachable Paid AI Service has reached its stop condition.
+The Production Entry — Durable Restart-Safe Paid AI Service has reached its stop condition.
 
-Production remains NOT AUTHORIZED / NOT STARTED. REA, Bitcoin Core, and BTCPay study remain deferred. Deployment and exchange/listing/liquidity work remain deferred.
+Production signing, custody, deployment, and settlement remain NOT AUTHORIZED / NOT STARTED. REA, Bitcoin Core, and BTCPay study remain deferred.

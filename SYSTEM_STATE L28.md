@@ -23,7 +23,7 @@ Product path:
 5. isolated local network — COMPLETE/PUBLISHED
 6. limited testnet — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
 7. public testnet — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
-8. production
+8. production entry — durable restart-safe paid AI service — PASS / ACTUAL-PRODUCT VERIFIED
 
 ## REPOSITORY
 Local: `/Users/pjaydondup/Projects/L28-Coin`
@@ -378,7 +378,9 @@ Recorded production-level restrictions remain:
 - `BROADCAST=false`
 - production `SETTLEMENT=false`
 
-The completed disposable, two-agent, HTTP/MCP, and cross-AI capabilities do NOT make a production signer eligible.
+The completed disposable, two-agent, HTTP/MCP, cross-AI, testnet, and restart-safe payment capabilities do NOT make a production signer eligible.
+
+The disposable restart-safe runtime does not change these production gates. `RUNTIME_HARDENING` and `FAULT_RECOVERY` remain UNRESOLVED.
 
 ## ASSURANCE MODEL
 `ASSURANCE_MODEL=OPEN_SOURCE_PUBLIC_REVIEW`
@@ -563,33 +565,51 @@ The Public Testnet frozen slice reached its STOP condition and is published on r
 
 Slice:
 
-**Public Testnet — Internet-Reachable Paid AI Service**
+**Production Entry — Durable Restart-Safe Paid AI Service**
 
 Status:
 
-PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
-
-STOP CONDITION REACHED
-
-Operator authorization:
-
-`AUTHORIZE NEXT FROZEN SLICE: L28 PUBLIC TESTNET`
+PASS / ACTUAL-PRODUCT VERIFIED
 
 Baseline:
 
-`ab108ae215ed1f27c442f0aa9a7839f040dd0a10`
+`d3f533b5b4e1b60d9f96ba925d08699fc247ae2d`
 
-The verified experiment is one disposable 28 L28 purchase across `https://remaining-successful-springs-new.trycloudflare.com`. Identity-module authorization flags stay false.
+A real provider process completed one disposable 28 L28 purchase, stopped, and restarted on the same state directory. The original payment was rejected as a replay. A second fresh disposable payment then completed.
 
-Production, deployment, mining, canonical broadcast, and exchange work remain unauthorized.
+Run 1 payment `896222f3a3e07752e91ad9dd1b2f1edec4897b15e8b19505b6eebbad5e939b1e` moved balances 100/0 to 72/28. Canonical validation passed. The result and receipt verified. Durable state version became 1.
+
+Run 2 reopened that state at restart generation 2. The same payment was rejected. Balances stayed 72/28. The service did not run again.
+
+Run 3 payment `5a008e8e2ee662c2f9079a19e7fccb0700438d8a45e2369ecab9a354f15d08ad` moved the same requester from 72 to 44 and a new disposable provider from 0 to 28. The original provider balance stayed 28. The result and receipt verified.
+
+Focused tests: 10 passed. Affected regressions: 58 passed.
+
+Security review: PASS. Unresolved Critical/High findings: 0.
+
+This is local disposable runtime evidence. It is not canonical settlement finality.
+
+`CUSTODY_READINESS=UNRESOLVED`
+
+`RUNTIME_HARDENING=UNRESOLVED`
+
+`FAULT_RECOVERY=UNRESOLVED`
+
+`F171_SIGNER_ELIGIBILITY_RESULT=BLOCKED`
+
+`SIGNER_RUNTIME_ACTIVE=false`
+
+Signing, canonical broadcast, mining, and production settlement stay false.
+
 ## NEXT AFTER THIS SLICE
-**Production**
+**Production signing, deployment, and settlement**
 
 Status:
 
 NOT AUTHORIZED / NOT STARTED
 
-Do not automatically start production signer/custody, deployment, or exchange/listing/liquidity work.
+Do not automatically start production signer/custody, deployment, exchange/listing/liquidity, or REA/Bitcoin/BTCPay work.
+
 ## SOURCE-OF-TRUTH RULE
 This file records current verified project state.
 
