@@ -1,6 +1,6 @@
 # L28 — SYSTEM_STATE.md
 
-Last updated: 2026-10-04
+Last updated: 2026-10-16
 
 ## PROJECT STATE
 PROJECT_STATE: ACTIVE
@@ -22,7 +22,7 @@ Product path:
 4. cross-AI interoperability — COMPLETE/PUBLISHED
 5. isolated local network — COMPLETE/PUBLISHED
 6. limited testnet — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
-7. public testnet
+7. public testnet — PASS / ACTUAL-PRODUCT VERIFIED
 8. production
 
 ## REPOSITORY
@@ -497,36 +497,99 @@ PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
 
 The Limited Testnet frozen slice reached its STOP condition and is published on remote main at commit `586362ef17138e8e82ddfa4ac954e3f54d33ea9d`.
 
+## WORKING CAPABILITY — PUBLIC TESTNET
+Verified capability:
+
+`python -m coin.public_testnet_service_demo --role provider --port 28429`
+
+Service:
+
+`l28.service.structured_text_analysis/v0.1`
+
+Network identity:
+
+`L28-DISPOSABLE-PUBLIC001`
+
+Verified public path:
+
+- Surface requester on a separate internet connection
+- public endpoint `https://remaining-successful-springs-new.trycloudflare.com`
+- ephemeral Cloudflare Quick Tunnel
+- Mac provider bound only to `127.0.0.1:28429`
+
+Provider evidence:
+
+- `coordination=provider_evidence`
+- `public_testnet=true`
+- `canonical_validation=PASS`
+- payment tx id `c95bbee5d1e9b5d8dadf66db319099f2930bd7edc624335f3a0f4e2beec579d2`
+- balances 100/0 → 72/28
+- `payment_applied=true`
+- `payment_verified=true`
+- `replay_rejected=true`
+- `service_executed=true`
+- `receipt_created=true`
+- `bounded_provider_shutdown=true`
+- canonical history untouched
+- historical state not imported
+- no production keys
+- no mining
+- no canonical broadcast
+- no production settlement
+
+The Surface requester completed the same public HTTPS transaction and showed the same payment tx id. That command completes only after the existing quote, payment, result, and receipt verification flow.
+
+Automated verification after the provider-evidence change:
+
+- focused tests: 7 passed
+- affected regressions: 72 passed
+
+Actual-product verification: PASS
+
+Security review: PASS
+
+Unresolved Critical/High findings: 0
+
+Identity-module authorization flags stay false. Protocol v1.0.0 and protected economics are unchanged.
+
+Slice result:
+
+PASS / ACTUAL-PRODUCT VERIFIED
+
+The Public Testnet frozen slice has reached its STOP condition. It is not yet published.
+
 ## CURRENT FROZEN SLICE
 `FROZEN_SLICE L28.md`
 
 Slice:
 
-**Limited Testnet — Two-Node Private-Network Paid Service**
+**Public Testnet — Internet-Reachable Paid AI Service**
 
 Status:
 
-PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
+PASS / ACTUAL-PRODUCT VERIFIED
 
 STOP CONDITION REACHED
 
 Operator authorization:
 
-`AUTHORIZE NEXT FROZEN SLICE: L28 LIMITED TESTNET`
+`AUTHORIZE NEXT FROZEN SLICE: L28 PUBLIC TESTNET`
 
 Baseline:
 
-`93b61bbf9e515ef4e68acb56fe02a5a3fb34a962`
+`ab108ae215ed1f27c442f0aa9a7839f040dd0a10`
 
-The verified experiment used two distinct explicit RFC1918 endpoints. Public testnet, production, deployment, and exchange work remain unauthorized.
+The verified experiment is one disposable 28 L28 purchase across `https://remaining-successful-springs-new.trycloudflare.com`. Identity-module authorization flags stay false.
+
+Production, deployment, mining, canonical broadcast, and exchange work remain unauthorized.
 ## NEXT AFTER THIS SLICE
-**Public testnet**
+**Production**
 
 Status:
 
 NOT AUTHORIZED / NOT STARTED
 
-Do not automatically start public testnet, production signer/custody, deployment, or exchange/listing/liquidity work.
+Do not automatically start production signer/custody, deployment, or exchange/listing/liquidity work.
 ## SOURCE-OF-TRUTH RULE
 This file records current verified project state.
 

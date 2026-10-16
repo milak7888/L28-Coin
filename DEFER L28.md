@@ -1,6 +1,6 @@
 # L28 — DEFER.md
 
-Last updated: 2026-10-04
+Last updated: 2026-10-16
 
 Purpose:
 Store useful ideas and future work that are NOT required to complete the current frozen slice.
@@ -11,11 +11,11 @@ Review only when selecting the next frozen slice.
 ## CURRENT SLICE — DO NOT DUPLICATE HERE
 The completed frozen slice is:
 
-**Limited Testnet — Two-Node Private-Network Paid Service**
+**Public Testnet — Internet-Reachable Paid AI Service**
 
 Status: PASS / ACTUAL-PRODUCT VERIFIED. STOP CONDITION REACHED.
 
-Do not recreate this limited testnet. Public testnet remains deferred and NOT AUTHORIZED.
+It is not yet published. Do not recreate this public testnet. Production remains NOT AUTHORIZED / NOT STARTED.
 
 ## COMPLETED PRODUCT STAGES — NOT DEFERRED
 Already complete/published:
@@ -26,6 +26,7 @@ Already complete/published:
 4. cross-AI interoperability
 5. isolated local network
 6. limited testnet — two-node private-network paid service
+7. public testnet — internet-reachable paid AI service, verified, not yet published
 
 Do not recreate these as new milestones.
 
@@ -43,14 +44,16 @@ When authorized later:
 ## NETWORKING — FUTURE AUTHORIZATION
 The limited two-node private-network transaction is complete and is not deferred.
 
-Still deferred / NOT AUTHORIZED:
+The public-testnet experiment is complete and is not deferred.
 
-- public testnet
-- durable disposable local state beyond completed slice requirements
+Still deferred:
+
+- durable disposable local state beyond current slice requirements
 - broader controlled peer communication
 - persistent P2P runtime
+- production deployment
 
-Public testnet requires separate explicit authorization. Do not start it from this completed slice.
+Production remains NOT AUTHORIZED. Do not treat localhost or LAN evidence as this public-testnet result.
 
 ## PRODUCTION — FUTURE
 - real custody architecture
@@ -115,6 +118,6 @@ If proposed work would create another document/gate whose result is still the sa
 The active work must change what L28 can actually DO.
 
 ## CURRENT FROZEN-SLICE RULE
-The Limited Testnet — Two-Node Private-Network Paid Service has reached its stop condition.
+The Public Testnet — Internet-Reachable Paid AI Service has reached its stop condition.
 
-Public testnet remains deferred and NOT AUTHORIZED. Leave public-testnet, production, deployment, and exchange ideas here.
+Production remains NOT AUTHORIZED / NOT STARTED. REA, Bitcoin Core, and BTCPay study remain deferred. Deployment and exchange/listing/liquidity work remain deferred.

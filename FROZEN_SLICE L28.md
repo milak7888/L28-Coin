@@ -1,66 +1,53 @@
 # L28 — FROZEN_SLICE.md
 
-Date: 2026-10-04
+Date: 2026-10-16
 PROJECT_STATE: ACTIVE
-Slice: Limited Testnet — Two-Node Private-Network Paid Service
+Slice: Public Testnet — Internet-Reachable Paid AI Service
 
 ## OBJECTIVE
 
-Move the published L28 paid structured-text service from same-machine loopback to two distinct, explicitly configured private IPv4 endpoints.
+Expose exactly one existing useful L28 service across a real public internet boundary and complete one 28 L28 machine-to-machine purchase.
 
-Requester node
-→ private RFC1918 network
-→ Provider node
-→ signed service request
-→ signed quote for exactly 28 L28
-→ signed disposable payment
-→ canonical validation
+Remote AI/agent requester
+→ public HTTPS internet endpoint
+→ L28 provider
+→ service request
+→ quote exactly 28 L28
+→ disposable signed payment
+→ canonical transaction validation
 → BlocklessLedger application
-→ payment verification
-→ structured-text work
+→ useful structured-text work
 → signed result
-→ signed receipt
+→ signed machine-readable receipt
 → requester verifies result and receipt
+
+Service remains `l28.service.structured_text_analysis/v0.1`.
+
+Do not add a marketplace or another service.
 
 ## BASELINE
 
-`93b61bbf9e515ef4e68acb56fe02a5a3fb34a962`
+`ab108ae215ed1f27c442f0aa9a7839f040dd0a10`
 
 Operator authorization:
 
-`AUTHORIZE NEXT FROZEN SLICE: L28 LIMITED TESTNET`
+`AUTHORIZE NEXT FROZEN SLICE: L28 PUBLIC TESTNET`
 
-This authorization covers only this bounded experiment. It does not change `RUNTIME_AUTHORIZED`, `NETWORK_AUTHORIZED`, `TESTNET_START_AUTHORIZED`, `SIGNING_AUTHORIZED`, `MINING_AUTHORIZED`, `BROADCAST_AUTHORIZED`, or `SETTLEMENT_AUTHORIZED`.
+This authorization covers only this disposable public-testnet experiment. It does not authorize production, production keys, production settlement, mining, canonical broadcast, persistent production deployment, exchange/listing/liquidity, external spending, or Protocol v1.0 changes.
 
-## NETWORK
+It does not change `RUNTIME_AUTHORIZED`, `NETWORK_AUTHORIZED`, `TESTNET_START_AUTHORIZED`, `SIGNING_AUTHORIZED`, `MINING_AUTHORIZED`, `BROADCAST_AUTHORIZED`, or `SETTLEMENT_AUTHORIZED`.
 
-Allowed private IPv4 only:
+## IDENTITY
 
-- `10.0.0.0/8`
-- `172.16.0.0/12`
-- `192.168.0.0/16`
-
-Reject loopback, loopback aliases, `0.0.0.0`, public IPs, peer discovery, multicast, broadcast discovery, UPnP, and NAT traversal.
-
-Peer addresses are explicit. The two endpoints must be distinct. Loopback evidence does not satisfy this slice.
-
-If two distinct RFC1918 endpoints are not already available, stop with:
-
-`BLOCKER=DISTINCT_PRIVATE_TESTNET_ENDPOINT_UNAVAILABLE`
-
-Do not install virtualization or download images to manufacture an endpoint.
-
-## TESTNET IDENTITY
-
-Reuse `coin.disposable_testnet_identity.validate_and_bind_disposable_testnet_config`.
-
-- `network_id=L28-DISPOSABLE-LIMITED001`
-- `data_dir_tag=l28-disposable-testnet:limited001`
+- `network_id=L28-DISPOSABLE-PUBLIC001`
+- `data_dir_tag=l28-disposable-testnet:public001`
 - initial height 0
-- issued supply 0
+- initial issued supply 0
 - no historical checkpoint
 - no historical balances
+- disposable state only
 - protected economics unchanged
+- canonical history untouched
 - production keys forbidden
 
 ## PAYMENT AND SERVICE
@@ -69,41 +56,51 @@ Price remains 28 L28. Disposable balances move 100/0 → 72/28.
 
 Reuse the existing request, quote, payment authorization, signed transfer, `coin.tx_validation.validate_transaction`, `BlocklessLedger`, and result/receipt semantics.
 
-Service remains `l28.service.structured_text_analysis/v0.1`.
+Work must not execute before verified payment.
 
-Every frame binds profile/version, network id, genesis hash, config hash, message type, sequence, and payload, in this order:
+## PUBLIC INTERNET
 
-1. `provider_hello`
-2. `service_request`
-3. `service_quote`
-4. `payment_package`
-5. `service_result_package`
+Actual-product pass requires the requester to reach the provider through a public internet endpoint. Localhost, RFC1918, same-machine loopback, and direct LAN paths do not pass.
 
-Fail closed on wrong network, wrong genesis/config hash, wrong peer, malformed or oversized or truncated frames, wrong or duplicate or out-of-order sequence, timeout, wrong amount, wrong payer or payee, invalid signature, replay, and tampered result or receipt.
+Prefer HTTPS. The requester must use the public HTTPS URL, not a LAN address.
+
+Operator authorization:
+
+`AUTHORIZE PUBLIC TESTNET BLOCKER CORRECTION: INSTALL CLOUDFLARED AND USE ONE EPHEMERAL QUICK TUNNEL`
+
+That authorization supersedes the earlier install restriction only for `cloudflared` and one ephemeral Quick Tunnel to the localhost provider. It does not authorize a Cloudflare account, login, named tunnel, token, credential file, or persistent service install.
+
+Do not purchase hosting, create accounts, or read secret tokens.
+
+If `cloudflared` cannot be installed with an already-available method, stop with:
+
+`BLOCKER=CLOUDFLARED_INSTALL_METHOD_UNAVAILABLE`
+
+If no public `https://*.trycloudflare.com` ingress is actually used, stop actual-product verification with:
+
+`BLOCKER=PUBLIC_TESTNET_ENDPOINT_UNAVAILABLE`
 
 ## STOP
 
-Stop after one bounded experiment. Do not start public testnet, production, deployment, or exchange work.
-
-Do not substitute `127.0.0.1` for a missing private endpoint.
+The provider is one-shot and bounded. Stop after one bounded experiment. Do not start production.
 
 ## ACCEPTANCE
 
 Status: STOP CONDITION REACHED
 
-- IMPLEMENTATION PASS
-- AUTOMATED TESTS PASS
-- ACTUAL-PRODUCT VERIFICATION PASS
-- EVIDENCE PASS
-- ACCEPTANCE CRITERIA PASS
+- IMPLEMENTATION — PASS
+- AUTOMATED TESTS — PASS
+- ACTUAL-PRODUCT VERIFICATION — PASS
+- EVIDENCE — PASS
+- SECURITY REVIEW — PASS
+- ACCEPTANCE CRITERIA — PASS
 
-Verified endpoints:
+Public endpoint:
 
-- requester `192.168.1.129`
-- provider `192.168.1.138:28428`
+`https://remaining-successful-springs-new.trycloudflare.com`
 
 Payment tx id:
 
-`cf1e700befd46e413218af74120f1edbb3140c11a830b0078ca8d52d5881a537`
+`c95bbee5d1e9b5d8dadf66db319099f2930bd7edc624335f3a0f4e2beec579d2`
 
-Balances moved 100/0 → 72/28. The result and receipt verified. A duplicate payment was rejected as replay and did not change those balances. Canonical history was not touched. No public network, production keys, mining, broadcast, or production settlement was used.
+The Surface requester and the Mac provider showed that same id. Balances moved 100/0 → 72/28. The result is PASS / ACTUAL-PRODUCT VERIFIED and is not yet published.
