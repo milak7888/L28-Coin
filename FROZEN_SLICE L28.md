@@ -26,7 +26,11 @@ The caller supplies the custody directory. There is no default path and no searc
 
 ## STATUS
 
-PASS / ACTUAL-PRODUCT VERIFIED
+PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
+
+Published commit:
+
+`522d181da436a0d936eee7b0e4d8e2e7389f51f6`
 
 Signer identity `l28disp_adbe504225163cbd10d6ca2e3416a0f94de3a1f8e92b928c7598c973d1917a3e` was unchanged after a real signer-process restart on the same disposable custody directory.
 
@@ -38,7 +42,7 @@ Focused tests: 11 passed. Affected regressions: 73 passed. Security review: PASS
 
 `CUSTODY_READINESS` stays UNRESOLVED. `RUNTIME_HARDENING` stays UNRESOLVED. `FAULT_RECOVERY` stays UNRESOLVED. `F171_SIGNER_ELIGIBILITY_RESULT` stays BLOCKED. `SIGNER_RUNTIME_ACTIVE` stays false. Production signing, broadcast, and production settlement stay false.
 
-Not published. Production signing and production custody remain NOT AUTHORIZED / NOT STARTED.
+Production signing and production custody remain NOT AUTHORIZED / NOT STARTED.
 
 ## STOP
 
