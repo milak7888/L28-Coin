@@ -5,8 +5,10 @@ from __future__ import annotations
 
 import ast
 import json
+import os
 import socket
 import sqlite3
+import threading
 from pathlib import Path
 
 import pytest
@@ -48,7 +50,7 @@ def _package(provider: demo.DurableProvider, payer: Ed25519PrivateKey, nonce: in
         signer,
         receiver=str(receiver),
         amount=int(amount),
-        timestamp=DEMO_TIMESTAMP,
+        timestamp=int(changes.get("timestamp", DEMO_TIMESTAMP)),
         nonce=nonce,
     )
     if changes.get("bad_signature"):
@@ -353,3 +355,82 @@ def test_real_process_restart_rejects_replay_then_accepts_fresh_payment(tmp_path
     assert result["canonical_history_touched"] is False
     encoded = json.dumps(result)
     assert "private_bytes" not in encoded
+
+
+def test_clock_rollback_permissions_stale_and_audit_fail_closed(tmp_path: Path) -> None:
+    payer = Ed25519PrivateKey.generate()
+    provider = demo.DurableProvider(tmp_path)
+    try:
+        provider.handle_payment(_package(provider, payer, 100))
+        with pytest.raises(demo.DurableRuntimeError) as rolled:
+            provider.handle_payment(_package(provider, payer, 104, timestamp=DEMO_TIMESTAMP - 1))
+        assert rolled.value.code == "clock_rollback"
+        assert provider.store.snapshot()["state_version"] == 1
+    finally:
+        provider.close()
+    database = tmp_path / demo.DB_NAME
+    os.chmod(database, 0o644)
+    with pytest.raises(demo.DurableRuntimeError) as loose:
+        demo.DurableStore(tmp_path).open()
+    assert loose.value.code == "permissions_invalid"
+    os.chmod(database, 0o600)
+    preserved = database.read_bytes()
+    again = demo.DurableProvider(tmp_path)
+    try:
+        again.handle_payment(_package(again, payer, 105))
+    finally:
+        again.close()
+    database.write_bytes(preserved)
+    os.chmod(database, 0o600)
+    with pytest.raises(demo.DurableRuntimeError) as stale:
+        demo.DurableStore(tmp_path).open()
+    assert stale.value.code == "stale_state"
+    connection = sqlite3.connect(tmp_path / demo.DB_NAME)
+    connection.execute("UPDATE audit SET entry_hash=? WHERE id=1", ("ab" * 32,))
+    connection.commit()
+    connection.close()
+    os.chmod(tmp_path / demo.DB_NAME, 0o600)
+    with pytest.raises(demo.DurableRuntimeError) as corrupt:
+        demo.DurableStore(tmp_path).open()
+    assert corrupt.value.code == "corrupt_state"
+
+
+def test_nested_json_is_bounded() -> None:
+    nested: object = {"value": 1}
+    for _ in range(demo.MAX_JSON_DEPTH):
+        nested = {"child": nested}
+    with pytest.raises(demo.DurableRuntimeError) as error:
+        demo._read_json(json.dumps(nested).encode("utf-8"))
+    assert error.value.code == "oversized_body"
+
+
+def test_concurrent_payments_apply_exactly_once_each(tmp_path: Path) -> None:
+    payer = Ed25519PrivateKey.generate()
+    provider = demo.DurableProvider(tmp_path)
+    first = _package(provider, payer, 100)
+    second = _package(provider, payer, 101)
+    barrier = threading.Barrier(2)
+    results: list[dict] = []
+    errors: list[BaseException] = []
+
+    def run(package: dict) -> None:
+        try:
+            barrier.wait(timeout=2)
+            results.append(provider.handle_payment(package))
+        except BaseException as exc:
+            errors.append(exc)
+
+    threads = [threading.Thread(target=run, args=(package,)) for package in (first, second)]
+    try:
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join(timeout=5)
+    finally:
+        provider.close()
+    assert errors == []
+    assert sorted(item["ok"] for item in results) == [True, True]
+    assert len({item["evidence"]["payment_tx_id"] for item in results}) == 2
+    balances = {item["evidence"]["requester_balance_after"] for item in results}
+    assert 44 in balances
+    assert 72 in balances

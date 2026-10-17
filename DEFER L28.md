@@ -11,11 +11,11 @@ Review only when selecting the next frozen slice.
 ## CURRENT SLICE — DO NOT DUPLICATE HERE
 The completed frozen slice is:
 
-**Production Entry — Durable Restart-Safe Paid AI Service**
+**Production Runtime Hardening and Fault Recovery**
 
 Status: PASS / ACTUAL-PRODUCT VERIFIED. STOP CONDITION REACHED.
 
-Do not recreate this disposable restart runtime. Production signing, custody, deployment, and settlement remain NOT AUTHORIZED / NOT STARTED.
+The disposable runtime gained fail-closed permission, audit, stale-state, and rollback checks. `RUNTIME_HARDENING` and `FAULT_RECOVERY` remain UNRESOLVED. Production signing, custody, deployment, and settlement remain NOT AUTHORIZED / NOT STARTED.
 
 ## COMPLETED PRODUCT STAGES — NOT DEFERRED
 Already complete/published:
@@ -27,6 +27,7 @@ Already complete/published:
 5. isolated local network
 6. limited testnet — two-node private-network paid service
 7. public testnet — internet-reachable paid AI service
+8. production entry — durable restart-safe paid AI service
 
 Do not recreate these as new milestones.
 
@@ -60,8 +61,8 @@ Production remains NOT AUTHORIZED. Do not treat localhost or LAN evidence as thi
 - real custody architecture
 - production signer
 - production key lifecycle
-- production runtime hardening
-- production fault/recovery
+- production runtime hardening gate — remains UNRESOLVED
+- production fault/recovery gate — remains UNRESOLVED
 - production monitoring
 - deployment
 - production settlement
@@ -119,6 +120,6 @@ If proposed work would create another document/gate whose result is still the sa
 The active work must change what L28 can actually DO.
 
 ## CURRENT FROZEN-SLICE RULE
-The Production Entry — Durable Restart-Safe Paid AI Service has reached its stop condition.
+The Production Runtime Hardening and Fault Recovery slice has reached its stop condition.
 
-Production signing, custody, deployment, and settlement remain NOT AUTHORIZED / NOT STARTED. REA, Bitcoin Core, and BTCPay study remain deferred.
+`RUNTIME_HARDENING` and `FAULT_RECOVERY` remain UNRESOLVED. Production signing, custody, deployment, and settlement remain NOT AUTHORIZED / NOT STARTED. REA, Bitcoin Core, and BTCPay study remain deferred.

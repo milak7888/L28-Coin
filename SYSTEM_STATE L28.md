@@ -24,6 +24,7 @@ Product path:
 6. limited testnet — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
 7. public testnet — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
 8. production entry — durable restart-safe paid AI service — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
+9. production runtime hardening and fault recovery — PASS / ACTUAL-PRODUCT VERIFIED
 
 ## REPOSITORY
 Local: `/Users/pjaydondup/Projects/L28-Coin`
@@ -380,7 +381,7 @@ Recorded production-level restrictions remain:
 
 The completed disposable, two-agent, HTTP/MCP, cross-AI, testnet, and restart-safe payment capabilities do NOT make a production signer eligible.
 
-The disposable restart-safe runtime does not change these production gates. `RUNTIME_HARDENING` and `FAULT_RECOVERY` remain UNRESOLVED.
+The disposable restart-safe runtime and the later hardening slice do not change these production gates. `RUNTIME_HARDENING` and `FAULT_RECOVERY` remain UNRESOLVED.
 
 ## ASSURANCE MODEL
 `ASSURANCE_MODEL=OPEN_SOURCE_PUBLIC_REVIEW`
@@ -560,9 +561,53 @@ PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
 
 The Public Testnet frozen slice reached its STOP condition and is published on remote main at commit `3fa23117aafbc1ee78c7bec0e52259008a2783ff`.
 
+## COMPLETED DURABLE RUNTIME SLICE
+The Production Entry — Durable Restart-Safe Paid AI Service slice reached its STOP condition and is published on remote main at commit `c0f5467bb2f58a2f59a47cbc2920dcb2e5b3f1a6`.
+
 ## CURRENT FROZEN SLICE
 `FROZEN_SLICE L28.md`
 
+Slice:
+
+**Production Runtime Hardening and Fault Recovery**
+
+Status:
+
+PASS / ACTUAL-PRODUCT VERIFIED
+
+Baseline:
+
+`b3c5dd1f0321e07c12ac874311b47d912ff7e9e4`
+
+The disposable payment runtime now rejects a world-readable state file, a group-accessible state directory, a rolled-back database inside the same directory, a corrupt audit chain, an older payment timestamp, and an over-nested request. A real process still completes the 28 L28 purchase, rejects the replay after restart, and completes a second fresh payment.
+
+Run 1 payment `103c4f35033ba784488b2b9e1b81dcff4415ef621cf7054b1444f1bf0e1024dd` moved balances 100/0 to 72/28.
+
+Run 2 rejected that same payment. Balances stayed 72/28.
+
+Run 3 payment `3c8cf49e8f6e7efa59d95872eda0e738ecffcb241f21c5cb2a962950ec8c4650` completed. The original provider balance stayed 28.
+
+Real process probes rejected `permissions_invalid`, `stale_state`, and `corrupt_state` before any service execution.
+
+Focused tests: 13 passed. Affected regressions: 116 passed.
+
+Security review: PASS. Unresolved Critical/High findings: 0.
+
+This does not resolve the production signer gates. Replacing every file in the state directory together is still outside this slice. No production rate, skew, or topology values were invented.
+
+`CUSTODY_READINESS=UNRESOLVED`
+
+`RUNTIME_HARDENING=UNRESOLVED`
+
+`FAULT_RECOVERY=UNRESOLVED`
+
+`F171_SIGNER_ELIGIBILITY_RESULT=BLOCKED`
+
+`SIGNER_RUNTIME_ACTIVE=false`
+
+Signing, canonical broadcast, mining, and production settlement stay false.
+
+## DURABLE RUNTIME EVIDENCE
 Slice:
 
 **Production Entry — Durable Restart-Safe Paid AI Service**

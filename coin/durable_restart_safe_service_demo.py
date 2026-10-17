@@ -10,8 +10,10 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import hashlib
 import http.client
 import json
+import os
 import sqlite3
 import subprocess
 import sys
@@ -74,6 +76,8 @@ NETWORK_ID = "L28-DISPOSABLE-PRODUCTION-ENTRY001"
 DATA_DIR_TAG = "l28-disposable-testnet:production-entry001"
 LOOPBACK_HOST = "127.0.0.1"
 MAX_BODY_BYTES = 65536
+MAX_JSON_DEPTH = 8
+MAX_JSON_NODES = 256
 REQUEST_TIMEOUT_SECONDS = 10.0
 HELLO_PATH = "/v1/l28/production-entry/provider_hello"
 REQUEST_PATH = "/v1/l28/production-entry/service_request"
@@ -81,6 +85,10 @@ PAYMENT_PATH = "/v1/l28/production-entry/payment"
 SHUTDOWN_PATH = "/v1/l28/production-entry/shutdown"
 MARKER_NAME = "runtime-initialized"
 DB_NAME = "disposable_runtime.sqlite"
+LINEAGE_NAME = "state-lineage"
+GENESIS_AUDIT_HASH = hashlib.sha256(b"L28-DISPOSABLE-PRODUCTION-ENTRY-AUDIT-V0.1").hexdigest()
+PRIVATE_DIRECTORY_MODE = 0o700
+PRIVATE_FILE_MODE = 0o600
 
 
 class DurableRuntimeError(Exception):
@@ -146,6 +154,45 @@ def production_entry_binding() -> dict[str, Any]:
     return binding
 
 
+def _entry_hash(previous_hash: str, state_version: int, payment_tx_id: str, event: str) -> str:
+    body = {
+        "event": event,
+        "payment_tx_id": payment_tx_id,
+        "previous_hash": previous_hash,
+        "state_version": state_version,
+    }
+    encoded = json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _mode_is_private(path: Path, *, directory: bool) -> bool:
+    mode = path.stat().st_mode
+    if mode & 0o077:
+        return False
+    return path.is_dir() if directory else path.is_file()
+
+
+def _require_private(path: Path, *, directory: bool) -> None:
+    if not path.exists() or not _mode_is_private(path, directory=directory):
+        raise DurableRuntimeError("permissions_invalid")
+
+
+def _walk_bounded(node: Any, depth: int, counter: list[int]) -> None:
+    counter[0] += 1
+    if depth > MAX_JSON_DEPTH or counter[0] > MAX_JSON_NODES:
+        raise DurableRuntimeError("oversized_body")
+    if isinstance(node, dict):
+        if len(node) > MAX_JSON_NODES:
+            raise DurableRuntimeError("oversized_body")
+        for value in node.values():
+            _walk_bounded(value, depth + 1, counter)
+    elif isinstance(node, list):
+        if len(node) > MAX_JSON_NODES:
+            raise DurableRuntimeError("oversized_body")
+        for item in node:
+            _walk_bounded(item, depth + 1, counter)
+
+
 def _connect(path: Path) -> sqlite3.Connection:
     connection = sqlite3.connect(path, timeout=5, isolation_level=None, check_same_thread=False)
     connection.execute("PRAGMA foreign_keys=ON")
@@ -158,6 +205,7 @@ class DurableStore:
         self.state_dir = Path(state_dir)
         self.db_path = self.state_dir / DB_NAME
         self.marker_path = self.state_dir / MARKER_NAME
+        self.lineage_path = self.state_dir / LINEAGE_NAME
         self.connection: sqlite3.Connection | None = None
         self.restart_generation = 0
         self.reopened = False
@@ -165,22 +213,40 @@ class DurableStore:
     def open(self) -> None:
         if self.state_dir.exists() and not self.state_dir.is_dir():
             raise DurableRuntimeError("missing_state")
+        fresh = not self.db_path.exists() and not self.marker_path.exists() and not self.lineage_path.exists()
         self.state_dir.mkdir(parents=True, exist_ok=True)
+        if fresh:
+            os.chmod(self.state_dir, PRIVATE_DIRECTORY_MODE)
+        _require_private(self.state_dir, directory=True)
         marker = self.marker_path.exists()
         database = self.db_path.exists()
-        if marker != database:
-            raise DurableRuntimeError("missing_state" if marker and not database else "corrupt_state")
-        if database and self.db_path.stat().st_size < 16:
+        lineage = self.lineage_path.exists()
+        if fresh:
+            pass
+        elif marker and not database:
+            raise DurableRuntimeError("missing_state")
+        elif not (marker and database and lineage):
             raise DurableRuntimeError("corrupt_state")
+        elif self.db_path.stat().st_size < 16:
+            raise DurableRuntimeError("corrupt_state")
+        else:
+            _require_private(self.db_path, directory=False)
+            _require_private(self.lineage_path, directory=False)
         try:
             self.connection = _connect(self.db_path)
-            if not database:
+            if fresh:
                 self._create()
+                os.chmod(self.db_path, PRIVATE_FILE_MODE)
+                _require_private(self.db_path, directory=False)
                 self.marker_path.write_text(RUNTIME_PROFILE + "\n", encoding="utf-8")
+                os.chmod(self.marker_path, PRIVATE_FILE_MODE)
+                self._write_lineage(0, GENESIS_AUDIT_HASH)
                 self.restart_generation = 1
                 self.reopened = False
             else:
                 self._require_schema()
+                audit_head = self._verify_audit_chain()
+                self._require_lineage(audit_head)
                 self.restart_generation = self._bump_generation()
                 self.reopened = True
         except DurableRuntimeError:
@@ -208,7 +274,8 @@ class DurableStore:
                 id INTEGER PRIMARY KEY CHECK (id = 1),
                 state_version INTEGER NOT NULL CHECK (state_version >= 0),
                 restart_generation INTEGER NOT NULL CHECK (restart_generation >= 1),
-                opening_seeded INTEGER NOT NULL CHECK (opening_seeded IN (0, 1))
+                opening_seeded INTEGER NOT NULL CHECK (opening_seeded IN (0, 1)),
+                timestamp_high_water INTEGER NOT NULL CHECK (timestamp_high_water >= 0)
             )
             """,
             """
@@ -233,7 +300,9 @@ class DurableStore:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 state_version INTEGER NOT NULL,
                 payment_tx_id TEXT NOT NULL,
-                event TEXT NOT NULL
+                event TEXT NOT NULL,
+                previous_hash TEXT NOT NULL,
+                entry_hash TEXT NOT NULL
             )
             """,
             """
@@ -241,13 +310,14 @@ class DurableStore:
             BEFORE UPDATE ON meta
             WHEN NEW.state_version < OLD.state_version
               OR NEW.restart_generation < OLD.restart_generation
+              OR NEW.timestamp_high_water < OLD.timestamp_high_water
             BEGIN
                 SELECT RAISE(ABORT, 'state_rollback');
             END
             """,
             """
-            INSERT INTO meta(id, state_version, restart_generation, opening_seeded)
-            VALUES (1, 0, 1, 0)
+            INSERT INTO meta(id, state_version, restart_generation, opening_seeded, timestamp_high_water)
+            VALUES (1, 0, 1, 0, 0)
             """,
         )
         connection.execute("BEGIN IMMEDIATE")
@@ -267,10 +337,26 @@ class DurableStore:
         }
         if not {"meta", "balances", "accepted_payments", "audit"}.issubset(tables):
             raise DurableRuntimeError("corrupt_state")
+        columns = {
+            row[1]
+            for row in connection.execute("PRAGMA table_info(meta)")
+        }
+        audit_columns = {row[1] for row in connection.execute("PRAGMA table_info(audit)")}
+        if "timestamp_high_water" not in columns or not {"previous_hash", "entry_hash"}.issubset(audit_columns):
+            raise DurableRuntimeError("corrupt_state")
         row = connection.execute(
-            "SELECT state_version, restart_generation, opening_seeded FROM meta WHERE id=1"
+            "SELECT state_version, restart_generation, opening_seeded, timestamp_high_water FROM meta WHERE id=1"
         ).fetchone()
-        if row is None or row[0] < 0 or row[1] < 1 or row[2] not in (0, 1):
+        integrity = connection.execute("PRAGMA integrity_check").fetchone()
+        if (
+            row is None
+            or row[0] < 0
+            or row[1] < 1
+            or row[2] not in (0, 1)
+            or row[3] < 0
+            or integrity is None
+            or integrity[0] != "ok"
+        ):
             raise DurableRuntimeError("corrupt_state")
 
     def _bump_generation(self) -> int:
@@ -296,7 +382,7 @@ class DurableStore:
     def snapshot(self) -> dict[str, Any]:
         connection = self._require()
         meta = connection.execute(
-            "SELECT state_version, restart_generation, opening_seeded FROM meta WHERE id=1"
+            "SELECT state_version, restart_generation, opening_seeded, timestamp_high_water FROM meta WHERE id=1"
         ).fetchone()
         if meta is None:
             raise DurableRuntimeError("missing_state")
@@ -324,6 +410,7 @@ class DurableStore:
             "state_version": int(meta[0]),
             "restart_generation": int(meta[1]),
             "opening_seeded": bool(meta[2]),
+            "timestamp_high_water": int(meta[3]),
             "balances": balances,
             "accepted": accepted,
         }
@@ -337,15 +424,18 @@ class DurableStore:
         payment_tx_id: str,
         balances_after: Mapping[str, int],
         expected_version: int,
+        timestamp: int,
     ) -> int:
         connection = self._require()
         connection.execute("BEGIN IMMEDIATE")
         try:
             meta = connection.execute(
-                "SELECT state_version, opening_seeded FROM meta WHERE id=1"
+                "SELECT state_version, opening_seeded, timestamp_high_water FROM meta WHERE id=1"
             ).fetchone()
             if meta is None or int(meta[0]) != expected_version or int(meta[0]) < 0:
                 raise DurableRuntimeError("missing_state")
+            if type(timestamp) is not int or timestamp < int(meta[2]):
+                raise DurableRuntimeError("clock_rollback")
             if connection.execute(
                 "SELECT 1 FROM accepted_payments WHERE payment_tx_id=?",
                 (payment_tx_id,),
@@ -355,10 +445,10 @@ class DurableStore:
             cursor = connection.execute(
                 """
                 UPDATE meta
-                SET state_version=?, opening_seeded=1
-                WHERE id=1 AND state_version=?
+                SET state_version=?, opening_seeded=1, timestamp_high_water=?
+                WHERE id=1 AND state_version=? AND timestamp_high_water<=?
                 """,
-                (next_version, expected_version),
+                (next_version, timestamp, expected_version, timestamp),
             )
             if cursor.rowcount != 1:
                 raise DurableRuntimeError("corrupt_state")
@@ -380,10 +470,7 @@ class DurableStore:
                 """,
                 (payment_tx_id, sender, receiver, amount, next_version),
             )
-            connection.execute(
-                "INSERT INTO audit(state_version, payment_tx_id, event) VALUES(?, ?, 'payment_committed')",
-                (next_version, payment_tx_id),
-            )
+            self._append_audit(next_version, payment_tx_id, "payment_committed")
             connection.execute("COMMIT")
         except DurableRuntimeError:
             connection.execute("ROLLBACK")
@@ -391,27 +478,107 @@ class DurableStore:
         except sqlite3.Error as exc:
             connection.execute("ROLLBACK")
             raise DurableRuntimeError("corrupt_state") from exc
+        self._sync_lineage()
         return next_version
 
     def mark_executed(self, payment_tx_id: str, receipt_id: str) -> None:
         connection = self._require()
-        cursor = connection.execute(
+        connection.execute("BEGIN IMMEDIATE")
+        try:
+            cursor = connection.execute(
+                """
+                UPDATE accepted_payments
+                SET service_executed=1, receipt_id=?
+                WHERE payment_tx_id=? AND service_executed=0 AND receipt_id IS NULL
+                """,
+                (receipt_id, payment_tx_id),
+            )
+            if cursor.rowcount != 1:
+                raise DurableRuntimeError("replay")
+            version = connection.execute("SELECT state_version FROM meta WHERE id=1").fetchone()
+            if version is None:
+                raise DurableRuntimeError("missing_state")
+            self._append_audit(int(version[0]), payment_tx_id, "receipt_linked")
+            connection.execute("COMMIT")
+        except DurableRuntimeError:
+            connection.execute("ROLLBACK")
+            raise
+        except sqlite3.Error as exc:
+            connection.execute("ROLLBACK")
+            raise DurableRuntimeError("corrupt_state") from exc
+        self._sync_lineage()
+
+    def _append_audit(self, state_version: int, payment_tx_id: str, event: str) -> None:
+        connection = self._require()
+        previous = connection.execute("SELECT entry_hash FROM audit ORDER BY id DESC LIMIT 1").fetchone()
+        previous_hash = previous[0] if previous else GENESIS_AUDIT_HASH
+        entry_hash = _entry_hash(previous_hash, state_version, payment_tx_id, event)
+        connection.execute(
             """
-            UPDATE accepted_payments
-            SET service_executed=1, receipt_id=?
-            WHERE payment_tx_id=? AND service_executed=0 AND receipt_id IS NULL
+            INSERT INTO audit(state_version, payment_tx_id, event, previous_hash, entry_hash)
+            VALUES(?, ?, ?, ?, ?)
             """,
-            (receipt_id, payment_tx_id),
+            (state_version, payment_tx_id, event, previous_hash, entry_hash),
         )
-        if cursor.rowcount != 1:
-            raise DurableRuntimeError("replay")
+
+    def _verify_audit_chain(self) -> str:
+        connection = self._require()
+        previous = GENESIS_AUDIT_HASH
+        for state_version, payment_tx_id, event, previous_hash, entry_hash in connection.execute(
+            "SELECT state_version, payment_tx_id, event, previous_hash, entry_hash FROM audit ORDER BY id"
+        ):
+            if previous_hash != previous or entry_hash != _entry_hash(previous, int(state_version), payment_tx_id, event):
+                raise DurableRuntimeError("corrupt_state")
+            previous = entry_hash
         version = connection.execute("SELECT state_version FROM meta WHERE id=1").fetchone()
         if version is None:
             raise DurableRuntimeError("missing_state")
-        connection.execute(
-            "INSERT INTO audit(state_version, payment_tx_id, event) VALUES(?, ?, 'receipt_linked')",
-            (int(version[0]), payment_tx_id),
-        )
+        if int(version[0]) == 0 and previous != GENESIS_AUDIT_HASH:
+            raise DurableRuntimeError("corrupt_state")
+        if int(version[0]) > 0 and previous == GENESIS_AUDIT_HASH:
+            raise DurableRuntimeError("corrupt_state")
+        return previous
+
+    def _read_lineage(self) -> tuple[int, str]:
+        try:
+            text = self.lineage_path.read_text(encoding="utf-8")
+        except OSError as exc:
+            raise DurableRuntimeError("corrupt_state") from exc
+        parts = text.split("\n")
+        if len(parts) != 3 or parts[2] != "" or not parts[1]:
+            raise DurableRuntimeError("corrupt_state")
+        try:
+            version = int(parts[0])
+        except ValueError as exc:
+            raise DurableRuntimeError("corrupt_state") from exc
+        if version < 0 or len(parts[1]) != 64:
+            raise DurableRuntimeError("corrupt_state")
+        return version, parts[1]
+
+    def _require_lineage(self, audit_head: str) -> None:
+        lineage_version, lineage_head = self._read_lineage()
+        db_version = int(self._require().execute("SELECT state_version FROM meta WHERE id=1").fetchone()[0])
+        if lineage_version == db_version:
+            if lineage_head != audit_head:
+                raise DurableRuntimeError("corrupt_state")
+            return
+        if lineage_version < db_version and audit_head:
+            self._write_lineage(db_version, audit_head)
+            return
+        raise DurableRuntimeError("stale_state")
+
+    def _write_lineage(self, version: int, audit_head: str) -> None:
+        temporary = self.state_dir / f".{LINEAGE_NAME}.tmp"
+        temporary.write_text(f"{version}\n{audit_head}\n", encoding="utf-8")
+        os.chmod(temporary, PRIVATE_FILE_MODE)
+        os.replace(temporary, self.lineage_path)
+        os.chmod(self.lineage_path, PRIVATE_FILE_MODE)
+
+    def _sync_lineage(self) -> None:
+        version = self._require().execute("SELECT state_version FROM meta WHERE id=1").fetchone()
+        if version is None:
+            raise DurableRuntimeError("missing_state")
+        self._write_lineage(int(version[0]), self._verify_audit_chain())
 
 
 def _ledger_from_snapshot(snapshot: Mapping[str, Any], sender: str, receiver: str) -> tuple[Any, dict[str, int], bool]:
@@ -567,6 +734,8 @@ class DurableProvider:
                 raise DurableRuntimeError(canonical_reason or "canonical_validation_failed")
             if payment_tx.get("amount") != PRICE_L28:
                 raise DurableRuntimeError("wrong_amount")
+            if type(payment_tx.get("timestamp")) is not int or payment_tx["timestamp"] < snapshot["timestamp_high_water"]:
+                raise DurableRuntimeError("clock_rollback")
             verify_payment_intent_binding(
                 request=package["request"],
                 quote=package["quote"],
@@ -591,6 +760,7 @@ class DurableProvider:
                 payment_tx_id=payment_tx_id,
                 balances_after=balances_after,
                 expected_version=snapshot["state_version"],
+                timestamp=payment_tx["timestamp"],
             )
             if fault == "after_commit":
                 raise DurableRuntimeError("interrupted_after_commit")
@@ -665,6 +835,7 @@ def _read_json(body: bytes) -> dict[str, Any]:
         raise DurableRuntimeError("malformed_json") from exc
     if not isinstance(payload, dict):
         raise DurableRuntimeError("malformed_json")
+    _walk_bounded(payload, 1, [0])
     return payload
 
 
@@ -912,6 +1083,100 @@ def execute_durable_restart_sequence(state_dir: str | Path, input_text: str) -> 
     }
 
 
+def _provider_failure_code(state_dir: Path) -> str:
+    process = subprocess.Popen(
+        [
+            sys.executable,
+            "-m",
+            "coin.durable_restart_safe_service_demo",
+            "--role",
+            "provider",
+            "--state-dir",
+            str(state_dir),
+            "--port",
+            "0",
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        cwd=str(Path(__file__).resolve().parents[1]),
+    )
+    try:
+        _stdout, stderr = process.communicate(timeout=10)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.communicate()
+        raise DurableRuntimeError("fault_not_closed")
+    if process.returncode == 0:
+        raise DurableRuntimeError("fault_not_closed")
+    lines = [line.strip() for line in stderr.splitlines() if line.strip()]
+    return lines[-1] if lines else ""
+
+
+def _execute_fault_probes(state_dir: Path, input_text: str) -> dict[str, bool]:
+    state_dir.mkdir(parents=True, exist_ok=True)
+    payer = Ed25519PrivateKey.generate()
+    process, port = _spawn_provider(state_dir)
+    try:
+        first = _purchase(port, payer, input_text, 100)
+    finally:
+        _stop_process(process, port)
+    if first.get("ok") is not True:
+        raise DurableRuntimeError("payment_apply_failed")
+    database = state_dir / DB_NAME
+    os.chmod(database, 0o644)
+    if _provider_failure_code(state_dir) != "permissions_invalid":
+        raise DurableRuntimeError("fault_not_closed")
+    os.chmod(database, PRIVATE_FILE_MODE)
+    os.chmod(state_dir, 0o755)
+    if _provider_failure_code(state_dir) != "permissions_invalid":
+        raise DurableRuntimeError("fault_not_closed")
+    os.chmod(state_dir, PRIVATE_DIRECTORY_MODE)
+    preserved = database.read_bytes()
+    process, port = _spawn_provider(state_dir)
+    try:
+        second = _purchase(port, payer, input_text, 101)
+    finally:
+        _stop_process(process, port)
+    if second.get("ok") is not True:
+        raise DurableRuntimeError("payment_apply_failed")
+    database.write_bytes(preserved)
+    os.chmod(database, PRIVATE_FILE_MODE)
+    if _provider_failure_code(state_dir) != "stale_state":
+        raise DurableRuntimeError("fault_not_closed")
+    corrupt = state_dir.parent / "corrupt-state"
+    corrupt.mkdir()
+    os.chmod(corrupt, PRIVATE_DIRECTORY_MODE)
+    (corrupt / MARKER_NAME).write_text(RUNTIME_PROFILE + "\n", encoding="utf-8")
+    (corrupt / DB_NAME).write_bytes(b"this is not a sqlite database!!")
+    (corrupt / LINEAGE_NAME).write_text("0\n" + GENESIS_AUDIT_HASH + "\n", encoding="utf-8")
+    os.chmod(corrupt / MARKER_NAME, PRIVATE_FILE_MODE)
+    os.chmod(corrupt / DB_NAME, PRIVATE_FILE_MODE)
+    os.chmod(corrupt / LINEAGE_NAME, PRIVATE_FILE_MODE)
+    if _provider_failure_code(corrupt) != "corrupt_state":
+        raise DurableRuntimeError("fault_not_closed")
+    return {
+        "permissions_rejected": True,
+        "stale_state_rejected": True,
+        "corrupt_state_rejected": True,
+        "service_executed_on_rejected_faults": False,
+    }
+
+
+def execute_hardened_runtime_verification(state_dir: str | Path, input_text: str) -> dict[str, Any]:
+    root = Path(state_dir)
+    root.mkdir(parents=True, exist_ok=True)
+    os.chmod(root, PRIVATE_DIRECTORY_MODE)
+    purchase = execute_durable_restart_sequence(root / "purchase", input_text)
+    faults = _execute_fault_probes(root / "fault", input_text)
+    purchase["fault_probes"] = faults
+    purchase["RUNTIME_HARDENING"] = "UNRESOLVED"
+    purchase["FAULT_RECOVERY"] = "UNRESOLVED"
+    purchase["F171_SIGNER_ELIGIBILITY_RESULT"] = "BLOCKED"
+    purchase["SIGNER_RUNTIME_ACTIVE"] = False
+    return purchase
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m coin.durable_restart_safe_service_demo")
     parser.add_argument("--role", choices=("parent", "provider"), default="parent")
@@ -939,7 +1204,7 @@ def main(argv: list[str] | None = None) -> int:
             thread.join()
             return 0
         state_dir = args.state_dir or tempfile.mkdtemp(prefix="l28-production-entry-")
-        result = execute_durable_restart_sequence(state_dir, args.input)
+        result = execute_hardened_runtime_verification(state_dir, args.input)
     except (DurableRuntimeError, ServiceDemoError) as exc:
         sys.stderr.write(getattr(exc, "code", "runtime_failed") + "\n")
         return 1

@@ -1,65 +1,49 @@
 # L28 — FROZEN_SLICE.md
 
-Date: 2026-10-16
+Date: 2026-10-17
 PROJECT_STATE: ACTIVE
-Slice: Production Entry — Durable Restart-Safe Paid AI Service
+Slice: Production Runtime Hardening and Fault Recovery
 
 ## OBJECTIVE
 
-Take the already-working public-testnet 28 L28 AI service purchase and make the provider state survive a process restart without duplicate payment application, replay reopening, or loss of machine-readable payment evidence.
+Harden the disposable restart-safe 28 L28 payment runtime so a real provider process fails closed on unsafe state and still completes a fresh purchase after a clean restart.
 
-Requester
-→ provider
-→ quote exactly 28 L28
-→ signed disposable payment
-→ canonical validation
-→ durable exactly-once state commit
-→ useful work
-→ result
-→ receipt
-→ provider process stops
-→ provider restarts using the same test-only state directory
-→ replay of the first payment is rejected
-→ a fresh second transaction can complete
-→ durable evidence remains consistent
-
-This slice is not production signer activation.
+This slice does not resolve the production signer gates.
 
 ## BASELINE
 
-`d3f533b5b4e1b60d9f96ba925d08699fc247ae2d`
+`b3c5dd1f0321e07c12ac874311b47d912ff7e9e4`
 
-Operator authorization covers bounded production-entry engineering for this disposable runtime only.
+Operator authorization covers bounded hardening and fault recovery for the existing disposable runtime.
 
 It does not authorize production private keys, real custody, signer activation, production signing, canonical broadcast, mining, production settlement, deployment, a persistent public production service, external spending, exchange/listing/liquidity, Protocol v1.0 changes, or protected economics/history changes.
 
-`CUSTODY_READINESS` stays UNRESOLVED. `F171_SIGNER_ELIGIBILITY_RESULT` stays BLOCKED. Signer runtime, signing, broadcast, and production settlement stay false.
+No production rate, skew, timeout, or topology values are invented. `F122-G07`, `F122-G08`, and the unresolved LSOD-OPS gaps stay unresolved.
+
+`CUSTODY_READINESS` stays UNRESOLVED. `RUNTIME_HARDENING` stays UNRESOLVED. `FAULT_RECOVERY` stays UNRESOLVED. `F171_SIGNER_ELIGIBILITY_RESULT` stays BLOCKED. Signer runtime, signing, broadcast, and production settlement stay false.
 
 ## RUNTIME
 
-- `network_id=L28-DISPOSABLE-PRODUCTION-ENTRY001`
-- test-only disposable state
-- initial balances 100/0
-- price 28 L28
-- first result 72/28
-- explicit state directory
-- no historical import
-- no production secret material
+- same disposable profile `L28-DISPOSABLE-PRODUCTION-ENTRY001`
+- owner-only state directory and state files
+- hash-chained local audit
+- monotonic local payment timestamp
+- bounded JSON depth and node count
+- stale database inside the same directory fails closed
+- corrupt or truncated state fails closed
 
 ## RESULT
 
-PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
+PASS / ACTUAL-PRODUCT VERIFIED
 
-Published commit:
+Real process payment `103c4f35033ba784488b2b9e1b81dcff4415ef621cf7054b1444f1bf0e1024dd` moved balances 100/0 to 72/28. After restart, that payment was rejected and balances stayed 72/28. Fresh payment `3c8cf49e8f6e7efa59d95872eda0e738ecffcb241f21c5cb2a962950ec8c4650` completed, with the original provider balance still 28.
 
-`c0f5467bb2f58a2f59a47cbc2920dcb2e5b3f1a6`
+Real process probes rejected loose permissions, a rolled-back database, and a corrupt database before service execution.
 
-The real provider process completed the 28 L28 purchase, stopped, and restarted on the same disposable state directory. Replay of payment `896222f3a3e07752e91ad9dd1b2f1edec4897b15e8b19505b6eebbad5e939b1e` was rejected and balances stayed 72/28. Fresh payment `5a008e8e2ee662c2f9079a19e7fccb0700438d8a45e2369ecab9a354f15d08ad` completed, with the original provider balance still 28.
+Focused tests: 13 passed. Affected regressions: 116 passed. Security review: PASS. Critical/High findings: 0.
 
-Focused tests: 10 passed. Affected regressions: 58 passed. Security review: PASS. Critical/High findings: 0.
-
-`RUNTIME_HARDENING` and `FAULT_RECOVERY` remain UNRESOLVED. Custody remains UNRESOLVED. Signer eligibility remains BLOCKED. Signing, broadcast, mining, and production settlement remain false.
+`RUNTIME_HARDENING` and `FAULT_RECOVERY` remain UNRESOLVED. Custody remains UNRESOLVED. Signer eligibility remains BLOCKED.
 
 ## STOP
 
-Stop after this bounded restart-safe runtime. Do not start production signing, deployment, or REA/Bitcoin/BTCPay work.
+Stop after this bounded hardening slice. Do not start production signing, deployment, or REA/Bitcoin/BTCPay work.
