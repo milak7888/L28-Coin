@@ -648,18 +648,26 @@ def _evidence(
 
 
 class DurableProvider:
-    def __init__(self, state_dir: str | Path) -> None:
+    def __init__(self, state_dir: str | Path, external_signer: Any | None = None) -> None:
         production_entry_binding()
         self.store = DurableStore(state_dir)
         self.store.open()
-        self._key = Ed25519PrivateKey.generate()
-        self.public_key = _public_key_hex(self._key)
-        self.identity = public_identity(self.public_key)
+        self._external = external_signer
+        if external_signer is None:
+            self._key = Ed25519PrivateKey.generate()
+            self.public_key = _public_key_hex(self._key)
+            self.identity = public_identity(self.public_key)
+        else:
+            self._key = None
+            self.public_key = external_signer.public_key
+            self.identity = external_signer.identity
+            if public_identity(self.public_key) != self.identity:
+                raise DurableRuntimeError("identity_mismatch")
         self._lock = threading.Lock()
         self.fatal = False
 
     def close(self) -> None:
-        self._key = None  # type: ignore[assignment]
+        self._key = None
         self.store.close()
 
     def hello(self) -> dict[str, str]:
@@ -669,7 +677,10 @@ class DurableProvider:
         verified = verify_service_request(request)
         if verified["provider_identity"] != self.identity:
             raise DurableRuntimeError("wrong_provider_identity")
-        quote = build_service_quote(self._key, request=request)
+        if self._external is None:
+            quote = build_service_quote(self._key, request=request)
+        else:
+            quote = self._external.sign("service_quote", {"request": request})
         if quote["amount"] != PRICE_L28:
             raise DurableRuntimeError("wrong_amount")
         return quote
@@ -765,20 +776,40 @@ class DurableProvider:
             if fault == "after_commit":
                 raise DurableRuntimeError("interrupted_after_commit")
             output = _perform_paid_service(package["request"]["input"]["text"], payment_verified=True)
-            service_result = build_service_result(
-                self._key,
-                request=package["request"],
-                quote=package["quote"],
-                payment_tx_id=payment_tx_id,
-                output=output,
-            )
-            receipt = build_service_receipt(
-                self._key,
-                request=package["request"],
-                quote=package["quote"],
-                service_result=service_result,
-                payment_tx_id=payment_tx_id,
-            )
+            if self._external is None:
+                service_result = build_service_result(
+                    self._key,
+                    request=package["request"],
+                    quote=package["quote"],
+                    payment_tx_id=payment_tx_id,
+                    output=output,
+                )
+                receipt = build_service_receipt(
+                    self._key,
+                    request=package["request"],
+                    quote=package["quote"],
+                    service_result=service_result,
+                    payment_tx_id=payment_tx_id,
+                )
+            else:
+                service_result = self._external.sign(
+                    "service_result",
+                    {
+                        "request": package["request"],
+                        "quote": package["quote"],
+                        "payment_tx_id": payment_tx_id,
+                        "output": output,
+                    },
+                )
+                receipt = self._external.sign(
+                    "service_receipt",
+                    {
+                        "request": package["request"],
+                        "quote": package["quote"],
+                        "service_result": service_result,
+                        "payment_tx_id": payment_tx_id,
+                    },
+                )
             verify_service_result(
                 service_result,
                 request=package["request"],
@@ -1177,11 +1208,40 @@ def execute_hardened_runtime_verification(state_dir: str | Path, input_text: str
     return purchase
 
 
+class _LoopbackSigner:
+    """Localhost client for the isolated disposable signer. Holds no private key."""
+
+    def __init__(self, port: int) -> None:
+        if type(port) is not int or not 1 <= port <= 65535:
+            raise DurableRuntimeError("invalid_port")
+        hello = _exchange(port, "GET", "/v1/l28/isolated-signer/hello")
+        hello.pop("_status", None)
+        if hello.get("production_signing") is not False or hello.get("SIGNER_RUNTIME_ACTIVE") is not False:
+            raise DurableRuntimeError("production_signer_refused")
+        public_key = hello.get("public_key")
+        identity = hello.get("identity")
+        if not isinstance(public_key, str) or not isinstance(identity, str):
+            raise DurableRuntimeError("signer_unavailable")
+        if public_identity(public_key) != identity:
+            raise DurableRuntimeError("identity_mismatch")
+        self.public_key = public_key
+        self.identity = identity
+        self.port = port
+
+    def sign(self, purpose: str, payload: Mapping[str, Any]) -> dict[str, Any]:
+        signed = _exchange(self.port, "POST", "/v1/l28/isolated-signer/sign", _json_bytes({"purpose": purpose, **dict(payload)}))
+        signed.pop("_status", None)
+        if signed.get("ok") is False:
+            raise DurableRuntimeError(str(signed.get("error", "signer_rejected")))
+        return signed
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m coin.durable_restart_safe_service_demo")
     parser.add_argument("--role", choices=("parent", "provider"), default="parent")
     parser.add_argument("--state-dir")
     parser.add_argument("--port", type=int, default=0)
+    parser.add_argument("--signer-port", type=int)
     parser.add_argument("--input", default="L28 enables machine payments between autonomous systems.")
     args = parser.parse_args(sys.argv[1:] if argv is None else argv)
     provider: DurableProvider | None = None
@@ -1192,7 +1252,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.role == "provider":
             if not args.state_dir:
                 raise DurableRuntimeError("missing_state")
-            provider = DurableProvider(args.state_dir)
+            external = _LoopbackSigner(args.signer_port) if args.signer_port else None
+            provider = DurableProvider(args.state_dir, external_signer=external)
             server = _Server(provider, args.port)
             host, port = server.server_address
             sys.stdout.write(

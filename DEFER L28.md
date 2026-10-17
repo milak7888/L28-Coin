@@ -1,6 +1,6 @@
 # L28 — DEFER.md
 
-Last updated: 2026-10-16
+Last updated: 2026-10-17
 
 Purpose:
 Store useful ideas and future work that are NOT required to complete the current frozen slice.
@@ -11,11 +11,11 @@ Review only when selecting the next frozen slice.
 ## CURRENT SLICE — DO NOT DUPLICATE HERE
 The completed frozen slice is:
 
-**Production Runtime Hardening and Fault Recovery**
+**Isolated Non-Production Signer Runtime**
 
 Status: PASS / ACTUAL-PRODUCT VERIFIED. STOP CONDITION REACHED.
 
-The disposable runtime gained fail-closed permission, audit, stale-state, and rollback checks. `RUNTIME_HARDENING` and `FAULT_RECOVERY` remain UNRESOLVED. Production signing, custody, deployment, and settlement remain NOT AUTHORIZED / NOT STARTED.
+Disposable signing runs in a separate localhost process. Production signing, custody, deployment, and settlement remain NOT AUTHORIZED / NOT STARTED. `SIGNER_RUNTIME_ACTIVE` remains false. `F171_SIGNER_ELIGIBILITY_RESULT` remains BLOCKED.
 
 ## COMPLETED PRODUCT STAGES — NOT DEFERRED
 Already complete/published:
@@ -28,6 +28,7 @@ Already complete/published:
 6. limited testnet — two-node private-network paid service
 7. public testnet — internet-reachable paid AI service
 8. production entry — durable restart-safe paid AI service
+9. production runtime hardening and fault recovery
 
 Do not recreate these as new milestones.
 
@@ -120,6 +121,6 @@ If proposed work would create another document/gate whose result is still the sa
 The active work must change what L28 can actually DO.
 
 ## CURRENT FROZEN-SLICE RULE
-The Production Runtime Hardening and Fault Recovery slice has reached its stop condition.
+The Isolated Non-Production Signer Runtime slice has reached its stop condition.
 
-`RUNTIME_HARDENING` and `FAULT_RECOVERY` remain UNRESOLVED. Production signing, custody, deployment, and settlement remain NOT AUTHORIZED / NOT STARTED. REA, Bitcoin Core, and BTCPay study remain deferred.
+Production signing, custody, deployment, and settlement remain NOT AUTHORIZED / NOT STARTED. `SIGNER_RUNTIME_ACTIVE` remains false. REA, Bitcoin Core, and BTCPay study remain deferred.

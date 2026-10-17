@@ -25,6 +25,7 @@ Product path:
 7. public testnet — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
 8. production entry — durable restart-safe paid AI service — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
 9. production runtime hardening and fault recovery — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
+10. isolated non-production signer runtime — PASS / ACTUAL-PRODUCT VERIFIED
 
 ## REPOSITORY
 Local: `/Users/pjaydondup/Projects/L28-Coin`
@@ -564,9 +565,51 @@ The Public Testnet frozen slice reached its STOP condition and is published on r
 ## COMPLETED DURABLE RUNTIME SLICE
 The Production Entry — Durable Restart-Safe Paid AI Service slice reached its STOP condition and is published on remote main at commit `c0f5467bb2f58a2f59a47cbc2920dcb2e5b3f1a6`.
 
+## COMPLETED HARDENING SLICE
+The Production Runtime Hardening / Fault Recovery slice reached its STOP condition and is published on remote main at commit `02974da1c300f18f293980c6fec035f553e87c1f`.
+
 ## CURRENT FROZEN SLICE
 `FROZEN_SLICE L28.md`
 
+Slice:
+
+**Isolated Non-Production Signer Runtime**
+
+Status:
+
+PASS / ACTUAL-PRODUCT VERIFIED
+
+Baseline:
+
+`6dc5c4bbdf33ee94a952afdc7301ff10192bac1c`
+
+A separate localhost process holds one disposable signing key. The payment process has no signing key. It still uses canonical validation and the durable exactly-once store.
+
+Run 1 payment `eab61398b14764be20044ac4f0c32a8d4f1b1da60626d2f79c73b808061557c5` moved balances 100/0 to 72/28. The result and receipt verified.
+
+The payment process stopped and restarted against the same signer and the same state directory. Replay of that payment was rejected. Balances stayed 72/28.
+
+Run 3 payment `844b6e882adc77846ee2deb2fbb0b093e68c1610625d9edde46a7bc467eea877` paid the same signer identity, moving that provider balance from 28 to 56 and the requester from 72 to 44.
+
+The signer process did not write the key. Production signer gates stayed closed.
+
+Focused tests: 3 passed. Affected regressions: 103 passed.
+
+Security review: PASS. Unresolved Critical/High findings: 0.
+
+`CUSTODY_READINESS=UNRESOLVED`
+
+`RUNTIME_HARDENING=UNRESOLVED`
+
+`FAULT_RECOVERY=UNRESOLVED`
+
+`F171_SIGNER_ELIGIBILITY_RESULT=BLOCKED`
+
+`SIGNER_RUNTIME_ACTIVE=false`
+
+Signing, canonical broadcast, mining, and production settlement stay false.
+
+## PRIOR HARDENING SLICE
 Slice:
 
 **Production Runtime Hardening and Fault Recovery**
