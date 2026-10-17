@@ -25,7 +25,7 @@ Product path:
 7. public testnet — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
 8. production entry — durable restart-safe paid AI service — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
 9. production runtime hardening and fault recovery — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
-10. isolated non-production signer runtime — PASS / ACTUAL-PRODUCT VERIFIED
+10. isolated non-production signer runtime — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
 
 ## REPOSITORY
 Local: `/Users/pjaydondup/Projects/L28-Coin`
@@ -577,7 +577,9 @@ Slice:
 
 Status:
 
-PASS / ACTUAL-PRODUCT VERIFIED
+PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
+
+The Isolated Non-Production Signer Runtime slice reached its STOP condition and is published on remote main at commit `ce8a5e37248d7b823c055c53274b49fd68d2080b`.
 
 Baseline:
 

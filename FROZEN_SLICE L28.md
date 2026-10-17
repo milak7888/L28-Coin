@@ -20,7 +20,11 @@ This authorization does not authorize production private keys, real custody, pro
 
 ## RESULT
 
-PASS / ACTUAL-PRODUCT VERIFIED
+PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
+
+Published commit:
+
+`ce8a5e37248d7b823c055c53274b49fd68d2080b`
 
 Payment `eab61398b14764be20044ac4f0c32a8d4f1b1da60626d2f79c73b808061557c5` moved balances 100/0 to 72/28. After the payment process restarted against the same signer, that payment was rejected and balances stayed 72/28. Fresh payment `844b6e882adc77846ee2deb2fbb0b093e68c1610625d9edde46a7bc467eea877` paid the same signer identity, 72/28 to 44/56.
 
