@@ -34,7 +34,11 @@ No production rate, skew, timeout, or topology values are invented. `F122-G07`, 
 
 ## RESULT
 
-PASS / ACTUAL-PRODUCT VERIFIED
+PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
+
+Published commit:
+
+`02974da1c300f18f293980c6fec035f553e87c1f`
 
 Real process payment `103c4f35033ba784488b2b9e1b81dcff4415ef621cf7054b1444f1bf0e1024dd` moved balances 100/0 to 72/28. After restart, that payment was rejected and balances stayed 72/28. Fresh payment `3c8cf49e8f6e7efa59d95872eda0e738ecffcb241f21c5cb2a962950ec8c4650` completed, with the original provider balance still 28.
 

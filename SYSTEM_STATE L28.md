@@ -24,7 +24,7 @@ Product path:
 6. limited testnet — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
 7. public testnet — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
 8. production entry — durable restart-safe paid AI service — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
-9. production runtime hardening and fault recovery — PASS / ACTUAL-PRODUCT VERIFIED
+9. production runtime hardening and fault recovery — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
 
 ## REPOSITORY
 Local: `/Users/pjaydondup/Projects/L28-Coin`
@@ -573,7 +573,9 @@ Slice:
 
 Status:
 
-PASS / ACTUAL-PRODUCT VERIFIED
+PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
+
+The Production Runtime Hardening / Fault Recovery slice reached its STOP condition and is published on remote main at commit `02974da1c300f18f293980c6fec035f553e87c1f`.
 
 Baseline:
 
