@@ -513,6 +513,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--custody-dir")
     parser.add_argument("--custody-mode", choices=("init", "reuse"))
     parser.add_argument("--expected-identity")
+    parser.add_argument("--production-eligibility", action="store_true")
     parser.add_argument("--input", default="L28 enables machine payments between autonomous systems.")
     args = parser.parse_args(sys.argv[1:] if argv is None else argv)
     signer: DisposableSigner | None = None
@@ -520,6 +521,8 @@ def main(argv: list[str] | None = None) -> int:
     thread: threading.Thread | None = None
     try:
         assert_production_flags_closed()
+        if args.production_eligibility:
+            raise IsolatedSignerError("production_eligibility_blocked")
         if args.role == "signer":
             signer = _open_disposable_signer(args)
             server = _SignerServer(signer)

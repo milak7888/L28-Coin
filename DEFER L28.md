@@ -11,11 +11,11 @@ Review only when selecting the next frozen slice.
 ## CURRENT SLICE — DO NOT DUPLICATE HERE
 The active frozen slice is:
 
-**Disposable Custody Continuity — Restart-Stable Isolated Signer**
+**Production Custody Readiness and Signer Eligibility**
 
 Status: PASS / ACTUAL-PRODUCT VERIFIED. STOP CONDITION REACHED.
 
-One disposable test-only signer identity survived an isolated signer process restart. Production signing, production custody, deployment, and settlement remain NOT AUTHORIZED / NOT STARTED. `SIGNER_RUNTIME_ACTIVE` remains false. `F171_SIGNER_ELIGIBILITY_RESULT` remains BLOCKED. `CUSTODY_READINESS` remains UNRESOLVED.
+A live disposable custody directory can be assessed without reading its private key. Production eligibility stays blocked, and a production-eligibility request exits before the key is loaded. Production signing, production custody, deployment, and settlement remain NOT AUTHORIZED / NOT STARTED. `SIGNER_RUNTIME_ACTIVE` remains false. `F171_SIGNER_ELIGIBILITY_RESULT` remains BLOCKED. `CUSTODY_READINESS` remains UNRESOLVED.
 
 ## COMPLETED PRODUCT STAGES — NOT DEFERRED
 Already complete/published:
@@ -30,6 +30,7 @@ Already complete/published:
 8. production entry — durable restart-safe paid AI service
 9. production runtime hardening and fault recovery
 10. isolated non-production signer runtime
+11. disposable custody continuity — restart-stable isolated signer
 
 Do not recreate these as new milestones.
 
@@ -122,8 +123,6 @@ If proposed work would create another document/gate whose result is still the sa
 The active work must change what L28 can actually DO.
 
 ## CURRENT FROZEN-SLICE RULE
-The active slice, Disposable Custody Continuity — Restart-Stable Isolated Signer, has reached its stop condition.
+The active slice, Production Custody Readiness and Signer Eligibility, has reached its stop condition.
 
-The isolated non-production signer runtime has reached its stop condition and is published.
-
-Production signing, production custody, deployment, and settlement remain NOT AUTHORIZED / NOT STARTED. `SIGNER_RUNTIME_ACTIVE` remains false. `CUSTODY_READINESS` remains UNRESOLVED. REA, Bitcoin Core, and BTCPay study remain deferred.
+Disposable custody continuity is published. Production signing, production custody, deployment, and settlement remain NOT AUTHORIZED / NOT STARTED. `SIGNER_RUNTIME_ACTIVE` remains false. `CUSTODY_READINESS` remains UNRESOLVED. `F171_SIGNER_ELIGIBILITY_RESULT` remains BLOCKED. REA, Bitcoin Core, and BTCPay study remain deferred.

@@ -27,6 +27,7 @@ Product path:
 9. production runtime hardening and fault recovery — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
 10. isolated non-production signer runtime — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
 11. disposable custody continuity — restart-stable isolated signer — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
+12. production custody readiness and signer eligibility — PASS / ACTUAL-PRODUCT VERIFIED
 
 ## REPOSITORY
 Local: `/Users/pjaydondup/Projects/L28-Coin`
@@ -570,6 +571,43 @@ The Production Entry — Durable Restart-Safe Paid AI Service slice reached its 
 The Production Runtime Hardening / Fault Recovery slice reached its STOP condition and is published on remote main at commit `02974da1c300f18f293980c6fec035f553e87c1f`.
 
 ## CURRENT FROZEN SLICE
+`FROZEN_SLICE L28.md`
+
+Slice:
+
+**Production Custody Readiness and Signer Eligibility**
+
+Status:
+
+PASS / ACTUAL-PRODUCT VERIFIED
+
+Baseline:
+
+`fd0dd7174385a3d308a25822f8073b9aa0aae871`
+
+A live disposable custody directory was assessed from its public record while the private-key file was absent. Public identity `l28disp_b0f34efeb88c5e6b5ce8442a155012855c974e1a295ea2bd6a21c1b5bbec4fad` was reported. The existing custody evaluator returned `BLOCKED_BY_UNRESOLVED_CUSTODY_DECISIONS`. The existing signer-eligibility reassessment returned `GATE_READINESS_BLOCKED`.
+
+Claiming an unresolved custody decision was RESOLVED was rejected. A signer process asked for production eligibility exited before opening custody. The disposable signer still started with the same public identity.
+
+Focused tests: 6 passed. Affected regressions: 67 passed.
+
+Security review: PASS. Unresolved Critical/High findings: 0.
+
+This does not resolve production custody or signer eligibility.
+
+`CUSTODY_READINESS=UNRESOLVED`
+
+`RUNTIME_HARDENING=UNRESOLVED`
+
+`FAULT_RECOVERY=UNRESOLVED`
+
+`F171_SIGNER_ELIGIBILITY_RESULT=BLOCKED`
+
+`SIGNER_RUNTIME_ACTIVE=false`
+
+Signing, canonical broadcast, mining, and production settlement stay false.
+
+## COMPLETED CUSTODY CONTINUITY SLICE
 `FROZEN_SLICE L28.md`
 
 Slice:
