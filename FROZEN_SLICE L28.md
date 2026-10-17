@@ -20,7 +20,11 @@ Profile: `l28-production-custody-readiness/v0.1`
 
 ## STATUS
 
-PASS / ACTUAL-PRODUCT VERIFIED
+PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
+
+Published commit:
+
+`36c07394558a29f795ce899dc34ec710cb669a13`
 
 Public identity `l28disp_b0f34efeb88c5e6b5ce8442a155012855c974e1a295ea2bd6a21c1b5bbec4fad` was assessed from the public custody record while the private-key file was absent. The existing custody evaluator returned `BLOCKED_BY_UNRESOLVED_CUSTODY_DECISIONS`. The existing signer-eligibility reassessment returned `GATE_READINESS_BLOCKED`.
 
@@ -30,7 +34,7 @@ A signer process started with production eligibility exited `production_eligibil
 
 Focused tests: 6 passed. Affected regressions: 67 passed. Security review: PASS. Critical/High findings: 0.
 
-Not published. Production signing, production custody, deployment, and settlement remain NOT AUTHORIZED / NOT STARTED.
+Production signing, production custody, deployment, and settlement remain NOT AUTHORIZED / NOT STARTED.
 
 ## STOP
 

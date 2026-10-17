@@ -27,7 +27,7 @@ Product path:
 9. production runtime hardening and fault recovery — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
 10. isolated non-production signer runtime — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
 11. disposable custody continuity — restart-stable isolated signer — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
-12. production custody readiness and signer eligibility — PASS / ACTUAL-PRODUCT VERIFIED
+12. production custody readiness and signer eligibility — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
 
 ## REPOSITORY
 Local: `/Users/pjaydondup/Projects/L28-Coin`
@@ -579,7 +579,9 @@ Slice:
 
 Status:
 
-PASS / ACTUAL-PRODUCT VERIFIED
+PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
+
+The Production Custody Readiness and Signer Eligibility slice reached its STOP condition and is published on remote main at commit `36c07394558a29f795ce899dc34ec710cb669a13`.
 
 Baseline:
 
