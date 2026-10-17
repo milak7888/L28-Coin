@@ -9,13 +9,13 @@ Nothing in this file is automatically approved.
 Review only when selecting the next frozen slice.
 
 ## CURRENT SLICE — DO NOT DUPLICATE HERE
-The completed frozen slice is:
+The active frozen slice is:
 
-**Isolated Non-Production Signer Runtime**
+**Disposable Custody Continuity — Restart-Stable Isolated Signer**
 
 Status: PASS / ACTUAL-PRODUCT VERIFIED. STOP CONDITION REACHED.
 
-Disposable signing runs in a separate localhost process. Production signing, custody, deployment, and settlement remain NOT AUTHORIZED / NOT STARTED. `SIGNER_RUNTIME_ACTIVE` remains false. `F171_SIGNER_ELIGIBILITY_RESULT` remains BLOCKED.
+One disposable test-only signer identity survived an isolated signer process restart. Production signing, production custody, deployment, and settlement remain NOT AUTHORIZED / NOT STARTED. `SIGNER_RUNTIME_ACTIVE` remains false. `F171_SIGNER_ELIGIBILITY_RESULT` remains BLOCKED. `CUSTODY_READINESS` remains UNRESOLVED.
 
 ## COMPLETED PRODUCT STAGES — NOT DEFERRED
 Already complete/published:
@@ -29,6 +29,7 @@ Already complete/published:
 7. public testnet — internet-reachable paid AI service
 8. production entry — durable restart-safe paid AI service
 9. production runtime hardening and fault recovery
+10. isolated non-production signer runtime
 
 Do not recreate these as new milestones.
 
@@ -121,6 +122,8 @@ If proposed work would create another document/gate whose result is still the sa
 The active work must change what L28 can actually DO.
 
 ## CURRENT FROZEN-SLICE RULE
-The Isolated Non-Production Signer Runtime slice has reached its stop condition.
+The active slice, Disposable Custody Continuity — Restart-Stable Isolated Signer, has reached its stop condition.
 
-Production signing, custody, deployment, and settlement remain NOT AUTHORIZED / NOT STARTED. `SIGNER_RUNTIME_ACTIVE` remains false. REA, Bitcoin Core, and BTCPay study remain deferred.
+The isolated non-production signer runtime has reached its stop condition and is published.
+
+Production signing, production custody, deployment, and settlement remain NOT AUTHORIZED / NOT STARTED. `SIGNER_RUNTIME_ACTIVE` remains false. `CUSTODY_READINESS` remains UNRESOLVED. REA, Bitcoin Core, and BTCPay study remain deferred.

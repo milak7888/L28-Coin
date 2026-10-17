@@ -1,9 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 """Isolated disposable signer process.
 
-The process holds one in-memory Ed25519 key and signs only the existing
-disposable service artifacts. It does not validate payments, store keys,
-broadcast, or settle. Production signer gates stay closed.
+The process signs only the existing disposable service artifacts. With no
+custody directory it holds one in-memory key and writes nothing. An explicit
+disposable custody directory is used only when the continuity slice supplies
+one. It does not validate payments, broadcast, or settle. Production signer
+gates stay closed.
 """
 
 from __future__ import annotations
@@ -85,9 +87,22 @@ def assert_production_flags_closed() -> None:
 
 
 class DisposableSigner:
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        signing_key: Ed25519PrivateKey | None = None,
+        *,
+        key_persisted: bool = False,
+        custody_profile: str | None = None,
+    ) -> None:
         assert_production_flags_closed()
-        self._key = Ed25519PrivateKey.generate()
+        if signing_key is None:
+            self._key = Ed25519PrivateKey.generate()
+            self._key_persisted = False
+            self._custody_profile = None
+        else:
+            self._key = signing_key
+            self._key_persisted = key_persisted
+            self._custody_profile = custody_profile
         self.public_key = _public_key_hex(self._key)
         self.identity = public_identity(self.public_key)
         self._lock = threading.Lock()
@@ -96,7 +111,7 @@ class DisposableSigner:
         self._key = None
 
     def hello(self) -> dict[str, Any]:
-        return {
+        body = {
             "profile": PROFILE,
             "public_key": self.public_key,
             "identity": self.identity,
@@ -104,8 +119,11 @@ class DisposableSigner:
             "production_signing": False,
             "SIGNER_RUNTIME_ACTIVE": False,
             "SIGNING": False,
-            "key_persisted": False,
+            "key_persisted": self._key_persisted,
         }
+        if self._custody_profile is not None:
+            body["custody_profile"] = self._custody_profile
+        return body
 
     def sign_payload(self, payload: Mapping[str, Any]) -> dict[str, Any]:
         with self._lock:
@@ -474,10 +492,27 @@ def _signer_sign(port: int, purpose: str, payload: Mapping[str, Any]) -> dict[st
     return signed
 
 
+def _open_disposable_signer(args: argparse.Namespace) -> DisposableSigner:
+    if args.custody_dir is None and args.custody_mode is None and args.expected_identity is None:
+        return DisposableSigner()
+    if not args.custody_dir or args.custody_mode is None:
+        raise IsolatedSignerError("custody_dir_required")
+    from coin.disposable_custody_continuity import CUSTODY_PROFILE, CustodyError, load_signer_key
+
+    try:
+        signing_key = load_signer_key(args.custody_dir, args.custody_mode, args.expected_identity)
+    except CustodyError as exc:
+        raise IsolatedSignerError(exc.code) from None
+    return DisposableSigner(signing_key, key_persisted=True, custody_profile=CUSTODY_PROFILE)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m coin.isolated_nonproduction_signer")
     parser.add_argument("--role", choices=("signer", "parent"), default="parent")
     parser.add_argument("--state-dir")
+    parser.add_argument("--custody-dir")
+    parser.add_argument("--custody-mode", choices=("init", "reuse"))
+    parser.add_argument("--expected-identity")
     parser.add_argument("--input", default="L28 enables machine payments between autonomous systems.")
     args = parser.parse_args(sys.argv[1:] if argv is None else argv)
     signer: DisposableSigner | None = None
@@ -486,7 +521,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         assert_production_flags_closed()
         if args.role == "signer":
-            signer = DisposableSigner()
+            signer = _open_disposable_signer(args)
             server = _SignerServer(signer)
             host, port = server.server_address
             ready = signer.hello()

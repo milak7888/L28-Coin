@@ -1,6 +1,6 @@
 # L28 — SYSTEM_STATE.md
 
-Last updated: 2026-10-16
+Last updated: 2026-10-17
 
 ## PROJECT STATE
 PROJECT_STATE: ACTIVE
@@ -26,6 +26,7 @@ Product path:
 8. production entry — durable restart-safe paid AI service — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
 9. production runtime hardening and fault recovery — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
 10. isolated non-production signer runtime — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
+11. disposable custody continuity — restart-stable isolated signer — PASS / ACTUAL-PRODUCT VERIFIED
 
 ## REPOSITORY
 Local: `/Users/pjaydondup/Projects/L28-Coin`
@@ -569,6 +570,51 @@ The Production Entry — Durable Restart-Safe Paid AI Service slice reached its 
 The Production Runtime Hardening / Fault Recovery slice reached its STOP condition and is published on remote main at commit `02974da1c300f18f293980c6fec035f553e87c1f`.
 
 ## CURRENT FROZEN SLICE
+`FROZEN_SLICE L28.md`
+
+Slice:
+
+**Disposable Custody Continuity — Restart-Stable Isolated Signer**
+
+Status:
+
+PASS / ACTUAL-PRODUCT VERIFIED
+
+Baseline:
+
+`16da76b59593d0505b18f9eb89e3c37c9258a4ed`
+
+Profile: `L28-DISPOSABLE-CUSTODY-CONTINUITY001`
+
+A real signer process initialized disposable custody, signed as identity `l28disp_adbe504225163cbd10d6ca2e3416a0f94de3a1f8e92b928c7598c973d1917a3e`, and completed payment `b1cdee2cec21cae9bf1e44d2aa5710079463d6d25c4a19c6a82271c93c94bbd4`. Canonical validation passed. Balances moved 100/0 to 72/28. The result and receipt verified.
+
+That signer process stopped. A new signer process reopened the same custody directory and presented the same identity. Replay of the original payment was rejected. Balances stayed 72/28. The service did not run again.
+
+Fresh payment `54ec2457814cfd717250764ebf70c85ce24ff3970934f355fa27565cfcd9284b` paid that same identity, moving balances 72/28 to 44/56. The result and receipt verified.
+
+Separate disposable copies rejected truncated custody (`custody_corrupt`), an unexpected identity replacement (`custody_replaced`), a group-readable key file (`permissions_invalid`), and a group-accessible custody directory (`permissions_invalid`) before signing. The successful custody directory was not modified by those probes.
+
+The private key was not present in stdout, stderr, or the evidence object. Canonical history was not touched.
+
+Focused tests: 11 passed. Affected regressions: 73 passed.
+
+Security review: PASS. Unresolved Critical/High findings: 0.
+
+This does not resolve production custody. The on-disk integrity record is owner-only test metadata, not a production custody claim.
+
+`CUSTODY_READINESS=UNRESOLVED`
+
+`RUNTIME_HARDENING=UNRESOLVED`
+
+`FAULT_RECOVERY=UNRESOLVED`
+
+`F171_SIGNER_ELIGIBILITY_RESULT=BLOCKED`
+
+`SIGNER_RUNTIME_ACTIVE=false`
+
+Signing, canonical broadcast, mining, and production settlement stay false.
+
+## COMPLETED ISOLATED SIGNER SLICE
 `FROZEN_SLICE L28.md`
 
 Slice:

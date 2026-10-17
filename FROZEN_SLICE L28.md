@@ -2,36 +2,44 @@
 
 Date: 2026-10-17
 PROJECT_STATE: ACTIVE
-Slice: Isolated Non-Production Signer Runtime
+Slice: Disposable Custody Continuity — Restart-Stable Isolated Signer
 
 ## OBJECTIVE
 
-Run disposable signing in a separate localhost process from payment validation and durable state.
+Take the already-working isolated non-production signer and prove that the signer can stop and restart while retaining the same disposable signer identity through an explicit test-only custody boundary.
 
-The signer holds one in-memory key, signs only the existing disposable service artifacts, and does not become consensus, custody, or settlement authority.
+Target:
+
+initialize disposable custody → isolated signer starts with identity A → complete one 28 L28 paid service transaction → stop the signer process → restart the signer using the same custody directory → identity remains exactly A → replay of the original payment stays rejected → a fresh payment to identity A succeeds → the result and receipt verify → corrupt, replaced, or unsafe custody fails closed.
+
+This slice is test-only disposable custody. It is not production custody.
 
 ## BASELINE
 
-`6dc5c4bbdf33ee94a952afdc7301ff10192bac1c`
+`16da76b59593d0505b18f9eb89e3c37c9258a4ed`
 
-This authorization does not authorize production private keys, real custody, production signer activation, production signing, canonical broadcast, mining, production settlement, deployment, or Protocol v1.0 changes.
+Profile: `L28-DISPOSABLE-CUSTODY-CONTINUITY001`
+
+The caller supplies the custody directory. There is no default path and no search of the home directory, environment, keychain, wallet, SSH, browser storage, or Bitcoin Core configuration.
 
 `CUSTODY_READINESS` stays UNRESOLVED. `RUNTIME_HARDENING` stays UNRESOLVED. `FAULT_RECOVERY` stays UNRESOLVED. `F171_SIGNER_ELIGIBILITY_RESULT` stays BLOCKED. `SIGNER_RUNTIME_ACTIVE` stays false. Production signing, broadcast, and production settlement stay false.
 
-## RESULT
+## STATUS
 
-PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
+PASS / ACTUAL-PRODUCT VERIFIED
 
-Published commit:
+Signer identity `l28disp_adbe504225163cbd10d6ca2e3416a0f94de3a1f8e92b928c7598c973d1917a3e` was unchanged after a real signer-process restart on the same disposable custody directory.
 
-`ce8a5e37248d7b823c055c53274b49fd68d2080b`
+Payment `b1cdee2cec21cae9bf1e44d2aa5710079463d6d25c4a19c6a82271c93c94bbd4` moved balances 100/0 to 72/28. Canonical validation passed. After the signer restarted, that payment was rejected and balances stayed 72/28. Fresh payment `54ec2457814cfd717250764ebf70c85ce24ff3970934f355fa27565cfcd9284b` paid the same identity, 72/28 to 44/56. The result and receipt verified.
 
-Payment `eab61398b14764be20044ac4f0c32a8d4f1b1da60626d2f79c73b808061557c5` moved balances 100/0 to 72/28. After the payment process restarted against the same signer, that payment was rejected and balances stayed 72/28. Fresh payment `844b6e882adc77846ee2deb2fbb0b093e68c1610625d9edde46a7bc467eea877` paid the same signer identity, 72/28 to 44/56.
+Truncated custody, unexpected identity replacement, and unsafe permissions failed closed before signing.
 
-The key was not written. Canonical validation still ran in the payment process.
+Focused tests: 11 passed. Affected regressions: 73 passed. Security review: PASS. Critical/High findings: 0.
 
-Focused tests: 3 passed. Affected regressions: 103 passed. Security review: PASS. Critical/High findings: 0.
+`CUSTODY_READINESS` stays UNRESOLVED. `RUNTIME_HARDENING` stays UNRESOLVED. `FAULT_RECOVERY` stays UNRESOLVED. `F171_SIGNER_ELIGIBILITY_RESULT` stays BLOCKED. `SIGNER_RUNTIME_ACTIVE` stays false. Production signing, broadcast, and production settlement stay false.
+
+Not published. Production signing and production custody remain NOT AUTHORIZED / NOT STARTED.
 
 ## STOP
 
-Stop after this isolated disposable signer. Do not start production signing, deployment, or REA/Bitcoin/BTCPay work.
+Stop after this disposable custody-continuity proof. Do not start production signing, deployment, exchange work, or REA/Bitcoin/BTCPay work.
