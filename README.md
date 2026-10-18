@@ -82,6 +82,26 @@ A conformance PASS is evidence of deterministic public-interface behavior.
 It is not production security certification, deployment authorization,
 testnet activation, signer authorization, or settlement authorization.
 
+## Non-production public-testnet release candidate
+
+`l28-public-testnet-v0.1.0-rc1` packages the existing disposable 28 L28
+one-shot service with machine-readable discovery and a local executable
+provider/requester example. It is explicitly a NON-PRODUCTION DISPOSABLE
+TESTNET candidate; no public endpoint is configured or authorized by this
+repository change.
+
+Run the actual local HTTP/JSON product path:
+
+```sh
+python -m coin.public_testnet_service_demo \
+  --role local-example \
+  --input "L28 enables machine payments between autonomous systems."
+```
+
+See the [public-testnet v0.1 release guide](docs/public_testnet_release_v0.1.md)
+for discovery, requester, local-only MCP, manifest, exposure-boundary, and
+rollback instructions.
+
 See [CONTRIBUTING.md](CONTRIBUTING.md) before proposing changes and
 [SECURITY.md](SECURITY.md) for vulnerability reporting.
 

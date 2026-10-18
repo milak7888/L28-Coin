@@ -1,6 +1,6 @@
 # L28 — SYSTEM_STATE.md
 
-Last updated: 2026-10-17
+Last updated: 2026-10-18
 
 ## PROJECT STATE
 PROJECT_STATE: ACTIVE
@@ -28,6 +28,7 @@ Product path:
 10. isolated non-production signer runtime — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
 11. disposable custody continuity — restart-stable isolated signer — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
 12. production custody readiness and signer eligibility — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
+13. discoverable public-testnet release candidate — PASS / ACTUAL-PRODUCT VERIFIED / LOCAL COMMIT CANDIDATE
 
 ## REPOSITORY
 Local: `/Users/pjaydondup/Projects/L28-Coin`
@@ -572,6 +573,78 @@ The Production Runtime Hardening / Fault Recovery slice reached its STOP conditi
 
 ## CURRENT FROZEN SLICE
 `FROZEN_SLICE L28.md`
+
+Slice:
+
+**Public-Testnet Discoverable Release Candidate v0.1**
+
+Status:
+
+PASS / ACTUAL-PRODUCT VERIFIED / LOCAL COMMIT CANDIDATE
+
+Baseline:
+
+`b2674aff02f67da002442a87f3ff739c73563d11`
+
+Branch:
+
+`codex/public-testnet-release-candidate-v0-1`
+
+Release candidate:
+
+`l28-public-testnet-v0.1.0-rc1`
+
+The provider now serves an exact machine-readable catalog at
+`GET /v1/l28/public-testnet/services`. The requester verifies that catalog
+before provider hello, disposable payer creation, request, quote, payment,
+work, result, or receipt processing. Missing, malformed, duplicate-key,
+inconsistent, scalar-type-substituted, and tampered catalogs fail closed.
+
+Actual local product command:
+
+`python -m coin.public_testnet_service_demo --role local-example --input "L28 enables machine payments between autonomous systems."`
+
+Verified result:
+
+- one exact `l28.service.structured_text_analysis/v0.1` service at 28 disposable L28;
+- network `L28-DISPOSABLE-PUBLIC001`;
+- canonical validation `PASS`;
+- payment tx id `4ca4e31b8a9dab69650e2409d4deb40a234fc7c7a69bfd11b50bc5644f2cf9ef`;
+- payment, useful work, result, and signed receipt verified;
+- replay rejected and provider shut down;
+- canonical history untouched;
+- no public network, external HTTPS exposure, production key, or production settlement.
+
+Automated verification:
+
+- focused and adversarial tests: 11 passed;
+- directly affected regressions: 62 passed;
+- actual-product CLI: PASS;
+- release SHA-256 inventory: PASS;
+- `git diff --check`: PASS.
+
+Release manifest SHA-256:
+
+`125781e60523128769b7007480e7e90e5c242ca3dd05be49bbe8507939ddddb4`
+
+Security review: PASS. Unresolved Critical/High implementation findings: 0.
+
+This result is local non-production release evidence only. The existing MCP
+adapter remains local stdio only. No public endpoint is configured or
+authorized. Public HTTPS exposure requires separate operator authorization.
+
+EVD-001 is not integrated. Protocol v1.0.0, protected economics, canonical
+history, custody gates, and F171 are unchanged.
+
+`CUSTODY_READINESS=UNRESOLVED`
+
+`F171_SIGNER_ELIGIBILITY_RESULT=BLOCKED`
+
+`SIGNER_RUNTIME_ACTIVE=false`
+
+Signing, canonical broadcast, mining, and production settlement stay false.
+
+## PRIOR PRODUCTION CUSTODY READINESS SLICE
 
 Slice:
 

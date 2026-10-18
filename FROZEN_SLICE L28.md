@@ -1,41 +1,87 @@
 # L28 — FROZEN_SLICE.md
 
-Date: 2026-10-17
+Date: 2026-10-18
 PROJECT_STATE: ACTIVE
-Slice: Production Custody Readiness and Signer Eligibility
+Slice: Public-Testnet Discoverable Release Candidate v0.1
 
 ## OBJECTIVE
 
-Evaluate one live disposable custody directory with the existing public custody and signer-eligibility checks, and refuse a production-eligibility request before any key is loaded.
+Create one self-describing, versioned NON-PRODUCTION public-testnet release
+candidate from the already-published one-shot paid-service implementation.
 
-This does not make disposable custody into production custody.
+This slice adds machine-readable discovery and reproducible release packaging.
+It does not deploy, expose public networking, integrate EVD-001, or change the
+existing payment, validation, result, receipt, or replay authority paths.
 
 ## BASELINE
 
-`fd0dd7174385a3d308a25822f8073b9aa0aae871`
+`b2674aff02f67da002442a87f3ff739c73563d11`
 
-Profile: `l28-production-custody-readiness/v0.1`
+Release candidate: `l28-public-testnet-v0.1.0-rc1`
 
-`CUSTODY_READINESS` stays UNRESOLVED. `RUNTIME_HARDENING` stays UNRESOLVED. `FAULT_RECOVERY` stays UNRESOLVED. `F171_SIGNER_ELIGIBILITY_RESULT` stays BLOCKED. `SIGNER_RUNTIME_ACTIVE` stays false. Production signing, broadcast, and production settlement stay false.
+Network identity: `L28-DISPOSABLE-PUBLIC001`
 
-## STATUS
+## DELIVERABLE
 
-PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
+- machine-readable `GET /v1/l28/public-testnet/services` discovery;
+- exact service ID, 28 L28 price, network/profile, limits, and session paths;
+- requester validation of discovery before quote or payment;
+- HTTP/JSON access instructions and accurate existing local-only MCP stdio
+  instructions;
+- one executable end-to-end example;
+- a versioned release manifest, SHA-256 inventory, deployment boundary, and
+  rollback plan;
+- explicit NON-PRODUCTION DISPOSABLE TESTNET designation.
 
-Published commit:
+Authorized paths:
 
-`36c07394558a29f795ce899dc34ec710cb669a13`
+- `FROZEN_SLICE L28.md`
+- `SYSTEM_STATE L28.md`
+- `README.md`
+- `coin/public_testnet_service_demo.py`
+- `tests/test_public_testnet_service_demo.py`
+- `docs/public_testnet_release_v0.1.md`
+- `release/public-testnet-v0.1.0-rc1/manifest.json`
+- `release/public-testnet-v0.1.0-rc1/SHA256SUMS`
 
-Public identity `l28disp_b0f34efeb88c5e6b5ce8442a155012855c974e1a295ea2bd6a21c1b5bbec4fad` was assessed from the public custody record while the private-key file was absent. The existing custody evaluator returned `BLOCKED_BY_UNRESOLVED_CUSTODY_DECISIONS`. The existing signer-eligibility reassessment returned `GATE_READINESS_BLOCKED`.
+## ACCEPTANCE CRITERIA
 
-A claim that an unresolved custody decision was RESOLVED was rejected as `unresolved_decision_claimed_resolved`. Custody readiness stayed UNRESOLVED and signer eligibility stayed BLOCKED.
+1. Discovery returns one exact service catalog entry for
+   `l28.service.structured_text_analysis/v0.1` priced at 28 disposable L28.
+2. The requester validates the catalog before provider hello, request, quote,
+   payment, work, result, or receipt processing.
+3. Missing, malformed, inconsistent, or tampered discovery fails before
+   payment; invalid payment and replay continue to fail closed.
+4. The actual local provider/requester product completes:
+   DISCOVER → REQUEST → QUOTE → PAY → VERIFY → WORK → RECEIPT.
+5. Existing canonical transaction validation, result verification, signed
+   receipt verification, and replay rejection remain unchanged.
+6. HTTP/JSON instructions and one executable example are exact. MCP guidance
+   accurately describes the existing stdio-only local adapter and makes no
+   public-network claim.
+7. The v0.1.0-rc1 manifest and SHA-256 inventory reproduce the authorized
+   release artifacts.
+8. Focused tests, directly affected regressions, adversarial checks,
+   `git diff --check`, and one consolidated security review pass with no
+   unresolved Critical/High implementation findings.
+9. Protocol v1.0.0, protected economics/history, production custody, F171, and
+   all production gates remain unchanged and blocked.
 
-A signer process started with production eligibility exited `production_eligibility_blocked` before opening custody. The disposable signer path still started and presented the same public identity.
+## SAFETY BOUNDARY
 
-Focused tests: 6 passed. Affected regressions: 67 passed. Security review: PASS. Critical/High findings: 0.
+No external networking, public ingress, deployment, provider/account mutation,
+external spending, secret access, production keys, production custody, mining,
+broadcast, settlement, merge, or push.
 
-Production signing, production custody, deployment, and settlement remain NOT AUTHORIZED / NOT STARTED.
+Do not integrate or modify EVD-001. Do not create a networked MCP server, a new
+payment validator, a second payment engine, or another authority path.
+
+All executable verification is local, disposable, bounded, and non-production.
+Public HTTPS exposure requires separate explicit operator authorization.
 
 ## STOP
 
-Stop after this readiness check. Do not start production signing, deployment, exchange work, or REA/Bitcoin/BTCPay work.
+After implementation, focused/adversarial tests, directly affected regressions,
+actual local product verification, consolidated security review, reproducible
+release evidence, `SYSTEM_STATE L28.md` update, exact-path staging, and one
+local commit, stop. Do not merge, push, deploy, or open public networking.

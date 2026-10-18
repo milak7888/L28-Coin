@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 import ast
+import hashlib
 import json
+import subprocess
+import sys
 from copy import deepcopy
 from pathlib import Path
 
@@ -34,6 +37,8 @@ from coin.tx_validation import compute_tx_id
 
 
 IMPL_PATH = Path(__file__).resolve().parents[1] / "coin/public_testnet_service_demo.py"
+REPO_ROOT = Path(__file__).resolve().parents[1]
+RELEASE_DIR = REPO_ROOT / "release/public-testnet-v0.1.0-rc1"
 INPUT_TEXT = "L28 enables machine payments between autonomous systems."
 
 
@@ -56,6 +61,82 @@ def test_public_identity_binding_and_authorization_flags_stay_false():
     frame["config_hash"] = "11" * 32
     with pytest.raises(demo.PublicTestnetError, match="wrong_network_binding"):
         demo.parse_frame(json.dumps(frame).encode(), expected_sequence=1, binding=binding)
+
+
+def test_service_discovery_is_exact_and_fails_closed():
+    binding = demo.public_testnet_binding()
+    discovery = demo.build_service_discovery(binding)
+    assert discovery == {
+        "discovery_profile": "l28-public-testnet-service-discovery/v0.1",
+        "discovery_version": 1,
+        "release_candidate": "l28-public-testnet-v0.1.0-rc1",
+        "designation": "NON_PRODUCTION_DISPOSABLE_TESTNET",
+        "network_id": "L28-DISPOSABLE-PUBLIC001",
+        "protocol_version": "1.0.0",
+        "genesis_hash": binding["genesis_hash"],
+        "config_hash": binding["config_hash"],
+        "transport_profile": "l28-public-testnet-service/v0.1",
+        "http_json": {
+            "discovery_path": "/v1/l28/public-testnet/services",
+            "provider_hello_path": "/v1/l28/public-testnet/provider_hello",
+            "session_path": "/v1/l28/public-testnet/session",
+            "external_https_required": True,
+            "max_body_bytes": 65536,
+            "request_timeout_seconds": 10,
+            "session_deadline_seconds": 120,
+        },
+        "services": [
+            {
+                "service_id": "l28.service.structured_text_analysis/v0.1",
+                "asset_id": "L28",
+                "price": 28,
+                "max_input_chars": 4096,
+                "one_shot": True,
+            }
+        ],
+        "production_authority": False,
+    }
+    body = json.dumps(discovery, separators=(",", ":"), ensure_ascii=False).encode()
+    assert demo.validate_service_discovery(body, binding) == discovery
+
+    for mutator in (
+        lambda value: value["services"][0].update(price=29),
+        lambda value: value["services"][0].update(price=28.0),
+        lambda value: value.update(discovery_version=True),
+        lambda value: value.update(network_id="L28-DISPOSABLE-OTHER001"),
+        lambda value: value.update(unexpected=True),
+        lambda value: value.pop("services"),
+    ):
+        tampered = deepcopy(discovery)
+        mutator(tampered)
+        with pytest.raises(demo.PublicTestnetError, match="discovery_invalid"):
+            demo.validate_service_discovery(json.dumps(tampered).encode(), binding)
+    with pytest.raises(demo.PublicTestnetError, match="malformed_json"):
+        demo.validate_service_discovery(b'{"discovery_version":1,"discovery_version":1}', binding)
+    with pytest.raises(demo.PublicTestnetError, match="discovery_invalid"):
+        demo.validate_service_discovery(b'{"discovery_version":NaN}', binding)
+
+
+def test_requester_rejects_discovery_before_identity_or_payment(monkeypatch):
+    binding = demo.public_testnet_binding()
+    calls: list[tuple[str, str, bytes | None]] = []
+
+    class NoDisposableKeyBeforeDiscovery:
+        @staticmethod
+        def generate():
+            raise AssertionError("disposable payer created before discovery validation")
+
+    monkeypatch.setattr(demo, "Ed25519PrivateKey", NoDisposableKeyBeforeDiscovery)
+
+    def exchange(method: str, path: str, body: bytes | None) -> bytes:
+        calls.append((method, path, body))
+        tampered = demo.build_service_discovery(binding)
+        tampered["services"][0]["price"] = 27
+        return json.dumps(tampered).encode()
+
+    with pytest.raises(demo.PublicTestnetError, match="discovery_invalid"):
+        demo.run_requester(exchange, INPUT_TEXT, binding)
+    assert calls == [("GET", demo.DISCOVERY_PATH, None)]
 
 
 def test_malformed_json_body_bound_and_request_timeout():
@@ -220,6 +301,9 @@ def test_one_shot_http_harness_shuts_down_and_is_not_public_evidence():
     finally:
         demo.stop_one_shot_server(server, thread)
     assert provider.finished.is_set()
+    assert requester["service_discovery_verified"] is True
+    assert requester["discovered_service_id"] == "l28.service.structured_text_analysis/v0.1"
+    assert requester["discovered_price"] == 28
     assert requester["quote_verified"] is True
     assert requester["service_result_verified"] is True
     assert requester["receipt_verified"] is True
@@ -242,8 +326,8 @@ def test_one_shot_http_harness_shuts_down_and_is_not_public_evidence():
 
 
 def test_product_command_does_not_substitute_localhost_or_lan():
-    completed = __import__("subprocess").run(
-        [__import__("sys").executable, "-m", "coin.public_testnet_service_demo", "--input", INPUT_TEXT],
+    completed = subprocess.run(
+        [sys.executable, "-m", "coin.public_testnet_service_demo", "--input", INPUT_TEXT],
         check=False,
         capture_output=True,
         text=True,
@@ -254,6 +338,84 @@ def test_product_command_does_not_substitute_localhost_or_lan():
     assert completed.stdout == ""
     for forbidden in ("127.0.0.1", "192.168.", "canonical_validation"):
         assert forbidden not in completed.stdout
+
+
+def test_local_release_example_command_exercises_actual_http_product():
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "coin.public_testnet_service_demo",
+            "--role",
+            "local-example",
+            "--input",
+            INPUT_TEXT,
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=20,
+    )
+    assert completed.returncode == 0, completed.stderr
+    result = json.loads(completed.stdout)
+    assert completed.stderr.strip() == (
+        f"❌ Reject tx id={result['payment_tx_id']} reason=replay"
+    )
+    assert result["release_candidate"] == "l28-public-testnet-v0.1.0-rc1"
+    assert result["designation"] == "NON_PRODUCTION_DISPOSABLE_TESTNET"
+    assert result["verification_scope"] == "LOCAL_ONLY"
+    assert result["service_discovery_verified"] is True
+    assert result["service_id"] == "l28.service.structured_text_analysis/v0.1"
+    assert result["network_id"] == "L28-DISPOSABLE-PUBLIC001"
+    assert result["quoted_amount"] == 28
+    assert result["canonical_validation"] == "PASS"
+    assert result["payment_verified"] is True
+    assert result["replay_rejected"] is True
+    assert result["service_executed"] is True
+    assert result["service_result_verified"] is True
+    assert result["receipt_verified"] is True
+    assert result["bounded_provider_shutdown"] is True
+    assert result["canonical_history_touched"] is False
+    assert result["production_keys_used"] is False
+    assert result["public_network_used"] is False
+    assert result["external_https_exposure"] is False
+    assert result["production_settlement"] is False
+
+
+def test_release_manifest_and_sha256_inventory_are_reproducible():
+    manifest_path = RELEASE_DIR / "manifest.json"
+    sums_path = RELEASE_DIR / "SHA256SUMS"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert manifest["schema"] == "l28.public-testnet-release-manifest"
+    assert manifest["schema_version"] == "0.1"
+    assert manifest["release_candidate"] == "l28-public-testnet-v0.1.0-rc1"
+    assert manifest["source_parent"] == "b2674aff02f67da002442a87f3ff739c73563d11"
+    assert manifest["designation"] == "NON_PRODUCTION_DISPOSABLE_TESTNET"
+    assert manifest["network_id"] == "L28-DISPOSABLE-PUBLIC001"
+    assert manifest["service"]["price"] == 28
+    assert manifest["transport"]["mcp"] == "LOCAL_STDIO_ONLY"
+    assert manifest["public_endpoint_configured"] is False
+    assert manifest["deployment_authorized"] is False
+    assert manifest["production_authority"] is False
+
+    manifest_paths = []
+    for artifact in manifest["artifacts"]:
+        path = REPO_ROOT / artifact["path"]
+        content = path.read_bytes()
+        manifest_paths.append(artifact["path"])
+        assert len(content) == artifact["size_bytes"]
+        assert hashlib.sha256(content).hexdigest() == artifact["sha256"]
+    assert manifest_paths == sorted(manifest_paths)
+
+    expected_sums = {}
+    for line in sums_path.read_text(encoding="utf-8").splitlines():
+        digest, path = line.split("  ", 1)
+        expected_sums[path] = digest
+    assert sorted(expected_sums) == sorted(
+        manifest_paths + ["release/public-testnet-v0.1.0-rc1/manifest.json"]
+    )
+    for path, digest in expected_sums.items():
+        assert hashlib.sha256((REPO_ROOT / path).read_bytes()).hexdigest() == digest
 
 
 def test_existing_http_service_still_purchases_and_source_has_no_secrets():

@@ -52,6 +52,8 @@ from coin.limited_testnet_service_demo import (
     verify_provider_hello,
 )
 from coin.two_agent_service_transaction_demo import (
+    ASSET_ID,
+    MAX_INPUT_CHARS,
     PRICE_L28,
     SERVICE_ID,
     DemoError as ServiceDemoError,
@@ -70,10 +72,15 @@ from coin.two_agent_service_transaction_demo import (
 
 
 DEMO_PROFILE = "l28-public-testnet-service/v0.1"
+DISCOVERY_PROFILE = "l28-public-testnet-service-discovery/v0.1"
+DISCOVERY_VERSION = 1
+RELEASE_CANDIDATE = "l28-public-testnet-v0.1.0-rc1"
+NON_PRODUCTION_DESIGNATION = "NON_PRODUCTION_DISPOSABLE_TESTNET"
 TRANSPORT_VERSION = 1
 NETWORK_ID = "L28-DISPOSABLE-PUBLIC001"
 DATA_DIR_TAG = "l28-disposable-testnet:public001"
 ENDPOINT_BLOCKER = "PUBLIC_TESTNET_ENDPOINT_UNAVAILABLE"
+DISCOVERY_PATH = "/v1/l28/public-testnet/services"
 HELLO_PATH = "/v1/l28/public-testnet/provider_hello"
 SESSION_PATH = "/v1/l28/public-testnet/session"
 LOOPBACK_HOST = "127.0.0.1"
@@ -171,6 +178,76 @@ def public_testnet_binding() -> dict[str, Any]:
     if any(flag is not False for flag in authorized):
         raise PublicTestnetError("identity_flag_mutated")
     return binding
+
+
+def build_service_discovery(binding: Mapping[str, Any]) -> dict[str, Any]:
+    """Return the exact public catalog without advancing the one-shot session."""
+    assert_identity_flags_unchanged()
+    if (
+        binding.get("network_id") != NETWORK_ID
+        or not isinstance(binding.get("genesis_hash"), str)
+        or not isinstance(binding.get("config_hash"), str)
+    ):
+        raise PublicTestnetError("discovery_binding_invalid")
+    return {
+        "discovery_profile": DISCOVERY_PROFILE,
+        "discovery_version": DISCOVERY_VERSION,
+        "release_candidate": RELEASE_CANDIDATE,
+        "designation": NON_PRODUCTION_DESIGNATION,
+        "network_id": NETWORK_ID,
+        "protocol_version": PROTOCOL_VERSION,
+        "genesis_hash": binding["genesis_hash"],
+        "config_hash": binding["config_hash"],
+        "transport_profile": DEMO_PROFILE,
+        "http_json": {
+            "discovery_path": DISCOVERY_PATH,
+            "provider_hello_path": HELLO_PATH,
+            "session_path": SESSION_PATH,
+            "external_https_required": True,
+            "max_body_bytes": MAX_BODY_BYTES,
+            "request_timeout_seconds": int(REQUEST_TIMEOUT_SECONDS),
+            "session_deadline_seconds": int(SESSION_DEADLINE_SECONDS),
+        },
+        "services": [
+            {
+                "service_id": SERVICE_ID,
+                "asset_id": ASSET_ID,
+                "price": PRICE_L28,
+                "max_input_chars": MAX_INPUT_CHARS,
+                "one_shot": True,
+            }
+        ],
+        "production_authority": False,
+    }
+
+
+def validate_service_discovery(body: bytes, binding: Mapping[str, Any]) -> dict[str, Any]:
+    """Fail closed unless discovery is the exact catalog for this binding."""
+    enforce_body_bound(len(body))
+    try:
+        value = json.loads(body.decode("utf-8"), object_pairs_hook=_reject_duplicate_keys)
+        actual = json.dumps(
+            value,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+            allow_nan=False,
+        )
+    except PublicTestnetError:
+        raise
+    except (TypeError, UnicodeError, ValueError, json.JSONDecodeError) as exc:
+        raise PublicTestnetError("discovery_invalid") from exc
+    expected = build_service_discovery(binding)
+    canonical_expected = json.dumps(
+        expected,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+        allow_nan=False,
+    )
+    if not isinstance(value, dict) or actual != canonical_expected:
+        raise PublicTestnetError("discovery_invalid")
+    return value
 
 
 def _host_is_local_or_lan(host: str) -> str:
@@ -374,6 +451,9 @@ class PublicProvider:
 
 
 def run_requester(exchange: Any, input_text: str, binding: Mapping[str, Any]) -> dict[str, Any]:
+    discovery_body = exchange("GET", DISCOVERY_PATH, None)
+    discovery = validate_service_discovery(discovery_body, binding)
+    service = discovery["services"][0]
     payer = Ed25519PrivateKey.generate()
     hello_body = exchange("GET", HELLO_PATH, None)
     hello_frame = parse_frame(hello_body, expected_sequence=1, binding=binding)
@@ -421,6 +501,10 @@ def run_requester(exchange: Any, input_text: str, binding: Mapping[str, Any]) ->
         raise PublicTestnetError("tampered_result")
     del payer
     return {
+        "service_discovery_received": True,
+        "service_discovery_verified": True,
+        "discovered_service_id": service["service_id"],
+        "discovered_price": service["price"],
         "provider_hello_received": True,
         "service_request_sent": True,
         "service_quote_received": True,
@@ -586,6 +670,12 @@ class _Handler(BaseHTTPRequestHandler):
         return body
 
     def do_GET(self) -> None:
+        if self.path == DISCOVERY_PATH:
+            try:
+                self._ok(build_service_discovery(self.server.provider.binding))
+            except PublicTestnetError as exc:
+                self._error(exc.code)
+            return
         if self.path != HELLO_PATH:
             self._error("path_not_found")
             return
@@ -687,9 +777,68 @@ def run_public_requester(endpoint: str, input_text: str, timeout: float = REQUES
     return requester
 
 
+def execute_local_release_example(input_text: str) -> dict[str, Any]:
+    """Exercise the real HTTP provider/requester locally without public exposure."""
+    server, thread, provider = start_one_shot_server()
+    host, port = server.server_address
+    base_url = f"http://{host}:{port}"
+
+    def exchange(method: str, path: str, body: bytes | None) -> bytes:
+        return http_exchange(
+            base_url,
+            method,
+            path,
+            body,
+            REQUEST_TIMEOUT_SECONDS,
+            allow_local_harness=True,
+        )
+
+    evidence: dict[str, Any] | None = None
+    try:
+        requester = run_requester(exchange, input_text, provider.binding)
+        evidence = provider.evidence
+    finally:
+        stop_one_shot_server(server, thread)
+    if evidence is None:
+        raise PublicTestnetError("provider_evidence_incomplete")
+    provider_record = provider_evidence_record(
+        evidence,
+        network_id=provider.binding["network_id"],
+        shutdown_complete=True,
+    )
+    if requester["payment_tx_id"] != provider_record["payment_tx_id"]:
+        raise PublicTestnetError("payment_binding_invalid")
+    return {
+        "release_candidate": RELEASE_CANDIDATE,
+        "designation": NON_PRODUCTION_DESIGNATION,
+        "verification_scope": "LOCAL_ONLY",
+        "service_discovery_verified": requester["service_discovery_verified"],
+        "service_id": requester["discovered_service_id"],
+        "network_id": provider_record["network_id"],
+        "quoted_amount": requester["quoted_amount"],
+        "canonical_validation": provider_record["canonical_validation"],
+        "payment_tx_id": requester["payment_tx_id"],
+        "payment_verified": provider_record["payment_verified"],
+        "replay_rejected": provider_record["replay_rejected"],
+        "service_executed": requester["service_executed"],
+        "service_result_verified": requester["service_result_verified"],
+        "receipt_verified": requester["receipt_verified"],
+        "canonical_history_touched": provider_record["canonical_history_touched"],
+        "production_keys_used": provider_record["production_keys_used"],
+        "public_network_used": False,
+        "external_https_exposure": False,
+        "production_settlement": provider_record["production_settlement"],
+        "bounded_provider_shutdown": provider_record["bounded_provider_shutdown"],
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m coin.public_testnet_service_demo")
-    parser.add_argument("--role", choices=("parent", "provider", "requester"), default="parent")
+    parser.add_argument(
+        "--role",
+        choices=("parent", "provider", "requester", "local-example"),
+        default="parent",
+    )
     parser.add_argument("--public-endpoint")
     parser.add_argument("--port", type=int, default=0)
     parser.add_argument("--input", default="L28 enables machine payments between autonomous systems.")
@@ -710,6 +859,13 @@ def main(argv: list[str] | None = None) -> int:
             record = provider_evidence_record(evidence, network_id=network_id, shutdown_complete=True)
             sys.stdout.write(json.dumps(record, sort_keys=True, separators=(",", ":"), ensure_ascii=False) + "\n")
             sys.stdout.flush()
+            return 0
+        if args.role == "local-example":
+            result = execute_local_release_example(args.input)
+            sys.stdout.write(
+                json.dumps(result, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+                + "\n"
+            )
             return 0
         if not args.public_endpoint:
             raise PublicTestnetError(ENDPOINT_BLOCKER)

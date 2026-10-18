@@ -1,0 +1,57 @@
+{
+  "schema": "l28.public-testnet-release-manifest",
+  "schema_version": "0.1",
+  "release_candidate": "l28-public-testnet-v0.1.0-rc1",
+  "release_date": "2026-10-18",
+  "source_parent": "b2674aff02f67da002442a87f3ff739c73563d11",
+  "designation": "NON_PRODUCTION_DISPOSABLE_TESTNET",
+  "protocol_version": "1.0.0",
+  "network_id": "L28-DISPOSABLE-PUBLIC001",
+  "discovery": {
+    "method": "GET",
+    "path": "/v1/l28/public-testnet/services",
+    "profile": "l28-public-testnet-service-discovery/v0.1",
+    "version": 1
+  },
+  "service": {
+    "service_id": "l28.service.structured_text_analysis/v0.1",
+    "asset_id": "L28",
+    "price": 28,
+    "max_input_chars": 4096,
+    "one_shot": true
+  },
+  "transport": {
+    "http_json": "PUBLIC_HTTPS_OPERATOR_GATED",
+    "mcp": "LOCAL_STDIO_ONLY",
+    "provider_hello_path": "/v1/l28/public-testnet/provider_hello",
+    "session_path": "/v1/l28/public-testnet/session"
+  },
+  "public_endpoint_configured": false,
+  "deployment_authorized": false,
+  "external_network_verification_performed": false,
+  "production_authority": false,
+  "canonical_history_mutation": false,
+  "production_settlement": false,
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "6fb84637baa12550524b4ffc120e4407a13e1e61a38b16e8e89c698e5cf0f78a",
+      "size_bytes": 4050
+    },
+    {
+      "path": "coin/public_testnet_service_demo.py",
+      "sha256": "f9106ed5574ae4adf78c5c3ececc27c3221d7df2d2600c77f34cd3250aba7237",
+      "size_bytes": 35132
+    },
+    {
+      "path": "docs/public_testnet_release_v0.1.md",
+      "sha256": "d24604052174c5ae2e024e0f535c00bf56e5cef79703c045b849ada20dbef9b0",
+      "size_bytes": 5835
+    },
+    {
+      "path": "tests/test_public_testnet_service_demo.py",
+      "sha256": "3722ec3591ed9d61637f42c334b67d4ad2e1ee147b06bfa8b747311571d46d52",
+      "size_bytes": 20027
+    }
+  ]
+}
