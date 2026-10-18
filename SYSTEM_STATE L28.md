@@ -29,6 +29,7 @@ Product path:
 11. disposable custody continuity — restart-stable isolated signer — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
 12. production custody readiness and signer eligibility — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
 13. discoverable public-testnet release candidate — PASS / ACTUAL-PRODUCT VERIFIED / LOCAL COMMIT CANDIDATE
+14. persistent disposable two-node ledger core — PASS / ACTUAL-PRODUCT VERIFIED / LOCAL COMMIT PENDING
 
 ## REPOSITORY
 Local: `/Users/pjaydondup/Projects/L28-Coin`
@@ -576,62 +577,64 @@ The Production Runtime Hardening / Fault Recovery slice reached its STOP conditi
 
 Slice:
 
-**Public-Testnet Discoverable Release Candidate v0.1**
+**Persistent Disposable Two-Node Ledger Core v0.1**
 
 Status:
 
-PASS / ACTUAL-PRODUCT VERIFIED / LOCAL COMMIT CANDIDATE
+PASS / ACTUAL-PRODUCT VERIFIED / LOCAL COMMIT PENDING
 
 Baseline:
 
-`b2674aff02f67da002442a87f3ff739c73563d11`
+`1ed38b5ac44015e87517d321cc2d56ca9021a384`
 
 Branch:
 
-`codex/public-testnet-release-candidate-v0-1`
+`codex/persistent-disposable-two-node-core-v0-1`
 
-Release candidate:
-
-`l28-public-testnet-v0.1.0-rc1`
-
-The provider now serves an exact machine-readable catalog at
-`GET /v1/l28/public-testnet/services`. The requester verifies that catalog
-before provider hello, disposable payer creation, request, quote, payment,
-work, result, or receipt processing. Missing, malformed, duplicate-key,
-inconsistent, scalar-type-substituted, and tampered catalogs fail closed.
+Two separate local node processes now use the existing canonical transaction
+validator and `BlocklessLedger` to validate and persist the same disposable
+events over IPv4 loopback. The writer creates one test-only 28 L28 coinbase at
+height zero and one ephemeral-key signed 28 L28 transfer. The follower
+independently validates and persists both events.
 
 Actual local product command:
 
-`python -m coin.public_testnet_service_demo --role local-example --input "L28 enables machine payments between autonomous systems."`
+`python -B -m coin.persistent_disposable_testnet_node`
 
 Verified result:
 
-- one exact `l28.service.structured_text_analysis/v0.1` service at 28 disposable L28;
-- network `L28-DISPOSABLE-PUBLIC001`;
-- canonical validation `PASS`;
-- payment tx id `4ca4e31b8a9dab69650e2409d4deb40a234fc7c7a69bfd11b50bc5644f2cf9ef`;
-- payment, useful work, result, and signed receipt verified;
-- replay rejected and provider shut down;
-- canonical history untouched;
-- no public network, external HTTPS exposure, production key, or production settlement.
+- network `L28-DISPOSABLE-PERSISTENT001`;
+- genesis hash `5284cbdc2ae6041735375dd7f4c5888c79c539c79a0e7279d7e359ffcd305c0d`;
+- config hash `abf1e128de2883c24a86163dc4dfeceee89d24274559293ef7b0a8fc72bd8d7d`;
+- two independent validators agreed on two event IDs;
+- balances converged to disposable `0/28` with issued supply `28` and mint
+  height `1`;
+- final state commitment `9105d2ebc3e457e35efa5e59aebb5dd58cef82002218300b2175e184b7508675`;
+- both nodes stopped and restarted from strict validated durable replay;
+- replay after restart, truncated persistence, malformed input, and
+  cross-network input rejected;
+- divergent state invoked `OPTION_A_HALT_ON_CONFLICT` without mutation;
+- all node processes terminated and temporary private material did not persist;
+- canonical history untouched; no mining, broadcast, public network, production
+  key, or production settlement.
 
 Automated verification:
 
-- focused and adversarial tests: 11 passed;
-- directly affected regressions: 62 passed;
+- focused and adversarial tests: 10 passed;
+- directly affected regressions: 186 passed;
+- final post-review ledger regressions: 42 passed;
 - actual-product CLI: PASS;
-- release SHA-256 inventory: PASS;
 - `git diff --check`: PASS.
 
-Release manifest SHA-256:
+Consolidated security review: PASS with complete changed-source coverage and
+zero reportable findings. Unresolved Critical/High implementation findings: 0.
+Three non-reportable exactness gaps found during review were corrected before
+the final focused tests and actual-product run: boolean frame scalar
+substitution, blank durable records, and unexpected shard files now reject.
 
-`125781e60523128769b7007480e7e90e5c242ca3dd05be49bbe8507939ddddb4`
-
-Security review: PASS. Unresolved Critical/High implementation findings: 0.
-
-This result is local non-production release evidence only. The existing MCP
-adapter remains local stdio only. No public endpoint is configured or
-authorized. Public HTTPS exposure requires separate operator authorization.
+This result is a local non-production ledger-foundation experiment only. It
+does not define confirmations, fork choice, finality, consensus, canonical
+history continuation, peer discovery, or a public endpoint.
 
 EVD-001 is not integrated. Protocol v1.0.0, protected economics, canonical
 history, custody gates, and F171 are unchanged.

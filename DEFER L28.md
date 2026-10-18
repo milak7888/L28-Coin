@@ -1,6 +1,6 @@
 # L28 — DEFER.md
 
-Last updated: 2026-10-17
+Last updated: 2026-10-18
 
 Purpose:
 Store useful ideas and future work that are NOT required to complete the current frozen slice.
@@ -11,11 +11,14 @@ Review only when selecting the next frozen slice.
 ## CURRENT SLICE — DO NOT DUPLICATE HERE
 The active frozen slice is:
 
-**Production Custody Readiness and Signer Eligibility**
+**Persistent Disposable Two-Node Ledger Core v0.1**
 
-Status: PASS / ACTUAL-PRODUCT VERIFIED. STOP CONDITION REACHED.
+Status: PASS / ACTUAL-PRODUCT VERIFIED / CONSOLIDATED REVIEW PASS. The local
+commit is the remaining in-slice completion step.
 
-A live disposable custody directory can be assessed without reading its private key. Production eligibility stays blocked, and a production-eligibility request exits before the key is loaded. Production signing, production custody, deployment, and settlement remain NOT AUTHORIZED / NOT STARTED. `SIGNER_RUNTIME_ACTIVE` remains false. `F171_SIGNER_ELIGIBILITY_RESULT` remains BLOCKED. `CUSTODY_READINESS` remains UNRESOLVED.
+The bounded capability is loopback-only, disposable, and non-production. It
+does not authorize public networking, historical import, consensus/finality,
+production signing, custody, mining, broadcast, deployment, or settlement.
 
 ## COMPLETED PRODUCT STAGES — NOT DEFERRED
 Already complete/published:
@@ -31,6 +34,8 @@ Already complete/published:
 9. production runtime hardening and fault recovery
 10. isolated non-production signer runtime
 11. disposable custody continuity — restart-stable isolated signer
+12. production custody readiness evidence — production eligibility remained blocked
+13. discoverable public-testnet release candidate
 
 Do not recreate these as new milestones.
 
@@ -52,8 +57,10 @@ The public-testnet experiment is complete and is not deferred.
 
 Still deferred:
 
-- broader controlled peer communication
-- persistent P2P runtime
+- multi-host peer discovery and synchronization
+- persistent public P2P runtime
+- transaction gossip, confirmation, fork choice, and finality
+- canonical historical checkpoint reconstruction and continuation
 - production deployment
 - production signing and settlement
 - REA, Bitcoin Core, and BTCPay study

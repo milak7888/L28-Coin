@@ -14,6 +14,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 import time
 from collections import defaultdict
 from dataclasses import replace
@@ -256,11 +257,16 @@ class BlocklessLedger:
                     logger.warning("❌ Reject tx: stored id diverges from validation id")
                     return False
 
+                is_coinbase = bool(is_coinbase_tx(tx))
                 sender = str(tx["sender"])
                 receiver = str(tx["receiver"])
                 amount = int(tx["amount"])
+                shard_id = self.get_shard_for_address(receiver if is_coinbase else sender)
 
-                is_coinbase = bool(is_coinbase_tx(tx))
+                # Persist the validated event before exposing its state transition.
+                # A failed append must not leave trusted memory ahead of durable state.
+                await self._save_transaction(tx, shard_id)
+
                 if is_coinbase:
                     self.balances[receiver] += amount
                     self.mint_height += 1
@@ -269,7 +275,6 @@ class BlocklessLedger:
                     self.balances[sender] -= amount
                     self.balances[receiver] += amount
 
-                shard_id = self.get_shard_for_address(receiver if is_coinbase else sender)
                 self.shards[shard_id].append(tx)
 
                 self.transactions[tx_id] = tx
@@ -278,7 +283,6 @@ class BlocklessLedger:
                 self.total_transactions += 1
                 self.total_volume += amount
 
-                await self._save_transaction(tx, shard_id)
                 if is_coinbase:
                     logger.info(
                         "✅ Coinbase %s credited %s (+%s) shard=%s",
@@ -324,12 +328,30 @@ class BlocklessLedger:
         return history[: int(limit)]
 
     async def _save_transaction(self, transaction: Dict[str, Any], shard_id: int) -> None:
-        """Persist transaction to disk"""
+        """Append one canonical JSON event and durably flush it before state mutation."""
         shard_file = self.data_dir / f"shard_{int(shard_id)}.jsonl"
         with open(shard_file, "a", encoding="utf-8") as f:
-            f.write(json.dumps(transaction, ensure_ascii=False, allow_nan=False) + "\n")
+            f.write(
+                json.dumps(
+                    transaction,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                    ensure_ascii=False,
+                    allow_nan=False,
+                )
+                + "\n"
+            )
+            f.flush()
+            os.fsync(f.fileno())
 
-    async def load_from_disk(self) -> None:
+    async def load_from_disk(
+        self,
+        *,
+        validate_replay: bool = False,
+        acknowledge_disposable_test_only: bool = False,
+        expected_network: Optional[str] = None,
+        validate_record: Optional[Callable[[Dict[str, Any]], bool]] = None,
+    ) -> None:
         """
         Load ledger from disk on startup.
 
@@ -340,12 +362,29 @@ class BlocklessLedger:
 
         Legacy mismatched ids fail closed without rewriting persisted records.
 
-        Disk contents alone do NOT establish canonical issuance readiness.
-        Empty directories are NOT treated as trusted genesis. On any load failure,
-        in-memory state is reset to empty and unready (no partial trusted state).
+        Default/legacy loading preserves the historical behavior: disk contents
+        alone do NOT establish canonical issuance readiness.
+
+        The opt-in disposable replay mode requires an explicit test-only
+        acknowledgement and expected network. It re-runs the canonical validator,
+        signature verifier, optional exact-schema callback, shard mapping, replay
+        checks, and issuance rules for every persisted event before committing any
+        in-memory state. Successful validated disposable replay restores only
+        disposable issuance readiness; it never establishes main-network history.
+
+        On any load failure, in-memory state is reset to empty and unready (no
+        partial trusted state).
         """
         async with self._lock:
             logger.info("Loading ledger from disk...")
+
+            if validate_replay:
+                if acknowledge_disposable_test_only is not True:
+                    raise ValueError("validated_replay_requires_test_only_acknowledgement")
+                if not isinstance(expected_network, str) or not expected_network:
+                    raise ValueError("validated_replay_requires_expected_network")
+                if validate_record is not None and not callable(validate_record):
+                    raise ValueError("validated_replay_record_validator_invalid")
 
             # Scratch buffers: commit only after full successful parse.
             shards: List[List[Dict[str, Any]]] = [[] for _ in range(self.num_shards)]
@@ -358,6 +397,20 @@ class BlocklessLedger:
             mint_height = 0
 
             try:
+                if validate_replay:
+                    expected_shard_names = {
+                        f"shard_{shard_id}.jsonl"
+                        for shard_id in range(self.num_shards)
+                    }
+                    for candidate in self.data_dir.glob("shard_*.jsonl"):
+                        if (
+                            candidate.name not in expected_shard_names
+                            or candidate.is_symlink()
+                        ):
+                            raise ValueError(
+                                "validated_replay_unexpected_shard_file "
+                                f"name={candidate.name}"
+                            )
                 for shard_id in range(self.num_shards):
                     shard_file = self.data_dir / f"shard_{shard_id}.jsonl"
                     if not shard_file.exists():
@@ -366,7 +419,17 @@ class BlocklessLedger:
                     with open(shard_file, "r", encoding="utf-8") as f:
                         for line_no, line in enumerate(f, start=1):
                             if not line.strip():
+                                if validate_replay:
+                                    raise ValueError(
+                                        f"validated_replay_blank_record shard={shard_id} "
+                                        f"line={line_no}"
+                                    )
                                 continue
+                            if validate_replay and not line.endswith("\n"):
+                                raise ValueError(
+                                    f"validated_replay_truncated_record shard={shard_id} "
+                                    f"line={line_no}"
+                                )
                             tx = json.loads(line)
                             if not isinstance(tx, dict):
                                 raise ValueError(
@@ -384,7 +447,81 @@ class BlocklessLedger:
                                     f"legacy_tx_id_mismatch shard={shard_id} line={line_no}"
                                 )
 
+                            if validate_replay:
+                                canonical_line = json.dumps(
+                                    tx,
+                                    sort_keys=True,
+                                    separators=(",", ":"),
+                                    ensure_ascii=False,
+                                    allow_nan=False,
+                                )
+                                if line[:-1] != canonical_line:
+                                    raise ValueError(
+                                        f"validated_replay_noncanonical_record shard={shard_id} "
+                                        f"line={line_no}"
+                                    )
+                                if tx.get("network") != expected_network:
+                                    raise ValueError(
+                                        f"validated_replay_wrong_network shard={shard_id} "
+                                        f"line={line_no}"
+                                    )
+                                if validate_record is not None:
+                                    try:
+                                        record_ok = validate_record(tx)
+                                    except Exception as exc:
+                                        raise ValueError(
+                                            f"validated_replay_record_invalid shard={shard_id} "
+                                            f"line={line_no}"
+                                        ) from exc
+                                    if record_ok is not True:
+                                        raise ValueError(
+                                            f"validated_replay_record_invalid shard={shard_id} "
+                                            f"line={line_no}"
+                                        )
+
+                                sender = str(tx.get("sender", ""))
+                                receiver = str(tx.get("receiver", ""))
+                                coinbase = self._is_coinbase_tx(tx)
+                                expected_shard = self.get_shard_for_address(
+                                    receiver if coinbase else sender
+                                )
+                                if expected_shard != shard_id:
+                                    raise ValueError(
+                                        f"validated_replay_wrong_shard shard={shard_id} "
+                                        f"line={line_no}"
+                                    )
+
+                                ok, validated_id, reason = validate_transaction(
+                                    tx,
+                                    policy=self.policy,
+                                    current_balance_lookup=(
+                                        lambda address, _network: int(
+                                            balances.get(address, 0)
+                                        )
+                                    ),
+                                    seen_tx_lookup=(lambda candidate: candidate in seen_tx_ids),
+                                    verify_signature=(
+                                        self.verify_signature
+                                        if self.require_signatures
+                                        else None
+                                    ),
+                                    current_height_lookup=(lambda: int(mint_height)),
+                                    current_issued_lookup=(lambda: int(issued_supply)),
+                                    now_ts=int(time.time()),
+                                    network=expected_network,
+                                )
+                                if not ok or validated_id != tx_id:
+                                    raise ValueError(
+                                        f"validated_replay_rejected shard={shard_id} "
+                                        f"line={line_no} reason={reason}"
+                                    )
+
                             if tx_id in seen_tx_ids:
+                                if validate_replay:
+                                    raise ValueError(
+                                        f"validated_replay_duplicate shard={shard_id} "
+                                        f"line={line_no}"
+                                    )
                                 continue
 
                             shards[shard_id].append(tx)
@@ -408,7 +545,7 @@ class BlocklessLedger:
                             total_transactions += 1
                             total_volume += amount
 
-                # Commit scratch → live. Disk alone never grants issuance readiness.
+                # Commit scratch → live only after every record succeeds.
                 self.shards = shards
                 self.balances = balances
                 self.transactions = transactions
@@ -417,8 +554,10 @@ class BlocklessLedger:
                 self.total_volume = total_volume
                 self.issued_supply = issued_supply
                 self.mint_height = mint_height
-                self._canonical_issuance_ready = False
-                self._issuance_init_kind = None
+                self._canonical_issuance_ready = bool(validate_replay)
+                self._issuance_init_kind = (
+                    _ISSUANCE_INIT_DISPOSABLE_TEST if validate_replay else None
+                )
 
                 logger.info("✅ Loaded %s transactions from disk", self.total_transactions)
             except Exception:

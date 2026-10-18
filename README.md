@@ -102,6 +102,27 @@ See the [public-testnet v0.1 release guide](docs/public_testnet_release_v0.1.md)
 for discovery, requester, local-only MCP, manifest, exposure-boundary, and
 rollback instructions.
 
+## Persistent disposable two-node ledger core
+
+The local persistent-node candidate runs one disposable writer and one
+independently validating follower as separate processes over IPv4 loopback.
+Both use `coin.tx_validation.validate_transaction` and `BlocklessLedger` for
+the same test-only 28 L28 coinbase and signed 28 L28 transfer. They then stop,
+restart from validated durable event logs, compare deterministic public state
+commitments, and reject replay, corruption, cross-network input, malformed
+frames, and divergent state.
+
+Run the actual bounded product path:
+
+```sh
+python -B -m coin.persistent_disposable_testnet_node
+```
+
+The command uses temporary directories and an ephemeral disposable signing
+key that is never persisted or printed. This is not mining, consensus,
+confirmation, canonical-history continuation, public networking, production
+signing, broadcast, or settlement.
+
 See [CONTRIBUTING.md](CONTRIBUTING.md) before proposing changes and
 [SECURITY.md](SECURITY.md) for vulnerability reporting.
 
