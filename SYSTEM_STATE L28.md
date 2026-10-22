@@ -1,6 +1,6 @@
 # L28 — SYSTEM_STATE.md
 
-Last updated: 2026-10-18
+Last updated: 2026-10-22
 
 ## PROJECT STATE
 PROJECT_STATE: ACTIVE
@@ -30,6 +30,7 @@ Product path:
 12. production custody readiness and signer eligibility — PASS / ACTUAL-PRODUCT VERIFIED / PUBLISHED
 13. discoverable public-testnet release candidate — PASS / ACTUAL-PRODUCT VERIFIED / LOCAL COMMIT CANDIDATE
 14. persistent disposable two-node ledger core — PASS / ACTUAL-PRODUCT VERIFIED / LOCAL COMMIT PENDING
+15. Protocol v1 coinbase validator strictness — PASS / ACTUAL-PRODUCT VERIFIED / LOCAL COMMIT CANDIDATE
 
 ## REPOSITORY
 Local: `/Users/pjaydondup/Projects/L28-Coin`
@@ -574,6 +575,68 @@ The Production Runtime Hardening / Fault Recovery slice reached its STOP conditi
 
 ## CURRENT FROZEN SLICE
 `FROZEN_SLICE L28.md`
+
+**Protocol v1 Coinbase Validator Strictness v0.1**
+
+Status: PASS / ACTUAL-PRODUCT VERIFIED / LOCAL COMMIT CANDIDATE
+
+Baseline: `3ff8bbaff1055f406fcd3ae768c3a339df64e4d2`
+
+Branch: `codex/protocol-v1-coinbase-validator-strictness-v0-1`
+
+Operator amendment:
+`AUTHORIZE_L28_COINBASE_STRICTNESS_LEDGER_SCOPE_AMENDMENT_V0_1`
+
+The canonical validator now requires exact coinbase identity, an explicit
+nonempty string miner matching the receiver, and nonnegative exact-integer
+issued supply. The ledger passes raw supply to canonical validation, including
+`None` for an absent attribute, and no longer converts invalid state into a
+valid-looking integer. Validated replay also passes its raw supply accumulator.
+Rejection occurs before the ledger's persistence and balance/index updates.
+
+Verification on 2026-10-22, using
+`/Users/pjaydondup/.pyenv/versions/3.11.9/envs/l28-env/bin/python`:
+
+- `-B -m pytest -q -p no:cacheprovider tests/test_protocol_conformance.py`:
+  49 passed, including 16 empty/funded-ledger invalid-supply subcases;
+- `-B -m pytest -q -p no:cacheprovider tests/test_uaii_reference_core.py`:
+  22 passed;
+- both suites ran once after the correction;
+- actual product: a standalone `python -B -` process exercised the real
+  `BlocklessLedger.add_transaction` and validated `load_from_disk` paths in
+  temporary directories; no keys, signing, mining, or sockets were used;
+- `True`, `False`, `0.0`, `"0"`, `-1`, missing, and null supply each rejected
+  with `issued_supply_unavailable` after one valid persisted disposable event;
+- all rejected cases preserved supply value/type/absence, balances, height,
+  transaction count/volume, indexes, shards, readiness, and persisted bytes;
+- the existing event's SHA-256 stayed
+  `9c343f472dbfd0158895898f0fd53507ce533007f2ba1b4aa640682d55dbbafc`
+  in every invalid-supply product case;
+- malformed coinbase identity and absent miner also rejected without mutation;
+- valid disposable coinbase
+  `d885dcd2666754d094078fa402b2fbb6b0f9b8e834d137703ea492d8683a8526`
+  produced balance/supply `28/28`, height `1`, reloaded identically, and rejected
+  replay without mutation;
+- temporary ledgers were removed after verification;
+- AST comparison against the baseline confirmed unchanged economic/historical
+  constants, reward schedule, strict integer parser, and transaction identity;
+- `git diff --check`: PASS.
+
+Consolidated source/security review: PASS. The previously confirmed ledger
+coercion and partial-mutation defect no longer reproduces. No unresolved
+Critical/High implementation findings in this slice. This is an engineering
+review, not an independent cryptographic or production-security approval.
+Networked/signing demos were not run; the bounded ledger, validated replay,
+protocol, and UAII paths above are the verification scope.
+
+Protocol v1.0.0, economics, historical records, F171, and custody gates are
+unchanged. `CUSTODY_READINESS=UNRESOLVED`,
+`F171_SIGNER_ELIGIBILITY_RESULT=BLOCKED`, and `SIGNER_RUNTIME_ACTIVE=false`.
+The historical-manifest correction was not started. This slice stops at one
+local commit; merge, push, deployment, and production activation remain
+unauthorized.
+
+## PRIOR PERSISTENT DISPOSABLE TWO-NODE SLICE
 
 Slice:
 

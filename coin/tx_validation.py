@@ -126,9 +126,11 @@ def is_coinbase_tx(tx: Dict[str, Any]) -> bool:
     """
     try:
         return (
-            str(tx.get("sender")) == "COINBASE"
-            and str(tx.get("type")) == "coinbase"
-            and bool(tx.get("coinbase")) is True
+            type(tx.get("sender")) is str
+            and tx.get("sender") == "COINBASE"
+            and type(tx.get("type")) is str
+            and tx.get("type") == "coinbase"
+            and tx.get("coinbase") is True
         )
     except Exception:
         return False
@@ -221,10 +223,10 @@ def validate_transaction(
         except Exception:
             return False, tx_id, "issued_supply_unavailable"
         issued, issued_err = strict_protocol_int(raw_issued, field="issued_supply")
-        if issued_err is not None or issued is None:
+        if issued_err is not None or issued is None or issued < 0:
             return False, tx_id, "issued_supply_unavailable"
 
-        miner = tx.get("miner") or tx.get("miner_address") or tx.get("to") or receiver
+        miner = tx.get("miner")
         nonce, nonce_err = strict_protocol_int(tx.get("nonce"), field="nonce")
         height_field, height_err = strict_protocol_int(tx.get("height"), field="height")
         ts, ts_err = strict_protocol_int(tx.get("timestamp"), field="timestamp")

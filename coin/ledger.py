@@ -244,7 +244,7 @@ class BlocklessLedger:
                     seen_tx_lookup=self._seen_tx_lookup,
                     verify_signature=(self.verify_signature if self.require_signatures else None),
                     current_height_lookup=(lambda: int(getattr(self, "mint_height", 0))),
-                    current_issued_lookup=(lambda: int(getattr(self, "issued_supply", 0))),
+                    current_issued_lookup=(lambda: getattr(self, "issued_supply", None)),
                     now_ts=int(time.time()),
                 )
 
@@ -506,7 +506,7 @@ class BlocklessLedger:
                                         else None
                                     ),
                                     current_height_lookup=(lambda: int(mint_height)),
-                                    current_issued_lookup=(lambda: int(issued_supply)),
+                                    current_issued_lookup=(lambda: issued_supply),
                                     now_ts=int(time.time()),
                                     network=expected_network,
                                 )

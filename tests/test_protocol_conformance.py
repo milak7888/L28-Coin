@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import copy
 import json
 import tempfile
 import unittest
@@ -25,6 +26,9 @@ from coin.tx_validation import (
     strict_protocol_int,
     validate_transaction,
 )
+
+
+_MISSING = object()
 
 
 def _run(coro):
@@ -96,6 +100,27 @@ class TestStrictIntegers(unittest.TestCase):
 
 
 class TestEmissionSchedule(unittest.TestCase):
+    def _validate_coinbase(self, tx, *, issued_supply=0):
+        return validate_transaction(
+            tx,
+            policy=TxPolicy(require_signatures=False),
+            current_balance_lookup=lambda a, n: 0,
+            seen_tx_lookup=lambda i: False,
+            current_height_lookup=lambda: 0,
+            current_issued_lookup=lambda: issued_supply,
+            now_ts=1_700_000_000,
+        )
+
+    def _mutated_coinbase(self, **changes):
+        tx = build_coinbase_tx("miner1", nonce=1, height=0, timestamp=1_700_000_000)
+        for field, value in changes.items():
+            if value is _MISSING:
+                tx.pop(field, None)
+            else:
+                tx[field] = value
+        tx["id"] = compute_tx_id(tx)
+        return tx
+
     def test_halving_boundaries(self):
         cases = [
             (0, 28),
@@ -189,6 +214,56 @@ class TestEmissionSchedule(unittest.TestCase):
     def test_no_permanent_minimum_reward(self):
         self.assertEqual(l28_coinbase_reward(1_050_000), 0)
         self.assertEqual(l28_coinbase_reward(10_000_000), 0)
+
+    def test_strict_coinbase_identity_rejects_substitutes(self):
+        class StringSubclass(str):
+            pass
+
+        cases = (
+            {"coinbase": 1},
+            {"coinbase": "true"},
+            {"coinbase": "false"},
+            {"coinbase": [True]},
+            {"coinbase": {"value": True}},
+            {"sender": StringSubclass("COINBASE")},
+            {"type": StringSubclass("coinbase")},
+            {"sender": "__MINT__"},
+            {"type": "transfer"},
+        )
+        for changes in cases:
+            with self.subTest(changes=changes):
+                ok, _, reason = self._validate_coinbase(self._mutated_coinbase(**changes))
+                self.assertFalse(ok)
+                self.assertEqual(reason, "reserved_sender_misuse")
+
+    def test_coinbase_requires_explicit_nonempty_string_miner(self):
+        cases = (
+            {"miner": _MISSING},
+            {"miner": ""},
+            {"miner": 7},
+            {"miner": _MISSING, "miner_address": "miner1"},
+            {"miner": _MISSING, "to": "miner1"},
+        )
+        for changes in cases:
+            with self.subTest(changes=changes):
+                ok, _, reason = self._validate_coinbase(self._mutated_coinbase(**changes))
+                self.assertFalse(ok)
+                self.assertEqual(reason, "coinbase_missing_miner")
+
+    def test_coinbase_rejects_invalid_issued_supply_state(self):
+        tx = self._mutated_coinbase()
+        for issued_supply in (-1, True, "0", 0.0):
+            with self.subTest(issued_supply=issued_supply):
+                ok, _, reason = self._validate_coinbase(tx, issued_supply=issued_supply)
+                self.assertFalse(ok)
+                self.assertEqual(reason, "issued_supply_unavailable")
+
+    def test_valid_builder_coinbase_remains_accepted(self):
+        tx = self._mutated_coinbase()
+        ok, tx_id, reason = self._validate_coinbase(tx)
+        self.assertTrue(ok)
+        self.assertEqual(reason, "ok")
+        self.assertEqual(tx_id, tx["id"])
 
 
 class TestTransactionIdentity(unittest.TestCase):
@@ -349,6 +424,133 @@ class TestLedgerIdentityAndReplay(unittest.TestCase):
 
 
 class TestCanonicalIssuanceGate(unittest.TestCase):
+    def test_invalid_issued_supply_rejects_before_any_ledger_mutation(self):
+        class IntSubclass(int):
+            pass
+
+        cases = (True, False, 0.0, "0", -1, _MISSING, None, IntSubclass(0))
+        for raw_supply in cases:
+            for funded in (False, True):
+                with self.subTest(supply=raw_supply, funded=funded):
+                    with tempfile.TemporaryDirectory() as td:
+                        ledger = _temp_ledger(td)
+                        _enable_disposable_test_issuance(ledger)
+                        if funded:
+                            first = build_coinbase_tx(
+                                "miner", nonce=1, height=0, timestamp=1_700_000_000
+                            )
+                            self.assertTrue(_run(ledger.add_transaction(first)))
+                        if raw_supply is _MISSING:
+                            del ledger.issued_supply
+                        else:
+                            ledger.issued_supply = raw_supply
+
+                        def snapshot():
+                            supply = getattr(ledger, "issued_supply", _MISSING)
+                            return (
+                                type(supply), supply,
+                                copy.deepcopy(ledger.balances),
+                                ledger.mint_height,
+                                ledger.total_transactions, ledger.total_volume,
+                                copy.deepcopy(ledger.transactions),
+                                set(ledger._seen_tx_ids),
+                                copy.deepcopy(ledger.shards),
+                                ledger._canonical_issuance_ready,
+                                ledger._issuance_init_kind,
+                                {
+                                    str(p.relative_to(td)): p.read_bytes()
+                                    for p in Path(td).rglob("*") if p.is_file()
+                                },
+                            )
+
+                        tx = build_coinbase_tx(
+                            "miner", nonce=2, height=ledger.mint_height,
+                            timestamp=1_700_000_001,
+                        )
+                        before = snapshot()
+                        with self.assertLogs("coin.ledger", level="WARNING") as logs:
+                            self.assertFalse(_run(ledger.add_transaction(tx)))
+                        self.assertTrue(any(
+                            "reason=issued_supply_unavailable" in line
+                            for line in logs.output
+                        ))
+                        self.assertEqual(snapshot(), before)
+
+    def test_valid_integer_supply_and_validated_replay_remain_compatible(self):
+        with tempfile.TemporaryDirectory() as td:
+            ledger = _temp_ledger(td)
+            _enable_disposable_test_issuance(ledger)
+            tx = build_coinbase_tx("miner", nonce=1, height=0, timestamp=1_700_000_000)
+            tx["network"] = "L28-DISPOSABLE-STRICTNESS001"
+            tx["id"] = compute_tx_id(tx)
+            self.assertTrue(_run(ledger.add_transaction(tx)))
+            self.assertEqual(ledger.get_balance("miner"), 28)
+            self.assertIs(type(ledger.issued_supply), int)
+            self.assertEqual(ledger.issued_supply, 28)
+
+            restored = _temp_ledger(td)
+            _run(restored.load_from_disk(
+                validate_replay=True,
+                acknowledge_disposable_test_only=True,
+                expected_network=tx["network"],
+            ))
+            self.assertEqual(restored.balances, ledger.balances)
+            self.assertEqual(restored.issued_supply, ledger.issued_supply)
+            self.assertEqual(restored.mint_height, ledger.mint_height)
+            self.assertEqual(restored.transactions, ledger.transactions)
+            self.assertEqual(restored._seen_tx_ids, ledger._seen_tx_ids)
+            self.assertFalse(_run(restored.add_transaction(tx)))
+
+    def test_rejected_coinbase_inputs_do_not_mutate_disposable_state(self):
+        with tempfile.TemporaryDirectory() as td:
+            ledger = _temp_ledger(td)
+            _enable_disposable_test_issuance(ledger)
+            original = (
+                ledger.get_balance("miner"),
+                ledger.issued_supply,
+                ledger.mint_height,
+                ledger.total_transactions,
+            )
+
+            malformed = build_coinbase_tx("miner", nonce=1, height=0, timestamp=1_700_000_000)
+            malformed["coinbase"] = 1
+            malformed["id"] = compute_tx_id(malformed)
+
+            missing_miner = build_coinbase_tx("miner", nonce=2, height=0, timestamp=1_700_000_000)
+            missing_miner.pop("miner")
+            missing_miner["id"] = compute_tx_id(missing_miner)
+
+            for tx in (malformed, missing_miner):
+                self.assertFalse(_run(ledger.add_transaction(tx)))
+                self.assertEqual(
+                    (
+                        ledger.get_balance("miner"),
+                        ledger.issued_supply,
+                        ledger.mint_height,
+                        ledger.total_transactions,
+                    ),
+                    original,
+                )
+
+            ledger.issued_supply = -1
+            negative_state = (
+                ledger.get_balance("miner"),
+                ledger.issued_supply,
+                ledger.mint_height,
+                ledger.total_transactions,
+            )
+            valid = build_coinbase_tx("miner", nonce=3, height=0, timestamp=1_700_000_000)
+            self.assertFalse(_run(ledger.add_transaction(valid)))
+            self.assertEqual(
+                (
+                    ledger.get_balance("miner"),
+                    ledger.issued_supply,
+                    ledger.mint_height,
+                    ledger.total_transactions,
+                ),
+                negative_state,
+            )
+
     def test_fresh_default_ledger_rejects_coinbase(self):
         with tempfile.TemporaryDirectory() as td:
             ledger = BlocklessLedger(
