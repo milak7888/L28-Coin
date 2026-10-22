@@ -20,6 +20,53 @@ CANONICAL_MANIFEST = (
 )
 
 
+class HistoricalPowCliTests(unittest.TestCase):
+    def run_pow_cli(self, *arguments):
+        return subprocess.run(
+            [sys.executable, "-B", "-m", "coin.historical_continuity_cli", *arguments],
+            cwd=ROOT, capture_output=True, text=True, timeout=15, check=False,
+        )
+
+    def test_pow_cli_requires_both_paths_and_exclusive_mode(self):
+        for args in [("--raw-dag", "raw"), ("--snapshot", "snapshot"),
+                     ("--manifest", "manifest", "--snapshot", "snapshot"),
+                     ("--manifest", "manifest", "--raw-dag", "raw", "--snapshot", "snapshot")]:
+            with self.subTest(args=args):
+                result = self.run_pow_cli(*args)
+                self.assertEqual(result.returncode, 2)
+                self.assertEqual(result.stdout, "")
+
+    def test_pow_cli_adversarial_inputs_fail_closed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            raw = Path(directory) / "raw.jsonl"
+            snapshot = Path(directory) / "snapshot.jsonl"
+            snapshot.write_bytes(b'{}\n')
+            for data in [b'', b'{}\n', b'{', b'\xff', b'{"hash":"forged"}\n',
+                         b'{"nonce":1,"nonce":2}\n', b'{}\n{}\n']:
+                raw.write_bytes(data)
+                result = self.run_pow_cli("--raw-dag", str(raw), "--snapshot", str(snapshot))
+                report = json.loads(result.stdout)
+                self.assertEqual(result.returncode, 1)
+                self.assertEqual(result.stderr, "")
+                self.assertEqual(report["code"], "artifact_hash_mismatch")
+                for flag in ["HASH_VALID", "RECORDED_DIFFICULTY_VALID",
+                             "HISTORICAL_POLICY_AUTHENTICATED", "CANONICAL_ACCEPTANCE"]:
+                    self.assertIs(report[flag], False)
+                identifier = report.pop("report_id")
+                self.assertEqual(identifier, cli.compute_report_id(report))
+
+    def test_pow_cli_internal_failure_is_sanitized_and_blocked(self):
+        with mock.patch.object(cli, "verify_pow_artifacts", side_effect=RuntimeError("not-for-output")):
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                status = cli.main(["--raw-dag", "raw", "--snapshot", "snapshot"])
+        report = json.loads(output.getvalue())
+        self.assertEqual(status, 3)
+        self.assertFalse(report["CANONICAL_ACCEPTANCE"])
+        self.assertFalse(report["HASH_VALID"])
+        self.assertNotIn("not-for-output", output.getvalue())
+
+
 class HistoricalContinuityCliTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()

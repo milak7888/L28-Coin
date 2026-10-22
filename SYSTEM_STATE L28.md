@@ -7,6 +7,80 @@ PROJECT_STATE: ACTIVE
 
 Only the operator may change PROJECT_STATE.
 
+## COMPLETED OFFLINE HISTORICAL POW VERIFIER — 2026-10-22
+
+Status: PASS / ACTUAL CLI VERIFIED / LOCAL COMMIT CANDIDATE
+Authorization: `AUTHORIZE_FROZEN_SLICE_L28_OFFLINE_HISTORICAL_POW_VERIFIER_V0_1`
+Base: `64d8d3fa52536ce2d0ff4c72bc3e6e2c49eb0442`
+Branch: `codex/offline-historical-pow-verifier-v0-1`
+
+The existing historical continuity verifier and CLI now support pinned offline
+PoW artifact verification. Manifest-only behavior and its existing tests remain
+unchanged. The prior coinbase-strictness slice is complete, not reopened.
+
+Verified with `/Users/pjaydondup/.pyenv/versions/3.11.9/envs/l28-env/bin/python`:
+
+- Focused: `-B -m pytest -q -p no:cacheprovider
+  tests/test_historical_continuity_verifier.py
+  tests/test_historical_continuity_cli.py -k HistoricalPow` — 10 passed.
+- Directly affected existing regressions: same command with
+  `-k 'not HistoricalPow'` — 23 passed. Each selection ran once.
+- Focused coverage independently exercises exact public preimage/hash binding,
+  payload/hash/height/parent/nonce tampering, insufficient declared work, Boolean
+  and coerced types, missing fields, selected-record association, duplicate
+  keys/records, malformed UTF-8/JSON, nonfinite values, size/count limits,
+  nonregular/missing/symlink paths, and false authority flags on failure.
+- Seven adversarial artifact CLI subprocess cases returned exit 1; four invalid
+  CLI argument combinations returned exit 2. Internal failures were sanitized.
+- Actual product command:
+
+```sh
+python -B -m coin.historical_continuity_cli \
+  --raw-dag /Users/pjaydondup/Documents/L28-Coin/l28_genesis_ledger_old.jsonl \
+  --snapshot /Users/pjaydondup/Documents/L28-Coin/l28_ledger_20251225_201521.jsonl \
+  --pretty
+```
+
+Actual CLI exit: 0, `code=pow_evidence_valid`, evidence-only scope.
+Raw: 102263 records, **2202/2202 PoW identifiers verified**.
+Snapshot: 72098 records, **817/817 selected PoW identifiers verified**.
+`HASH_VALID=true`, `RECORDED_DIFFICULTY_VALID=true`.
+Recorded difficulty 4 passes; zero raw PoW hashes meet recovered-source default
+12. `source_policy_status=MISMATCH_NOT_CONSENSUS_AUTHORITY` remains visible.
+`HISTORICAL_POLICY_AUTHENTICATED=false` / `UNPROVEN`;
+`CANONICAL_ACCEPTANCE=false` / `BLOCKED`.
+
+Actual report ID:
+`1770505f73167a3011cac7e7fbecfccdffcf5b30af9b254d87efadf07a1f08d8`
+
+Original artifact fingerprints (checked before implementation, used by CLI,
+and independently rechecked unchanged after actual-product verification):
+
+- raw: `1ba544052cee098cea265add04c8fb0ff0562897803ba829b201293745aad669`
+- snapshot: `6580333e4dba688f242d82a9ea7253369b7723273b3392dc6d8ae9b78d9b2d11`
+
+Final validation: `git diff --check` passed; exactly seven authorized paths
+changed and no untracked datasets were present. AST comparison confirmed every
+pre-existing manifest-verifier function/class unchanged. Protected paths are
+unchanged by exact-path diff inspection.
+
+Consolidated offline manual security review covered all changed behavior:
+fixed artifact identities/counts, same-byte hash/parse binding, bounded regular
+file reads, strict record parsing, independent PoW recomputation, parent and
+selected-record binding, CLI failure semantics, manifest compatibility, and
+authority separation. No unresolved Critical/High implementation findings.
+This is not independent cryptographic review; no managed scan artifacts were
+created outside the approved allowlist. NOT_INDEPENDENTLY_AUDITED=true.
+
+The tool does not authenticate outer economic fields through PoW, recompute
+non-PoW identities, establish historical issuance/ownership, or select canonical
+history. Source/configuration provenance, the difficulty-4/12 discrepancy,
+missing-height issuance evidence and legitimate canonical continuation remain
+unresolved. Original datasets stay outside Git; no historical import occurred.
+Protocol v1.0.0, protected economics, historical manifest, canonical validator,
+F171 and custody are unchanged. Production gates remain BLOCKED. No network,
+mining, nonce search, signing, deployment, merge or push was performed.
+
 ## PRODUCT DIRECTION
 L28 is being built toward a functional machine-to-machine AI payment use case.
 

@@ -11,6 +11,8 @@ from typing import Any, Mapping, Optional, Sequence
 from .historical_continuity_verifier import (
     ContinuityVerifyResult,
     STABLE_CODES,
+    POW_PROFILE,
+    verify_pow_artifacts,
     verify_manifest,
 )
 
@@ -116,11 +118,13 @@ def _parser() -> argparse.ArgumentParser:
         ),
         allow_abbrev=False,
     )
-    parser.add_argument(
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument(
         "--manifest",
-        required=True,
         help="Explicit path to the public continuity manifest.",
     )
+    mode.add_argument("--raw-dag", help="Explicit public raw DAG; evidence-only mode.")
+    parser.add_argument("--snapshot", help="Explicit public snapshot; requires --raw-dag.")
     parser.add_argument(
         "--pretty",
         action="store_true",
@@ -135,7 +139,26 @@ def _parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
-    args = _parser().parse_args(argv)
+    parser = _parser()
+    args = parser.parse_args(argv)
+    if bool(args.raw_dag) != bool(args.snapshot):
+        parser.error("--raw-dag and --snapshot are required together")
+
+    if args.raw_dag:
+        try:
+            report = verify_pow_artifacts(args.raw_dag, args.snapshot)
+            exit_code = EXIT_PASS if report["ok"] else EXIT_FAILURE
+        except Exception:
+            report = {
+                "profile": POW_PROFILE, "ok": False, "code": "internal_error",
+                "HASH_VALID": False, "RECORDED_DIFFICULTY_VALID": False,
+                "HISTORICAL_POLICY_AUTHENTICATED": False,
+                "CANONICAL_ACCEPTANCE": False,
+            }
+            exit_code = EXIT_INTERNAL
+        report["report_id"] = compute_report_id(report)
+        emit_report(report, pretty=args.pretty)
+        return exit_code
 
     try:
         result = verify_manifest(args.manifest)

@@ -4,6 +4,7 @@ import json
 import os
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 from coin.historical_continuity_verifier import (
@@ -12,12 +13,153 @@ from coin.historical_continuity_verifier import (
     STABLE_CODES,
     verify_manifest,
 )
+from coin import historical_continuity_verifier as hv
 
 
 ROOT = Path(__file__).resolve().parents[1]
 CANONICAL_MANIFEST = (
     ROOT / "docs" / "l28_historical_continuity_manifest_v0.1.json"
 )
+
+
+class HistoricalPowTests(unittest.TestCase):
+    def setUp(self):
+        # One public preimage/hash regression vector, not a ledger dataset.
+        # Outer numeric fields are synthetic; the historical PoW excludes them.
+        self.record = {
+            "entry_height": 100061,
+            "prev": "0f0b31907458b903ecc534cf9db61afa5a21c9bbeee3a01c2315d5d73bfa7d2b",
+            "hash": "00005d20db366636f8506c07b4fa49cef278085a75d9f4fc0d2e1ccaa66d7dd9",
+            "difficulty": 4,
+            "payload": {"type": "mining", "miner": "WORKER_POW_1",
+                        "timestamp": "2025-11-08T12:50:14.080500", "nonce": 6624},
+            "current_supply": 28.0, "reward": 28.0, "qubits": 50,
+            "poi_q": 1.0, "poi_v": 100.0, "validator_s": 100.0, "ts": 1.0,
+        }
+        self.parent = {"entry_height": 100060, "hash": self.record["prev"],
+                       "prev": "0" * 64}
+        self.index = {self.parent["hash"]: self.parent,
+                      self.record["hash"]: self.record}
+
+    def test_pow_exact_preimage_and_stored_nonce_without_search(self):
+        expected = (b'1000610f0b31907458b903ecc534cf9db61afa5a21c9bbeee3a01c2315d5d73bfa7d2b'
+                    b'{"miner":"WORKER_POW_1","nonce":6624,"timestamp":'
+                    b'"2025-11-08T12:50:14.080500","type":"mining"}6624')
+        self.assertEqual(hv._pow_preimage(self.record), expected)
+        self.assertEqual(hashlib.sha256(expected).hexdigest(), self.record["hash"])
+        self.assertEqual(hv._verify_pow_record(self.record, self.index), self.record["hash"])
+        self.assertIsNone(hv._verify_selected_pow(self.record, self.index))
+
+    def test_pow_tamper_and_type_rejection_without_artifact_pins(self):
+        cases = [
+            ("hash", "f" * 64, "pow_hash_mismatch"),
+            ("prev", "f" * 64, "pow_hash_mismatch"),
+            ("entry_height", 100062, "pow_hash_mismatch"),
+            ("entry_height", True, "record_schema_error"),
+            ("difficulty", 0, "recorded_difficulty_invalid"),
+            ("difficulty", 12, "recorded_difficulty_invalid"),
+            ("difficulty", True, "recorded_difficulty_invalid"),
+            ("difficulty", "4", "recorded_difficulty_invalid"),
+            ("difficulty", 4.0, "recorded_difficulty_invalid"),
+            ("hash", "A" * 64, "record_schema_error"),
+            ("reward", True, "record_schema_error"),
+        ]
+        for key, value, code in cases:
+            with self.subTest(key=key, value=value):
+                record = copy.deepcopy(self.record)
+                record[key] = value
+                with self.assertRaisesRegex(hv._PowError, "^" + code + "$"):
+                    hv._verify_pow_record(record, self.index)
+        for value in [True, False, -1, 6624.0, "6624", None, 2**64]:
+            with self.subTest(nonce=value):
+                record = copy.deepcopy(self.record)
+                record["payload"]["nonce"] = value
+                with self.assertRaisesRegex(hv._PowError, "record_schema_error"):
+                    hv._verify_pow_record(record, self.index)
+        for key, value in [("miner", "altered"), ("nonce", 6625),
+                           ("timestamp", "altered")]:
+            record = copy.deepcopy(self.record)
+            record["payload"][key] = value
+            with self.assertRaisesRegex(hv._PowError, "pow_hash_mismatch"):
+                hv._verify_pow_record(record, self.index)
+        for key in self.record:
+            record = copy.deepcopy(self.record)
+            del record[key]
+            with self.assertRaises(hv._PowError):
+                hv._verify_pow_record(record, self.index)
+
+    def test_pow_declared_work_independently_checked(self):
+        record = copy.deepcopy(self.record)
+        record["payload"]["nonce"] = 0
+        record["hash"] = hashlib.sha256(hv._pow_preimage(record)).hexdigest()
+        self.assertFalse(record["hash"].startswith("0000"))
+        with self.assertRaisesRegex(hv._PowError, "recorded_difficulty_invalid"):
+            hv._verify_pow_record(record, self.index)
+
+    def test_pow_parent_and_selected_binding(self):
+        with self.assertRaisesRegex(hv._PowError, "parent_missing"):
+            hv._verify_pow_record(self.record, {})
+        self.parent["entry_height"] = 100059
+        with self.assertRaisesRegex(hv._PowError, "parent_height_mismatch"):
+            hv._verify_pow_record(self.record, self.index)
+        for value in [29.0, 28]:
+            record = copy.deepcopy(self.record)
+            record["reward"] = value
+            with self.assertRaisesRegex(hv._PowError, "selected_record_mismatch"):
+                hv._verify_selected_pow(record, self.index)
+        with self.assertRaisesRegex(hv._PowError, "selected_record_mismatch"):
+            hv._verify_selected_pow(self.record, {})
+
+    def test_pow_json_failures_and_bounds(self):
+        for data, code in [
+            (b'\xff', "invalid_record_json"), (b'{', "invalid_record_json"),
+            (b'{}\n\n', "record_schema_error"),
+            (b'{"a":1,"a":2}', "duplicate_record_key"),
+            (b'[]', "record_schema_error"),
+            (b' ' * (hv.MAX_RECORD_BYTES + 1), "record_too_large"),
+            (b'\n' * (hv.MAX_RECORDS + 2), "record_limit"),
+            (b'[' * 1100, "invalid_record_json"),
+        ]:
+            with self.subTest(code=code):
+                with self.assertRaisesRegex(hv._PowError, code):
+                    hv._parse_pow_records(data)
+        for value in [float('nan'), float('inf'), -float('inf'), '\ud800']:
+            record = copy.deepcopy(self.record)
+            record["payload"]["miner"] = value
+            with self.assertRaisesRegex(hv._PowError, "record_schema_error"):
+                hv._parse_pow_records(json.dumps(record).encode())
+        encoded = json.dumps(self.record).encode()
+        with self.assertRaisesRegex(hv._PowError, "duplicate_record"):
+            hv._parse_pow_records(encoded + b'\n' + encoded)
+        record = copy.deepcopy(self.record)
+        record["payload"]["miner"] = "é"
+        self.assertIn(b'\\u00e9', hv._pow_preimage(record))
+
+    def test_pow_empty_and_count_mismatches(self):
+        for raw, snapshot in [({}, {}), (self.index, {}), (self.index, self.index)]:
+            with self.assertRaisesRegex(hv._PowError, "record_count_mismatch"):
+                hv._verify_pow_indexes(raw, snapshot)
+
+    def test_pow_artifact_boundary_and_no_policy_promotion(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "public.jsonl"
+            path.write_bytes(b'{}\n')
+            with mock.patch.object(hv, "_parse_pow_records") as parser:
+                report = hv.verify_pow_artifacts(path, path)
+                parser.assert_not_called()
+            self.assertEqual(report["code"], "artifact_hash_mismatch")
+            for flag in ["HASH_VALID", "RECORDED_DIFFICULTY_VALID",
+                         "HISTORICAL_POLICY_AUTHENTICATED", "CANONICAL_ACCEPTANCE"]:
+                self.assertIs(report[flag], False)
+            self.assertEqual(report["source_policy_status"], "MISMATCH_NOT_CONSENSUS_AUTHORITY")
+            for invalid in [None, "", Path(directory), path.with_name("missing")]:
+                self.assertFalse(hv.verify_pow_artifacts(invalid, path)["ok"])
+            link = path.with_name("link")
+            link.symlink_to(path)
+            self.assertFalse(hv.verify_pow_artifacts(link, path)["ok"])
+            with path.open("wb") as stream:
+                stream.truncate(hv.MAX_ARTIFACT_BYTES + 1)
+            self.assertEqual(hv.verify_pow_artifacts(path, path)["code"], "artifact_too_large")
 
 
 class HistoricalContinuityVerifierTests(unittest.TestCase):

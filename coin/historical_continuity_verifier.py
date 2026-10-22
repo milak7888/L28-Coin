@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import stat
 from dataclasses import dataclass
@@ -399,6 +400,227 @@ def verify_manifest(path: os.PathLike[str] | str) -> ContinuityVerifyResult:
     )
 
 
+# This is an evidence profile, not a consensus policy or ledger bootstrap.
+POW_PROFILE = "l28-historical-pow-evidence/v0.1"
+RAW_SHA256 = "1ba544052cee098cea265add04c8fb0ff0562897803ba829b201293745aad669"
+SNAPSHOT_SHA256 = "6580333e4dba688f242d82a9ea7253369b7723273b3392dc6d8ae9b78d9b2d11"
+MAX_ARTIFACT_BYTES = 64 * 1024 * 1024
+MAX_RECORD_BYTES = 8192
+MAX_RECORDS = 110_000
+POW_CODES = frozenset({
+    "pow_evidence_valid", "artifact_path_error", "artifact_read_error",
+    "artifact_not_regular", "artifact_too_large", "artifact_hash_mismatch",
+    "record_too_large", "record_limit", "invalid_record_json",
+    "duplicate_record_key", "record_schema_error", "duplicate_record",
+    "record_count_mismatch", "pow_count_mismatch", "pow_hash_mismatch",
+    "parent_missing", "parent_height_mismatch", "recorded_difficulty_invalid",
+    "selected_record_mismatch",
+})
+_ISSUANCE_FIELDS = frozenset({
+    "entry_height", "hash", "prev", "payload", "current_supply", "reward",
+    "qubits", "poi_q", "poi_v", "validator_s", "ts",
+})
+
+
+class _PowError(ValueError):
+    """Only fixed codes, never input content, reach evidence reports."""
+
+
+def _pow_require(condition: bool, code: str = "record_schema_error") -> None:
+    if not condition:
+        raise _PowError(code)
+
+
+def _bounded_json(value: Any, depth: int = 0) -> None:
+    _pow_require(depth <= 16)
+    if type(value) is dict:
+        _pow_require(len(value) <= 256)
+        for key, child in value.items():
+            _pow_require(type(key) is str and len(key) <= 1024)
+            _bounded_json(child, depth + 1)
+    elif type(value) is list:
+        _pow_require(len(value) <= 256)
+        for child in value:
+            _bounded_json(child, depth + 1)
+    elif type(value) is str:
+        _pow_require(len(value) <= 4096 and not any(
+            0xD800 <= ord(char) <= 0xDFFF for char in value
+        ))
+    elif type(value) is float:
+        _pow_require(math.isfinite(value))
+    elif type(value) is int:
+        _pow_require(abs(value) <= 2**63 - 1)
+    else:
+        _pow_require(value is None or type(value) is bool)
+
+
+def _hex64(value: Any) -> bool:
+    return type(value) is str and len(value) == 64 and set(value) <= _HEX64
+
+
+def _record_core(record: Any) -> None:
+    _pow_require(type(record) is dict)
+    _bounded_json(record)
+    _pow_require(type(record.get("entry_height")) is int
+                 and record["entry_height"] >= 0)
+    _pow_require(_hex64(record.get("hash")) and _hex64(record.get("prev")))
+
+
+def _issuance_shape(record: dict, *, pow_record: bool) -> None:
+    expected = _ISSUANCE_FIELDS | ({"difficulty"} if pow_record else set())
+    _pow_require(set(record) == expected and type(record["payload"]) is dict)
+    for key in ("current_supply", "reward", "poi_q", "poi_v", "validator_s", "ts"):
+        _pow_require(type(record[key]) in (int, float) and record[key] >= 0)
+    _pow_require(type(record["qubits"]) is int and record["qubits"] >= 0)
+
+
+def _pow_preimage(record: dict) -> bytes:
+    """Reconstruct stored evidence only; never search for a nonce."""
+    _record_core(record)
+    _issuance_shape(record, pow_record=True)
+    payload = record["payload"]
+    _pow_require(set(payload) == {"type", "miner", "timestamp", "nonce"})
+    _pow_require(payload["type"] == "mining")
+    for key in ("miner", "timestamp"):
+        _pow_require(type(payload[key]) is str and bool(payload[key]))
+    _pow_require(type(payload["nonce"]) is int and payload["nonce"] >= 0)
+    _pow_require(type(record["difficulty"]) is int and record["difficulty"] == 4,
+                 "recorded_difficulty_invalid")
+    rendered = json.dumps(payload, sort_keys=True, separators=(",", ":"),
+                          ensure_ascii=True, allow_nan=False)
+    return (str(record["entry_height"]) + record["prev"] + rendered
+            + str(payload["nonce"])).encode("utf-8")
+
+
+def _verify_pow_record(record: dict, raw_index: Mapping[str, dict]) -> str:
+    """Shared record checks, independently testable without artifact pins."""
+    calculated = hashlib.sha256(_pow_preimage(record)).hexdigest()
+    _pow_require(calculated == record["hash"], "pow_hash_mismatch")
+    _pow_require(calculated.startswith("0" * record["difficulty"]),
+                 "recorded_difficulty_invalid")
+    parent = raw_index.get(record["prev"])
+    _pow_require(parent is not None, "parent_missing")
+    _record_core(parent)
+    _pow_require(parent["hash"] == record["prev"], "parent_missing")
+    _pow_require(record["entry_height"] == parent["entry_height"] + 1,
+                 "parent_height_mismatch")
+    return calculated
+
+
+def _read_pow_artifact(path: os.PathLike[str] | str) -> bytes:
+    # Open once, disallow final symlinks, avoid blocking on FIFO/device inputs,
+    # then validate the opened descriptor. Parse only these fingerprinted bytes.
+    try:
+        name = os.fspath(path)
+        if not isinstance(name, str) or not name:
+            raise _PowError("artifact_path_error")
+        fd = os.open(name, os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW)
+        with os.fdopen(fd, "rb") as source:
+            info = os.fstat(source.fileno())
+            _pow_require(stat.S_ISREG(info.st_mode), "artifact_not_regular")
+            _pow_require(info.st_size <= MAX_ARTIFACT_BYTES, "artifact_too_large")
+            data = source.read(MAX_ARTIFACT_BYTES + 1)
+            _pow_require(len(data) <= MAX_ARTIFACT_BYTES, "artifact_too_large")
+            return data
+    except (TypeError, ValueError) as exc:
+        if isinstance(exc, _PowError):
+            raise
+        raise _PowError("artifact_path_error") from None
+    except OSError:
+        raise _PowError("artifact_read_error") from None
+
+
+def _parse_pow_records(data: bytes) -> dict[str, dict]:
+    index: dict[str, dict] = {}
+    # LF is the JSONL separator; do not silently skip empty/malformed records.
+    lines = data.split(b"\n")
+    if lines and lines[-1] == b"":
+        lines.pop()
+    _pow_require(len(lines) <= MAX_RECORDS, "record_limit")
+    for line in lines:
+        _pow_require(len(line) <= MAX_RECORD_BYTES, "record_too_large")
+        try:
+            record = json.loads(line.decode("utf-8"),
+                                object_pairs_hook=_pairs_no_duplicates)
+        except _DuplicateKey:
+            raise _PowError("duplicate_record_key") from None
+        except (UnicodeError, ValueError, RecursionError):
+            raise _PowError("invalid_record_json") from None
+        _record_core(record)
+        _pow_require(record["hash"] not in index, "duplicate_record")
+        index[record["hash"]] = record
+    return index
+
+
+def _verify_selected_pow(record: dict, raw: Mapping[str, dict]) -> None:
+    _record_core(record)
+    original = raw.get(record["hash"])
+    # JSON comparison distinguishes Boolean/int and int/float values.
+    _pow_require(original is not None and
+                 json.dumps(original, sort_keys=True, allow_nan=False) ==
+                 json.dumps(record, sort_keys=True, allow_nan=False),
+                 "selected_record_mismatch")
+    _verify_pow_record(record, raw)
+
+
+def _verify_pow_indexes(raw: dict[str, dict], snapshot: dict[str, dict]) -> dict:
+    _pow_require(len(raw) == 102263 and len(snapshot) == 72098,
+                 "record_count_mismatch")
+    raw_pow = [r for r in raw.values() if "difficulty" in r]
+    selected = [r for r in snapshot.values() if "difficulty" in r]
+    _pow_require(len(raw_pow) == 2202 and len(selected) == 817,
+                 "pow_count_mismatch")
+    for record in raw.values():
+        _issuance_shape(record, pow_record="difficulty" in record)
+    source_passes = 0
+    for record in raw_pow:
+        digest = _verify_pow_record(record, raw)
+        source_passes += digest.startswith("0" * 12)
+    for record in selected:
+        _verify_selected_pow(record, raw)
+    return {
+        "raw_records": len(raw), "snapshot_records": len(snapshot),
+        "raw_pow_verified": len(raw_pow), "selected_pow_verified": len(selected),
+        "source_difficulty_12_hash_passes": source_passes,
+    }
+
+
+def verify_pow_artifacts(raw_path: os.PathLike[str] | str,
+                         snapshot_path: os.PathLike[str] | str) -> dict[str, Any]:
+    """Pinned historical evidence only. No caller-supplied trust override."""
+    report: dict[str, Any] = {
+        "profile": POW_PROFILE, "ok": False, "code": "artifact_read_error",
+        "scope": "historical_pow_evidence_only",
+        "HASH_VALID": False, "RECORDED_DIFFICULTY_VALID": False,
+        "HISTORICAL_POLICY_AUTHENTICATED": False, "CANONICAL_ACCEPTANCE": False,
+        "historical_policy_status": "UNPROVEN",
+        "canonical_acceptance_status": "BLOCKED",
+        "recorded_difficulty": 4, "recovered_source_difficulty": 12,
+        "source_policy_status": "MISMATCH_NOT_CONSENSUS_AUTHORITY",
+        "limitations": ["outer_economic_fields_not_pow_bound",
+                        "non_pow_identities_not_recomputed",
+                        "no_issuance_or_spendability_proof"],
+    }
+    try:
+        raw_bytes = _read_pow_artifact(raw_path)
+        snapshot_bytes = _read_pow_artifact(snapshot_path)
+        report["raw_sha256"] = hashlib.sha256(raw_bytes).hexdigest()
+        report["snapshot_sha256"] = hashlib.sha256(snapshot_bytes).hexdigest()
+        _pow_require(report["raw_sha256"] == RAW_SHA256 and
+                     report["snapshot_sha256"] == SNAPSHOT_SHA256,
+                     "artifact_hash_mismatch")
+        raw = _parse_pow_records(raw_bytes)
+        snapshot = _parse_pow_records(snapshot_bytes)
+        report.update(_verify_pow_indexes(raw, snapshot))
+    except _PowError as exc:
+        code = str(exc)
+        report["code"] = code if code in POW_CODES else "record_schema_error"
+        return report
+    report.update(ok=True, code="pow_evidence_valid", HASH_VALID=True,
+                  RECORDED_DIFFICULTY_VALID=True)
+    return report
+
+
 __all__ = [
     "ContinuityVerifyResult",
     "EXPECTED_STATUS",
@@ -406,4 +628,5 @@ __all__ = [
     "PROFILE",
     "STABLE_CODES",
     "verify_manifest",
+    "verify_pow_artifacts",
 ]

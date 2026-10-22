@@ -2,7 +2,7 @@
 
 - Foundation: 17
 - Status: Public manifest verification; non-activation
-- Verification mode: Manifest only
+- Verification modes: Unchanged manifest v0.1; historical PoW evidence v0.1
 
 ## Purpose
 
@@ -27,7 +27,7 @@ Version 0.1 verifies the public manifest's:
 - mining-policy evidence boundaries; and
 - non-activation requirements.
 
-The verifier accepts only an explicitly supplied manifest path. It does not
+The manifest mode accepts only an explicitly supplied manifest path. It does not
 search for ledgers, wallets, keys, logs, or private infrastructure.
 
 ## Command-line usage
@@ -111,10 +111,76 @@ the audited Foundation 16 evidence. It does not independently prove:
 Historical supply, treasury-lock, allocation, and consolidation statements
 remain evidence claims with the qualifications recorded in the manifest.
 
-## Future modes
+## Historical PoW evidence mode (2026-10-22)
 
-Snapshot and reconstruction verification may be added in later versions.
-Those modes must require explicit caller-supplied artifact paths and preserve
-the same offline, read-only, fail-closed security boundary.
+This extension independently verifies PoW records in the two pinned public
+historical artifacts. It does not run the historical miner or import a ledger.
+The manifest-only command and report contract above remain unchanged.
 
-They are not implemented or implied by version 0.1.
+```sh
+python -B -m coin.historical_continuity_cli \
+  --raw-dag /Users/pjaydondup/Documents/L28-Coin/l28_genesis_ledger_old.jsonl \
+  --snapshot /Users/pjaydondup/Documents/L28-Coin/l28_ledger_20251225_201521.jsonl \
+  --pretty
+```
+
+The two artifact arguments are required together and cannot be combined with
+`--manifest`. There is no fingerprint override or unpinned-success mode.
+
+| Input | SHA-256 | Records | PoW records |
+|---|---|---:|---:|
+| Raw DAG | `1ba544052cee098cea265add04c8fb0ff0562897803ba829b201293745aad669` | 102263 | 2202 |
+| Snapshot | `6580333e4dba688f242d82a9ea7253369b7723273b3392dc6d8ae9b78d9b2d11` | 72098 | 817 |
+
+The verifier hashes the same bounded bytes it subsequently parses. Inputs must
+be regular files, not final-path symlinks, at most 64 MiB each. JSONL permits
+one final newline, but not blank records. Limits are 110000 records per file,
+8192 bytes per record, nesting depth 16, 256 members per container, 1024
+characters per key and 4096 per string value. Integers have magnitude at most
+2^63−1; nonfinite numbers, unpaired surrogate values and duplicate keys reject.
+These are evidence-parser resource limits, not new consensus rules.
+
+PoW records require the original issuance field set plus exact-integer
+`difficulty=4`. Heights and nonces are nonnegative exact integers, never Booleans
+or coerced strings/floats. The payload has exactly `type`, `miner`, `timestamp`,
+`nonce`, with `type="mining"` and nonempty string miner/timestamp. Legacy outer
+numeric fields retain their historical representation; no migration occurs.
+
+```text
+P = json.dumps(payload, sort_keys=True, separators=(',', ':'), ensure_ascii=True)
+preimage = UTF8(decimal(entry_height) + prev + P + decimal(payload.nonce))
+identifier = SHA256(preimage).hexdigest()
+```
+
+The nonce appears inside the payload and again as the decimal suffix. No extra
+delimiter/newline is added. This is a hash preimage, not a signed message.
+Every PoW identifier must reproduce, meet recorded difficulty 4, resolve its
+parent in the raw DAG and have parent height + 1. Every selected PoW record must
+match its raw record, including fields not covered by PoW. Duplicate identifiers
+reject; competing records at the same height are not silently selected or removed.
+
+The `l28-historical-pow-evidence/v0.1` JSON report includes pinned artifact
+digests, verified counts, a deterministic body-bound `report_id`, and separate:
+
+- `HASH_VALID` — all scoped PoW hashes reproduced;
+- `RECORDED_DIFFICULTY_VALID` — all scoped PoW hashes satisfy recorded difficulty;
+- `HISTORICAL_POLICY_AUTHENTICATED=false`, status `UNPROVEN`;
+- `CANONICAL_ACCEPTANCE=false`, status `BLOCKED`.
+
+The recovered source's default difficulty 12 versus recorded 4 is always
+disclosed as `MISMATCH_NOT_CONSENSUS_AUTHORITY`, with a count of raw hashes
+meeting 12. This is a historical source comparison, not an expected future target.
+No input can promote the last two flags. On failure the validity flags stay false
+(not established); no partial success is presented as complete verification.
+
+Exit 0 means **evidence-only verification success**, including visible unresolved
+policy mismatch. Exit 1 means artifact/record verification failed, 2 means CLI
+usage failure, and 3 means sanitized unexpected internal failure. Fixed codes
+in `POW_CODES` identify failures without echoing input records or local paths.
+
+Outer reward, supply, difficulty and timestamps are not authenticated by these
+PoW preimages; their original bytes are protected by the pinned artifact hashes.
+Non-PoW identifiers and the two treasury attestations are not independently
+revalidated by this mode. Full DAG reconstruction, policy provenance, issuance
+authentication, ownership, enforceable treasury locking, spendability and
+canonical continuation remain outside its result. No historical files are bundled.
