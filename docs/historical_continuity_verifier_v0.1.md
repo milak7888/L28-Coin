@@ -13,6 +13,51 @@ private historical ledger files.
 It produces a deterministic JSON report for independent review, automation,
 and machine-to-machine verification.
 
+## Historical manifest integrity correction (2026-10-22)
+
+Manifest validity now requires exact, typed agreement with 70 immutable,
+code-owned reference fields, in addition to the existing arithmetic checks.
+The candidate manifest cannot redefine its own expected hashes, supply, sizes,
+counts, heights or provenance flags. Unknown root/section fields also reject.
+Whitespace and key ordering are not pinned; equivalent JSON serialization passes.
+
+Reference provenance is explicit:
+
+- Protected economics come from frozen Protocol/project controls: 28000000 cap,
+  11130000 emission ceiling, 2824584 declared supply, 500000 treasury commitment,
+  2324584 circulating snapshot, last issuance 100877 and reference next height
+  100878. None is a live ledger initialization value.
+- Raw/snapshot hashes, byte sizes, counts and issuance heights were independently
+  rechecked against the operator-specified public files. Sizes are 40707627 and
+  30658355 bytes; physical counts are 102263 and 72098 respectively.
+- Other historical metadata is pinned to the published Foundation16 audit and
+  manifest at commit `d7b6270fcb21b4b719f10973f5e70c86744d14e5`. Claimed timestamps,
+  consolidation identity and allocation/provenance statements remain recorded
+  claims, not newly authenticated events. Consolidation bytes are not read here.
+
+The existing manifest has no next-height field. The verifier pins last issuance
+height and separately requires its successor to equal 100878; the report exposes
+`reference_next_canonical_height`, never an active canonical-state claim. No
+historical manifest or original data was rewritten to add this field.
+
+Manifest reports additionally expose:
+
+- `verification_scope=pinned_manifest_metadata_only`;
+- `MANIFEST_METADATA_VALID` (true only on successful manifest validation);
+- `ARTIFACT_BYTES_VERIFIED=false`;
+- `HISTORICAL_POLICY_AUTHENTICATED=false`;
+- `CANONICAL_ACCEPTANCE=false`.
+
+These fields participate in the existing deterministic report ID. Exit 0 means
+the metadata matches the pinned references, not that the referenced files were
+opened. Use the separate explicit PoW artifact command below to verify bytes.
+Correlated equation-preserving alterations, missing fields, wrong types, altered
+hashes and unknown claims fail closed with the existing schema/invariant codes.
+
+Recovered source difficulty 12 versus recorded 4, missing-height issuance,
+treasury enforceability, policy provenance and canonical continuation remain
+unresolved. This correction grants no production or consensus authority.
+
 ## Scope
 
 Version 0.1 verifies the public manifest's:

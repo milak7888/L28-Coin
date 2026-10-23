@@ -22,6 +22,107 @@ CANONICAL_MANIFEST = (
 )
 
 
+class ManifestIntegrityTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.path = Path(self.temp.name) / "candidate.json"
+        self.manifest = json.loads(CANONICAL_MANIFEST.read_bytes())
+
+    def verify(self, candidate):
+        self.path.write_text(json.dumps(candidate), encoding="utf-8")
+        return verify_manifest(self.path)
+
+    def test_integrity_positive_and_semantic_reserialization(self):
+        self.assertTrue(self.verify(self.manifest).ok)
+        reordered = {k: self.manifest[k] for k in reversed(self.manifest)}
+        self.assertTrue(self.verify(reordered).ok)
+        self.assertEqual(hv.REFERENCE_NEXT_CANONICAL_HEIGHT, 100878)
+        with self.assertRaises(TypeError):
+            hv.PINNED_MANIFEST_REFERENCES[0] = ("audit_date", "altered")
+
+    def test_integrity_every_leaf_alteration_deletion_and_type_change_rejects(self):
+        # Enumerate the public reference independently of the verifier's pins.
+        leaves = []
+        for key, value in self.manifest.items():
+            if isinstance(value, dict):
+                leaves.extend(((key, child), leaf) for child, leaf in value.items())
+            else:
+                leaves.append(((key,), value))
+        self.assertEqual(len(leaves), 70)
+        for parts, value in leaves:
+            altered = (not value if type(value) is bool else
+                       value + 1 if type(value) is int else "f" * 64)
+            replacements = [altered, None, [], {}]
+            if type(value) is int:
+                replacements += [True, float(value), str(value)]
+            for action in ["delete", *range(len(replacements))]:
+                with self.subTest(field=".".join(parts), action=action):
+                    candidate = copy.deepcopy(self.manifest)
+                    parent = candidate if len(parts) == 1 else candidate[parts[0]]
+                    if action == "delete":
+                        del parent[parts[-1]]
+                    else:
+                        parent[parts[-1]] = replacements[action]
+                    self.assertFalse(self.verify(candidate).ok)
+
+    def test_integrity_correlated_equation_preserving_mutations_reject(self):
+        cases = [
+            {"economics.treasury_lock_commitment": 1,
+             "economics.derived_unlocked_amount": 2824583},
+            {"economics.missing_height_count": 28783,
+             "economics.missing_height_implied_amount": 805924,
+             "economics.historical_declared_supply": 2824612,
+             "economics.derived_unlocked_amount": 2324612},
+            {"raw_dag.physical_records": 102264,
+             "raw_dag.extra_candidates_not_selected": 30168},
+            {"parent_graph.parent_in_snapshot": 51427,
+             "parent_graph.parent_only_in_raw_dag": 20670},
+            {"consolidation.reward_units": 72094,
+             "consolidation.total_amount": 2018632,
+             "consolidation.unconsolidated_genesis_reward": 56},
+            {"preserved_snapshot.issuance_records": 72097,
+             "preserved_snapshot.physical_records": 72099,
+             "raw_dag.physical_records": 102264,
+             "raw_dag.unique_represented_heights": 72097,
+             "parent_graph.parent_in_snapshot": 51427,
+             "economics.physical_recorded_reward_total": 2018716,
+             "economics.historical_declared_supply": 2824612,
+             "economics.derived_unlocked_amount": 2324612,
+             "consolidation.total_amount": 2018688,
+             "consolidation.reward_units": 72096},
+        ]
+        for changes in cases:
+            with self.subTest(changes=changes):
+                candidate = copy.deepcopy(self.manifest)
+                for dotted, value in changes.items():
+                    group, field = dotted.split(".")
+                    candidate[group][field] = value
+                result = self.verify(candidate)
+                self.assertFalse(result.ok)
+                self.assertEqual(result.code, "invariant_violation")
+                self.assertTrue(result.detail.startswith("pinned_reference:"))
+
+    def test_integrity_unknown_claims_and_nonfinite_values_reject(self):
+        for group in [None, "economics", "activation", "preserved_snapshot"]:
+            candidate = copy.deepcopy(self.manifest)
+            target = candidate if group is None else candidate[group]
+            target["next_canonical_height"] = 100879
+            self.assertFalse(self.verify(candidate).ok)
+        for value in [float("nan"), float("inf"), -float("inf")]:
+            candidate = copy.deepcopy(self.manifest)
+            candidate["raw_dag"]["size_bytes"] = value
+            self.assertFalse(self.verify(candidate).ok)
+
+    def test_integrity_reference_does_not_read_candidate_as_oracle(self):
+        candidate = copy.deepcopy(self.manifest)
+        candidate["raw_dag"]["sha256"] = "f" * 64
+        with mock.patch.object(hv, "_read_pow_artifact", side_effect=AssertionError("must not read artifacts")):
+            result = self.verify(candidate)
+        self.assertFalse(result.ok)
+        self.assertEqual(result.detail, "pinned_reference:raw_dag.sha256")
+
+
 class HistoricalPowTests(unittest.TestCase):
     def setUp(self):
         # One public preimage/hash regression vector, not a ledger dataset.

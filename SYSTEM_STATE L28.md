@@ -7,6 +7,89 @@ PROJECT_STATE: ACTIVE
 
 Only the operator may change PROJECT_STATE.
 
+## COMPLETED HISTORICAL MANIFEST INTEGRITY — 2026-10-22
+
+Status: PASS / ACTUAL-PRODUCT VERIFIED / LOCAL COMMIT CANDIDATE
+Authorization: `AUTHORIZE_FROZEN_SLICE_L28_HISTORICAL_MANIFEST_INTEGRITY_V0_1`
+Base: `d7b6270fcb21b4b719f10973f5e70c86744d14e5`
+Branch: `codex/historical-manifest-integrity-v0-1`
+
+The existing continuity verifier now matches all 70 manifest reference fields
+against immutable code-owned literals, with exact types and closed root/section
+schemas, while retaining the existing arithmetic and authority checks. References
+are not loaded from caller metadata. No manifest or historical data was changed.
+The reference next canonical height 100878 is checked against pinned last issuance
+100877 and reported only as a reference, not as initialized consensus state.
+
+Baseline diagnosis reproduced 22 leaf-level false-PASS cases:
+
+- Alter/delete audit date, consolidation record count, DAG leaf count, final-lock
+  path length, claimed snapshot timestamp, final entry height, last issuance
+  height, snapshot byte size and raw byte size (18 cases).
+- Alter consolidation hash, final-entry hash, snapshot hash and raw hash (4 cases).
+
+Six correlated false-PASS cases also reproduced against the immutable baseline:
+treasury/unlocked redistribution; missing-height/declared-supply increase;
+raw-candidate count increase; parent-partition redistribution; consolidation/
+genesis redistribution; and linked issuance/count/supply/consolidation increase.
+All six preserved the old equations. All 28 reproduced cases now reject.
+
+Validation with `/Users/pjaydondup/.pyenv/versions/3.11.9/envs/l28-env/bin/python`:
+
+- Focused: `-B -m pytest -q -p no:cacheprovider
+  tests/test_historical_continuity_verifier.py
+  tests/test_historical_continuity_cli.py -k ManifestIntegrity` — **7 passed**.
+  Includes alteration/deletion/type rejection across all 70 fields, six
+  equation-preserving mutations, unknown claims and nonfinite values.
+- Affected regressions: same command with `-k 'not ManifestIntegrity'` —
+  **33 passed**, including existing manifest and PoW tests. Both selections ran once.
+- Actual CLI subprocess tests: all 22 baseline leaf cases plus three correlated
+  supply/treasury/count cases returned exit 1; equivalent valid metadata returned
+  exit 0. Report IDs bind the explicit evidence/authority flags.
+
+Actual product commands (run with the interpreter above):
+
+```sh
+python -B -m coin.historical_continuity_cli \
+  --manifest docs/l28_historical_continuity_manifest_v0.1.json --pretty
+python -B -m coin.historical_continuity_cli \
+  --raw-dag /Users/pjaydondup/Documents/L28-Coin/l28_genesis_ledger_old.jsonl \
+  --snapshot /Users/pjaydondup/Documents/L28-Coin/l28_ledger_20251225_201521.jsonl \
+  --pretty
+```
+
+Both exited 0. Metadata report: `MANIFEST_METADATA_VALID=true`,
+`ARTIFACT_BYTES_VERIFIED=false`, `HISTORICAL_POLICY_AUTHENTICATED=false`,
+`CANONICAL_ACCEPTANCE=false`, scope `pinned_manifest_metadata_only`.
+Manifest SHA256: `b477529809564ded69954ace5ea5f14f7d4888229a35a5ceb1f269043e679c7f`.
+Metadata report ID: `ef24c822d28cb01484ec4762e22873bca2ed4dd66e3e0971505f0536c39ce577`.
+
+Separate artifact verification: 102263 raw / 72098 snapshot records;
+**2202/2202 raw PoW** and **817/817 selected PoW** verified. Recorded difficulty
+4 passes; source difficulty 12 mismatch remains explicit. PoW report ID unchanged:
+`1770505f73167a3011cac7e7fbecfccdffcf5b30af9b254d87efadf07a1f08d8`.
+
+Original bytes independently fingerprinted before and after verification:
+
+- raw: 40707627 bytes;
+  `1ba544052cee098cea265add04c8fb0ff0562897803ba829b201293745aad669`
+- snapshot: 30658355 bytes;
+  `6580333e4dba688f242d82a9ea7253369b7723273b3392dc6d8ae9b78d9b2d11`
+
+Consolidated manual offline security review covered the complete changed-file
+scope, caller-controlled reference substitution, correlated arithmetic attacks,
+strict types/schema, stable rejection codes, report semantics, and unchanged PoW
+behavior. No unresolved Critical/High implementation findings.
+NOT_INDEPENDENTLY_AUDITED=true. No managed scan artifacts outside the allowlist.
+
+Pinned metadata remains a match to recorded claims, not fresh authentication of
+consolidation bytes, timestamps, allocation ownership, treasury enforceability
+or historical consensus. Missing-height issuance, difficulty-policy provenance,
+and authenticated canonical continuation remain unresolved. Protocol v1.0.0,
+protected economics, original history, historical manifest, canonical validator,
+custody and F171 remain unchanged; production gates remain BLOCKED. No mining,
+signing, import, network, settlement, merge, push or deployment occurred.
+
 ## COMPLETED OFFLINE HISTORICAL POW VERIFIER — 2026-10-22
 
 Status: PASS / ACTUAL CLI VERIFIED / LOCAL COMMIT CANDIDATE

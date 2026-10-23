@@ -16,6 +16,87 @@ PROFILE = "l28-historical-continuity/v0.1"
 EXPECTED_STATUS = "audit_evidence_only"
 MAX_MANIFEST_BYTES = 1_048_576
 
+# Code-owned reference, never loaded from the candidate manifest at runtime.
+# Economics: PROJECT_RULES/Protocol; historical claims: frozen Foundation16
+# audit + manifest at d7b6270. Raw/snapshot fingerprints, sizes, counts and
+# heights independently rechecked against the operator-specified public bytes.
+# Pinning a recorded claim (e.g. consolidation hash or claimed timestamp) is
+# NOT independent proof of the underlying event, ownership or consensus.
+PINNED_MANIFEST_REFERENCES = (
+    ("activation.canonical_continuation_proven", False),
+    ("activation.canonical_issuance_initialized", False),
+    ("activation.historical_ledger_copied_to_public_repository", False),
+    ("activation.network_started", False),
+    ("activation.new_ledger_created", False),
+    ("activation.wallet_spendability_proven", False),
+    ("audit_date", "2026-07-14"),
+    ("consolidation.all_records_target_verified_creator", True),
+    ("consolidation.creator_live_balance_proven", False),
+    ("consolidation.genesis_reward_excluded", True),
+    ("consolidation.records", 205),
+    ("consolidation.reward_units", 72095),
+    ("consolidation.sha256", "78de2831a5f1631c79e2a5f5b702887be149a1517b32ff9d3edb35c7b59f73d7"),
+    ("consolidation.total_amount", 2018660),
+    ("consolidation.unconsolidated_genesis_reward", 28),
+    ("consolidation.writer_execution_provenance", False),
+    ("consolidation.writer_source_recovered", False),
+    ("economics.derived_unlocked_amount", 2324584),
+    ("economics.derived_unlocked_is_live_spendable_proof", False),
+    ("economics.historical_declared_supply", 2824584),
+    ("economics.missing_height_count", 28782),
+    ("economics.missing_height_implied_amount", 805896),
+    ("economics.physical_recorded_reward_total", 2018688),
+    ("economics.treasury_attestation_records", 2),
+    ("economics.treasury_economic_commitments_counted", 1),
+    ("economics.treasury_lock_commitment", 500000),
+    ("identity.architecture", "native_blockless_dag_coin"),
+    ("identity.asset", "L28"),
+    ("identity.emission_schedule_ceiling", 11130000),
+    ("identity.hard_cap", 28000000),
+    ("identity.historical_supply_must_not_be_reminted", True),
+    ("identity.smart_contract_identity", False),
+    ("manifest_version", "l28-historical-continuity/v0.1"),
+    ("mining.accepted_coinbase_receiver_must_match_declared_miner", True),
+    ("mining.active", False),
+    ("mining.automatic_creator_reward_routing", False),
+    ("mining.canonical_pow_formula_defined_in_v1", False),
+    ("mining.difficulty_18_is_consensus", False),
+    ("mining.winning_proof_binding_implemented", False),
+    ("parent_graph.cycle_detected_on_final_path", False),
+    ("parent_graph.dag_leaf_count", 20694),
+    ("parent_graph.final_lock_parent_path_length", 4),
+    ("parent_graph.first_root", 1),
+    ("parent_graph.parent_in_snapshot", 51426),
+    ("parent_graph.parent_only_in_raw_dag", 20671),
+    ("parent_graph.snapshot_self_contained", False),
+    ("preserved_snapshot.claimed_timestamp", "2025-11-15T13:08:38.085676Z"),
+    ("preserved_snapshot.final_entry_hash", "589034a1c80f6ba8f5d6b90baf0cf247b0b71a0b63e677f1b89028be643156d4"),
+    ("preserved_snapshot.final_entry_height", 100879),
+    ("preserved_snapshot.issuance_records", 72096),
+    ("preserved_snapshot.last_issuance_height", 100877),
+    ("preserved_snapshot.physical_records", 72098),
+    ("preserved_snapshot.public_timestamp_independently_proven", False),
+    ("preserved_snapshot.sha256", "6580333e4dba688f242d82a9ea7253369b7723273b3392dc6d8ae9b78d9b2d11"),
+    ("preserved_snapshot.size_bytes", 30658355),
+    ("preserved_snapshot.special_records", 2),
+    ("protocol_baseline", "1.0.0"),
+    ("raw_dag.extra_candidates_not_selected", 30167),
+    ("raw_dag.future_parents", 0),
+    ("raw_dag.missing_parents", 0),
+    ("raw_dag.physical_records", 102263),
+    ("raw_dag.sha256", "1ba544052cee098cea265add04c8fb0ff0562897803ba829b201293745aad669"),
+    ("raw_dag.size_bytes", 40707627),
+    ("raw_dag.unique_represented_heights", 72096),
+    ("reconstruction.appendage", "two_chained_SYSTEM_TREASURY_LOCK_attestations"),
+    ("reconstruction.deterministic_content_and_order_confirmed", True),
+    ("reconstruction.ordering", "ascending_height"),
+    ("reconstruction.selection", "first_physical_raw_candidate_per_represented_height"),
+    ("reconstruction.serialization", "python_json_dumps_default"),
+    ("status", "audit_evidence_only"),
+)
+REFERENCE_NEXT_CANONICAL_HEIGHT = 100878
+
+
 STABLE_CODES = frozenset(
     {
         "manifest_valid",
@@ -136,6 +217,34 @@ def _expect_hex64(root: Mapping[str, Any], dotted: str) -> None:
 def _expect_equation(actual: int, expected: int, name: str) -> None:
     if actual != expected:
         raise _InvariantError(name)
+
+
+def _validate_pinned_references(manifest: Mapping[str, Any]) -> None:
+    # Closed schema prevents aliases/extensions from smuggling contradictory
+    # supply, height, provenance or authority claims into a successful report.
+    root_keys: set[str] = set()
+    groups: dict[str, set[str]] = {}
+    for dotted, expected in PINNED_MANIFEST_REFERENCES:
+        parts = dotted.split(".")
+        root_keys.add(parts[0])
+        if len(parts) == 2:
+            groups.setdefault(parts[0], set()).add(parts[1])
+        actual = _path_value(manifest, dotted)
+        if type(actual) is not type(expected):
+            raise _SchemaError(f"type:{dotted}")
+        if actual != expected:
+            raise _InvariantError(f"pinned_reference:{dotted}")
+    if set(manifest) != root_keys:
+        raise _SchemaError("unexpected_manifest_fields")
+    for group, keys in groups.items():
+        if type(manifest[group]) is not dict or set(manifest[group]) != keys:
+            raise _SchemaError(f"unexpected_fields:{group}")
+    # The manifest stores last issuance height, not a live next-height state.
+    _expect_equation(
+        _strict_int(manifest, "preserved_snapshot.last_issuance_height") + 1,
+        REFERENCE_NEXT_CANONICAL_HEIGHT,
+        "reference_next_canonical_height",
+    )
 
 
 def _validate_manifest(
@@ -314,6 +423,7 @@ def _validate_manifest(
             raise _InvariantError(f"activation:{field}")
     checks.append("activation")
 
+    _validate_pinned_references(manifest)
     return version_value, tuple(checks)
 
 
@@ -358,7 +468,7 @@ def verify_manifest(path: os.PathLike[str] | str) -> ContinuityVerifyResult:
         )
     except _DuplicateKey:
         return _failure("duplicate_json_key", digest=digest)
-    except (UnicodeDecodeError, json.JSONDecodeError):
+    except (UnicodeDecodeError, ValueError, RecursionError):
         return _failure("invalid_json", digest=digest)
 
     if not isinstance(value, dict):

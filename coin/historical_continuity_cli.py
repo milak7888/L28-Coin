@@ -12,6 +12,7 @@ from .historical_continuity_verifier import (
     ContinuityVerifyResult,
     STABLE_CODES,
     POW_PROFILE,
+    REFERENCE_NEXT_CANONICAL_HEIGHT,
     verify_pow_artifacts,
     verify_manifest,
 )
@@ -65,6 +66,12 @@ def build_report(result: ContinuityVerifyResult) -> dict[str, Any]:
         "manifest_sha256": str(result.manifest_sha256),
         "checks": list(result.checks),
         "detail": str(result.detail),
+        "verification_scope": "pinned_manifest_metadata_only",
+        "MANIFEST_METADATA_VALID": result.ok and result.code == "manifest_valid",
+        "ARTIFACT_BYTES_VERIFIED": False,
+        "HISTORICAL_POLICY_AUTHENTICATED": False,
+        "CANONICAL_ACCEPTANCE": False,
+        "reference_next_canonical_height": REFERENCE_NEXT_CANONICAL_HEIGHT,
     }
     return {
         **body,

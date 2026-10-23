@@ -2,23 +2,23 @@
 
 Date: 2026-10-22
 PROJECT_STATE: ACTIVE
-Slice: Offline Historical PoW Verifier v0.1
+Slice: Historical Manifest Integrity v0.1
 
-## AUTHORIZATION
+## AUTHORIZATION AND BASE
 
-AUTHORIZE_FROZEN_SLICE_L28_OFFLINE_HISTORICAL_POW_VERIFIER_V0_1
-Explicitly replaces the completed coinbase-strictness slice.
+AUTHORIZE_FROZEN_SLICE_L28_HISTORICAL_MANIFEST_INTEGRITY_V0_1
+Explicit replacement of the completed offline historical PoW slice.
 Repository: /Users/pjaydondup/Projects/L28-Coin
-Base: 64d8d3fa52536ce2d0ff4c72bc3e6e2c49eb0442
-Branch: codex/offline-historical-pow-verifier-v0-1
+Base: d7b6270fcb21b4b719f10973f5e70c86744d14e5
+Branch: codex/historical-manifest-integrity-v0-1
 
-## OBJECTIVE AND DELIVERABLE
+## OBJECTIVE
 
-Extend the existing historical continuity verifier/CLI with offline historical
-PoW evidence verification, preserving manifest-only behavior. No second
-framework or consensus authority.
+Fix reproduced false-PASS acceptance of altered historical supply metadata and
+artifact identities in the existing continuity verifier/CLI. No new framework.
 
-Authorized paths:
+## AUTHORIZED PATHS
+
 - FROZEN_SLICE L28.md
 - SYSTEM_STATE L28.md
 - coin/historical_continuity_verifier.py
@@ -27,53 +27,50 @@ Authorized paths:
 - tests/test_historical_continuity_cli.py
 - docs/historical_continuity_verifier_v0.1.md
 
-## INPUTS AND CONTRACT
+## DELIVERABLE
 
-Read-only raw: /Users/pjaydondup/Documents/L28-Coin/l28_genesis_ledger_old.jsonl
+Enforce immutable code-owned historical references independently of caller
+metadata: cap 28000000, emission ceiling 11130000, declared supply 2824584,
+treasury commitment 500000, circulating snapshot 2324584, last issuance height
+100877 and reference next canonical height 100878, plus artifact identities,
+sizes and counts. Preserve original records and the historical manifest.
+
+Reject correlated tampering, missing fields, invalid types and altered artifact
+identities. Clearly distinguish metadata matching pinned historical claims from
+actual artifact-byte verification. Neither grants consensus, issuance,
+ownership or spendability authority. Reuse existing PoW verification unchanged
+except directly relevant integrity checks.
+
+## READ-ONLY INPUTS
+
+Raw: /Users/pjaydondup/Documents/L28-Coin/l28_genesis_ledger_old.jsonl
 SHA256: 1ba544052cee098cea265add04c8fb0ff0562897803ba829b201293745aad669
-Read-only snapshot: /Users/pjaydondup/Documents/L28-Coin/l28_ledger_20251225_201521.jsonl
+Snapshot: /Users/pjaydondup/Documents/L28-Coin/l28_ledger_20251225_201521.jsonl
 SHA256: 6580333e4dba688f242d82a9ea7253369b7723273b3392dc6d8ae9b78d9b2d11
-
-Verify fingerprints before parsing the same bytes. Require 102263 raw records,
-72098 snapshot records, 2202 raw PoW records and 817 selected PoW records.
-
-P = json.dumps(payload, sort_keys=True, separators=(',', ':'), ensure_ascii=True)
-preimage = UTF8(decimal(entry_height) + prev + P + decimal(payload.nonce))
-identifier = SHA256(preimage).hexdigest()
-
-No added separators/newline. This is a hash preimage, not a signature.
-Verify required types, nonnegative integer nonce, hash encoding, resolving parent
-and parent-height relationship. Reject duplicate/conflicting records.
-Selected PoW records must exactly match raw records. Verify declared difficulty
-4 and disclose recovered-source difficulty 12 mismatch without policy approval.
 
 ## ACCEPTANCE
 
-- 2202/2202 raw and 817/817 selected identifiers independently reproduce.
-- Bounded parsing rejects malformed UTF-8/JSON, duplicate keys, nonfinite values,
-  invalid types, missing fields, oversized inputs and tampering.
-- Stable codes and nonzero CLI status for artifact or verification failures.
-- Independently test record checks without relying only on pinned fingerprints.
-- Separate HASH_VALID, RECORDED_DIFFICULTY_VALID,
-  HISTORICAL_POLICY_AUTHENTICATED and CANONICAL_ACCEPTANCE.
-  Last two remain false with UNPROVEN/BLOCKED explanations.
-- Exit zero denotes evidence-only success; known policy mismatch stays visible.
-- Focused tests once and directly affected regressions once; actual CLI against
-  authentic artifacts and adversarial fixtures; original hashes unchanged.
+- Reproduce and record the manifest false-PASS cases before correction.
+- Authentic metadata and artifact-byte checks pass.
+- Every reproduced mutation fails deterministically, including correlated
+  supply/treasury/count changes and altered heights/hashes.
+- 2202/2202 raw and 817/817 selected historical PoW checks still pass.
+- Focused positive/adversarial tests and directly affected regressions once.
+- Actual CLI verification against authentic inputs and tampered metadata passes.
+- Original historical artifact hashes remain unchanged.
 - One consolidated security review: no unresolved Critical/High findings.
-- Exact-path review and git diff --check pass.
+- Exact-path diff review, protected-path preservation and git diff --check pass.
 
 ## SAFETY
 
-No mining/nonce search, signing, keys/secrets, custody, network, historical import,
-reminting, ledger mutation, broadcast, settlement or deployment.
-No Leap28 modification/dependency. No historical datasets in Git.
-No historical-manifest, Protocol v1.0.0, economics, canonical-validator/history,
-F171 or production-gate changes. No policy authentication, spendability or
-independent-approval claims.
+No historical data mutation/import, reminting, new consensus, private keys,
+signing, mining/nonce search, networking, broadcast, custody or settlement.
+No Leap28 changes. No Protocol v1.0.0, economics, canonical history, custody or
+F171 changes; production gates remain BLOCKED. No unrelated architecture or
+governance. Do not copy historical datasets into Git.
 
 ## STOP
 
-If required evidence fails, preserve work and report without committing.
-On full PASS, update SYSTEM_STATE and create one local exact-path commit.
-No merge, push, production activation or subsequent milestone.
+On PASS update SYSTEM_STATE and make one local exact-path commit.
+If evidence conflicts, stop and report without inventing replacement history.
+No merge, push, deployment or subsequent milestone.

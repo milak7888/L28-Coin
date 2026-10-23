@@ -20,6 +20,79 @@ CANONICAL_MANIFEST = (
 )
 
 
+class ManifestIntegrityCliTests(unittest.TestCase):
+    def run_candidate(self, candidate, path):
+        path.write_text(json.dumps(candidate), encoding="utf-8")
+        result = subprocess.run(
+            [sys.executable, "-B", "-m", "coin.historical_continuity_cli",
+             "--manifest", str(path)], cwd=ROOT, capture_output=True, text=True,
+            check=False, timeout=15,
+        )
+        report = json.loads(result.stdout)
+        self.assertFalse(report["ARTIFACT_BYTES_VERIFIED"])
+        self.assertFalse(report["CANONICAL_ACCEPTANCE"])
+        self.assertFalse(report["HISTORICAL_POLICY_AUTHENTICATED"])
+        self.assertEqual(report["verification_scope"], "pinned_manifest_metadata_only")
+        self.assertEqual(report["reference_next_canonical_height"], 100878)
+        report_id = report.pop("report_id")
+        self.assertEqual(report_id, cli.compute_report_id(report))
+        return result, report
+
+    def test_integrity_cli_all_22_reproduced_leaf_false_passes(self):
+        manifest = json.loads(CANONICAL_MANIFEST.read_bytes())
+        both = ["audit_date", "consolidation.records", "parent_graph.dag_leaf_count",
+                "parent_graph.final_lock_parent_path_length",
+                "preserved_snapshot.claimed_timestamp", "preserved_snapshot.final_entry_height",
+                "preserved_snapshot.last_issuance_height", "preserved_snapshot.size_bytes",
+                "raw_dag.size_bytes"]
+        alter_only = ["consolidation.sha256", "preserved_snapshot.final_entry_hash",
+                      "preserved_snapshot.sha256", "raw_dag.sha256"]
+        cases = [(field, action) for field in both for action in ["alter", "delete"]]
+        cases += [(field, "alter") for field in alter_only]
+        self.assertEqual(len(cases), 22)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "manifest.json"
+            for dotted, action in cases:
+                with self.subTest(field=dotted, action=action):
+                    candidate = copy.deepcopy(manifest)
+                    parts = dotted.split(".")
+                    parent = candidate if len(parts) == 1 else candidate[parts[0]]
+                    old = parent[parts[-1]]
+                    if action == "delete":
+                        del parent[parts[-1]]
+                    else:
+                        parent[parts[-1]] = old + 1 if type(old) is int else "f" * 64
+                    result, report = self.run_candidate(candidate, path)
+                    self.assertEqual(result.returncode, 1)
+                    self.assertFalse(report["MANIFEST_METADATA_VALID"])
+
+    def test_integrity_cli_positive_and_correlated_supply_treasury_counts(self):
+        manifest = json.loads(CANONICAL_MANIFEST.read_bytes())
+        changes = [
+            {"economics.treasury_lock_commitment": 1,
+             "economics.derived_unlocked_amount": 2824583},
+            {"economics.missing_height_count": 28783,
+             "economics.missing_height_implied_amount": 805924,
+             "economics.historical_declared_supply": 2824612,
+             "economics.derived_unlocked_amount": 2324612},
+            {"raw_dag.physical_records": 102264,
+             "raw_dag.extra_candidates_not_selected": 30168},
+        ]
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "manifest.json"
+            result, report = self.run_candidate(manifest, path)
+            self.assertEqual(result.returncode, 0)
+            self.assertTrue(report["MANIFEST_METADATA_VALID"])
+            for updates in changes:
+                candidate = copy.deepcopy(manifest)
+                for dotted, value in updates.items():
+                    group, field = dotted.split(".")
+                    candidate[group][field] = value
+                result, report = self.run_candidate(candidate, path)
+                self.assertEqual(result.returncode, 1)
+                self.assertFalse(report["MANIFEST_METADATA_VALID"])
+
+
 class HistoricalPowCliTests(unittest.TestCase):
     def run_pow_cli(self, *arguments):
         return subprocess.run(
