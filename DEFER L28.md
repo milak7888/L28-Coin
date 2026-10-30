@@ -1,6 +1,6 @@
 # L28 — DEFER.md
 
-Last updated: 2026-10-18
+Last updated: 2026-10-30
 
 Purpose:
 Store useful ideas and future work that are NOT required to complete the current frozen slice.
@@ -8,15 +8,49 @@ Store useful ideas and future work that are NOT required to complete the current
 Nothing in this file is automatically approved.
 Review only when selecting the next frozen slice.
 
-## CURRENT SLICE — DO NOT DUPLICATE HERE
-The active frozen slice is:
+## ACCEPTED SLICE — DO NOT REOPEN OR DUPLICATE
+The latest frozen slice is accepted:
 
-**Persistent Disposable Two-Node Ledger Core v0.1**
+**Two-Host Disposable Synchronization v0.1**
 
-Status: PASS / ACTUAL-PRODUCT VERIFIED / CONSOLIDATED REVIEW PASS. The local
-commit is the remaining in-slice completion step.
+Final physical acceptance PASS; operator authorized completion records and one
+local milestone commit on 2026-10-30. PROJECT_STATE remains ACTIVE. Accepted
+session a649173ab9cdf2a4e432cdb284027e90: independent disposable 28 L28 validation,
+matching IDs/state, durable genuine-process restart, replay rejection and terminal
+divergence halt; both-host cleanup verified. Mac reports inspected, Surface and
+physical pairing/cleanup operator-attested. Full evidence and qualifications are
+in SYSTEM_STATE; no programmatic physical-topology or independent audit claim.
+Accepted 34 focused / 141 affected passing cases reused, no test/session repeats.
+Runtime digest remains:
+6578a9d9b6ba975ef3d94b7cfa50e9f8e875d29e2c05648e8a34df1dd828dbf1.
+No new runtime, implementation, merge, push or production authority. Stop after
+the local commit; select future work only under separate operator authorization.
+Original reports, older candidates and protected economics/history are preserved.
 
-The bounded capability is loopback-only, disposable, and non-production. It
+### Historical pre-acceptance status — superseded, not current instructions
+
+Status: physical coordinator integration implemented and verified offline. It uses
+direct operator enrollment of public certificate pins, automatic START bootstrap
+bound inside TLS/HMAC, and the existing ledger/validator. No secret hand copying.
+Surface preparation at digest 2481871a is operator-reported PASS (Python 3.11.6,
+cryptography 49.0.0, pyOpenSSL 26.4.0). The 2026-10-29 endpoint-only amendment
+changes Surface to 192.168.68.54, retaining Mac 192.168.68.50 and TCP 42828.
+The operator-reported Surface correction passed at 3dd065c1, but the subsequent
+physical attempt expired before either peer record/pin was accepted. No physical
+transaction was verified; no retry is authorized here. The prepared-enrollment
+amendment is now OFFLINE PASS: physically inspect/import the complete canonical
+public record with local VERIFIED attestation; preparation is bounded by unchanged
+certificate expiry, not the retired 300/420-second limits. Writer READY remains;
+follower has no second READY prompt. TLS/HMAC, active cap 120 and original session
+600 remain. Current digest is
+3fd812981f3a9e38b52173da220ebb02948f9a84ae81d912dab777da1812c7de.
+Physical verification remains BLOCKED pending corrected Surface source parity,
+current endpoint/private-LAN checks and separate session/firewall authorization.
+Do not rebuild this coordinator or the completed offline handoff. No physical
+completion or commit is claimed.
+
+The existing loopback core remains available. The new opt-in session is restricted
+to the two explicitly authorized private-LAN addresses, disposable and non-production. It
 does not authorize public networking, historical import, consensus/finality,
 production signing, custody, mining, broadcast, deployment, or settlement.
 

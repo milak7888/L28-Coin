@@ -2,3 +2,5 @@
 # Exact pin for deterministic clean-environment installs.
 # Security upgrades MUST be intentional, reviewed dependency changes.
 cryptography==49.0.0
+# Disposable pinned-TLS authentication handoff; compatible with cryptography 49.
+pyOpenSSL==26.4.0

@@ -1,11 +1,724 @@
 # L28 — SYSTEM_STATE.md
 
-Last updated: 2026-10-22
+Last updated: 2026-10-30
 
 ## PROJECT STATE
 PROJECT_STATE: ACTIVE
 
 Only the operator may change PROJECT_STATE.
+
+## CURRENT — PHYSICAL SLICE ACCEPTED / LOCAL FINALIZATION — 2026-10-30
+
+Authorization: AUTHORIZE_L28_PHYSICAL_SLICE_FINALIZATION. The operator accepted
+the final review as COMPLETE_PENDING_OPERATOR and authorized necessary completion
+records plus one exact-path local milestone commit, then STOP. PROJECT_STATE
+remains ACTIVE. This closes the existing two-host slice, not the L28 project;
+it grants no new runtime session, implementation, merge, push or deployment.
+Branch: codex/two-host-disposable-sync-v0-1.
+Parent/base: 530a307f56e7eb79007fb0309fc93a6e0b9f2c0b.
+
+ACCEPTANCE: PASS for one physical, disposable, private-LAN two-host experiment.
+Session: a649173ab9cdf2a4e432cdb284027e90.
+Runtime digest: 6578a9d9b6ba975ef3d94b7cfa50e9f8e875d29e2c05648e8a34df1dd828dbf1.
+Node SHA-256: 71e4a37e9edffe78130997f2d2806dfa58e72f6742587ff73b494b48abc23413.
+Mac writer: 192.168.68.50; Surface follower: 192.168.68.54:42828; trusted uma
+is operator-attested. Surface native source/dependency preparation at this digest
+is operator-reported PASS (Python 3.11.6, cryptography 49.0.0, pyOpenSSL 26.4.0).
+
+Evidence basis: actual Mac initial.json/restart.json were inspected and reconciled
+against the accepted source. Surface outcomes, physical machine separation,
+complete-fingerprint comparisons and Windows cleanup are explicitly operator-
+attested; raw Windows report files were not independently inspected here.
+Both hosts report PAIR_PHASE_PASS / initial exit 0 and PAIR_WORKFLOW_PASS /
+restart exit 0 for the same session, source, transaction IDs and commitment.
+Mac PIDs 62051 -> 62065 prove its fresh local process; Surface genuine restart is
+operator-confirmed. START 1793327439 is retained, public certificate pins are fresh,
+durable state agrees, supply is 28 and final balances are 0/28. TLS/HMAC precede
+canonical validation and persistence. Replay rejects without memory/disk mutation;
+restart performs the terminal divergence probe and persists HALTED_BY_OPTION_A.
+The accepted disposable session is terminal and must not be resumed or reused.
+
+State commitment: 98056ec92a23fc0186ef51c39c0ae6d0acf224f692c4ccfd510fa93f55547964
+Transaction IDs:
+0f2e6924652d5e6c37464e0cc9f6a4734c27d8fa86f555ad52ac2f614b688baa
+6b3c2d0a78fbdab05e43ea376efdf0744af11405e9c324837e98dab7de19b738
+Mac report directory: l28-pair-launch-Axsq8LNv in the operator's temporary folder.
+initial.json SHA-256: 013c0169edf2912b961aa85ac89837d440e16a5064d69f884c991d7f394b2d71
+restart.json SHA-256: ff7ee11da9a26f56ddc233c24cdecf82d41487653b164a7c35c85d2cd68d382e
+Original reports/disposable state remain external and unchanged; only sanitized
+public evidence references are recorded here, not copied historical/test ledgers.
+
+Cleanup: connection_and_identity_closed=true; Mac running lock absent, no Mac
+test-node process or TCP 42828 listener found at final review. Operator reports
+MAC_CLEANUP_VERIFIED, SURFACE_CLEANUP_VERIFIED and L28_FINAL_CLEANUP=PASS, including
+Surface listener/process absence and removal of its temporary Private firewall rule.
+
+physical_two_host_verified=false is hardcoded in both physical and offline report
+paths. It is a conservative absence of programmatic physical-topology attestation,
+not a failed transaction check. Physical separation and screen comparison rely on
+the operator; physical_comparison=operator_attested and transport=PRIVATE_LAN are
+preserved. No Boolean was changed or independent security audit claimed.
+
+Accepted verification reused: 34 focused cases and 141 directly affected
+regressions PASS, actual offline two-process initial/restart/rejection checks PASS,
+and the actual physical evidence above. One consolidated local security review
+found no unresolved Critical/High implementation issue in this bounded scope;
+NOT_INDEPENDENTLY_AUDITED=true. Finalization changes only completion records;
+accepted node/tests/dependencies and runtime digest are unchanged. No suites or
+physical sessions repeated. Final allowlist, staged/unstaged diff, whitespace,
+source/evidence hash and acceptance checks are required before the local commit.
+
+Protocol v1.0.0, economics/history, canonical validation, ledger, custody/F171 and
+production blocks remain unchanged. No production custody, signing, canonical
+issuance, mining, broadcast, settlement or public networking is authorized.
+Historical/custody decisions and EVD-001 independent-review requirements remain
+open. Earlier pending/offline-only sections below are dated historical evidence,
+not the current acceptance status. STOP after the authorized local commit; any
+integration/publication or new slice requires separate operator authorization.
+
+## HISTORICAL — AUTOMATIC PAIRING / FRESH-PROCESS PHASES — 2026-10-29
+
+Authority: AUTHORIZE_L28_AUTOMATIC_PUBLIC_PAIRING_AND_LAUNCH_AMENDMENT and
+AUTHORIZE_L28_PAIRING_PER_FRESH_PROCESS_PHASE; offline implementation only,
+same seven paths, branch codex/two-host-disposable-sync-v0-1, base/HEAD
+530a307f56e7eb79007fb0309fc93a6e0b9f2c0b. This section supersedes the older
+manual-record launch instructions below; those are retained as dated evidence.
+
+The new paired coordinator exchanges bounded UNTRUSTED complete public records,
+validates the existing certificate/role/source/endpoint/phase/context contract,
+and displays a complete role-ordered, domain-separated SHA-256 fingerprint.
+Each local terminal requires PAIR after physical comparison of BOTH displays.
+The public acknowledgment is NOT authentication. Exact-pin TLS key-possession
+verification and the existing mutually authenticated HMAC channel still precede
+ledger activity. Initial context remains null during pairing; fresh session/START
+are then bound inside TLS/HMAC. Restart pairing binds the retained session/START.
+No manual JSON, pin, timestamp, secret or state-path copying is needed.
+
+One generated native-shell launcher per computer sequences initial and restart
+processes and handles only public reports/state paths. Two comparisons total,
+one per fresh-process phase, each locally approved on both computers. No Python
+credential-bearing supervisor, private IPC or serialized TLS identity was added.
+Unapproved, mismatched, malformed, wrong-role/source/endpoint, interrupted and
+expired pairing fails closed. Public approval acknowledgment waits only to the
+existing certificate deadline, not the ordinary ten-second frame idle timeout.
+TLS activation checks validity before identity cleanup; identities close before
+ledger application. Active budget remains <=120 seconds and is capped by both
+certificate expirations and the original session START+600. Restart never resets
+START. The follower reuses the existing disposable listener's SO_REUSEADDR binding
+for sequential restart, exact address/port and peer checks retained.
+
+Current runtime digest:
+6578a9d9b6ba975ef3d94b7cfa50e9f8e875d29e2c05648e8a34df1dd828dbf1
+Node SHA-256:
+71e4a37e9edffe78130997f2d2806dfa58e72f6742587ff73b494b48abc23413
+The other nine runtime closure files, including requirements, canonical validator
+and ledger, are byte-identical to the verified 3fd81298 Surface ZIP. No new
+dependency. Surface parity at 3fd81298 is historical, NOT current parity.
+
+Verification: 34 focused automatic-pairing cases PASS; 141 disjoint directly
+affected coordinator/handoff/prepared regressions PASS (175 unique cases).
+Two launcher-generation/syntax cases rechecked after cleanup-output adjustment,
+both PASS. The initial focused run exposed two fixture errors and the new
+activation-after-identity-close ordering error; fixtures/order corrected, targeted
+checks and the final focused set PASS. No tests were weakened.
+
+Actual final-source CLI via explicit AF_UNIX offline transport and public PTY
+test approvals: OFFLINE_PAIRED_CLI_PASS. Initial PIDs 50865/50866; fresh restart
+PIDs 50869/50870, no overlapping phase processes. Both roles independently validate
+the same two events; issued supply 28, balances 0/28, identical commitments before
+and after durable restart, same START, replay rejects without mutation and the
+restart divergence probe halts. Each phase proves pinned TLS/HMAC and closes its
+identity/connection. Declined pairing exits 1/1 (coordinator_interrupted and
+pairing_not_approved), with no success report or ledger activity. All owned test
+state/reports, PTYs, sockets and processes cleaned up. No TCP listener or firewall
+action. Runtime check PASS with network_started=false.
+
+State commitment: 61f3af514003e6589bdd55415e56b4262cf85dc1ddb39da328ad04a0232153d3
+Transaction IDs:
+eb57b66f336823d775dff030e09b45e262fdde924a03188d01890d9370cced92
+504516cb55a45032fe62dceeae10aa89aac73126407e3ccea29a226272d1954a
+
+Consolidated local security review: no unresolved Critical/High implementation
+finding identified. Core TLS identity/handoff, HMAC, validation, ledger, economics,
+history, custody and F171 unchanged. Existing nondisclosure regressions scan
+captured output, ciphertext and persisted test records for generated private
+authentication material and prohibit credential-file/keylog APIs. New public
+pairing/report/launcher paths neither accept nor serialize that material.
+NOT_INDEPENDENTLY_AUDITED=true; no managed scan or qualified approval claimed.
+Operator physical comparison, trusted local OS/clocks and source parity remain
+assumptions; Python/OpenSSL cannot guarantee all memory copies/swap erasure.
+Hard-watchdog exit 124 can leave a public crash lock; never clear it to force retry.
+Mac launcher parses with zsh; Windows launcher has static scope/finally checks,
+but no native PowerShell execution was available here. Offline IPC is NOT proof
+of Windows firewall behavior, real LAN reconnection or physical transaction PASS.
+
+STATUS: this amendment OFFLINE PASS; full physical slice NOT PASS. Changes remain
+uncommitted. Clean main preserved. No physical session, firewall change, deployment,
+commit, merge or push. Next: approved source synchronization/native Surface parity
+and launcher preflight, then separate authorization for one physical session.
+
+## PREPARED ENROLLMENT AMENDMENT — 2026-10-29
+
+Authorization: AUTHORIZE_L28_PREPARED_ENROLLMENT_AMENDMENT. PROJECT_STATE ACTIVE;
+offline implementation only in the existing seven paths, same feature branch and
+base 530a307f56e7eb79007fb0309fc93a6e0b9f2c0b. No physical retry or commit here.
+
+Latest physical evidence is operator-reported: both hosts reached PUBLIC_ENROLLMENT
+but neither peer-pin prompt completed. Mac reported coordinator_enrollment_expired,
+MAC_INITIAL_EXIT=1; Surface exit 124 and SURFACE_CLEANUP_VERIFIED. No transaction
+or agreement was verified. Exit 124 is consistent with the hard-watchdog path,
+not independent proof of its precise origin. Repeated timed retries are stopped.
+
+The operator approved direct physical inspection of the complete public record
+on the independent peer computer as this disposable experiment's trust channel.
+The coordinator now displays a canonical PUBLIC_ENROLLMENT envelope containing
+the existing public bindings plus phase, fixed endpoint scope and public DER
+certificate. Its prompt imports VERIFIED followed by that entire JSON line.
+Bare pins, missing local attestation, unknown/missing/duplicate fields, altered
+source/role/IP/port/phase/context, noncanonical JSON, malformed/substituted DER,
+bad self-signature, unsupported certificate profile and expiry fail closed.
+VERIFIED is operator attestation, not cryptographic proof of physical inspection.
+It cannot safely be supplied for a merely network-learned record. Exact TLS
+certificate verification and HMAC still prove the actual peer/key before ledger
+application; this amendment does not create automatic trust-on-first-use.
+
+The same memory-only TLS identity survives preparation through activation. Its
+unchanged certificate expiration bounds preparation; former 300-second enrollment
+and 420-second total invocation caps are superseded. A hard watchdog bounds the
+wait. No socket/listener, ledger operation or new payment-session START occurs
+during preparation. PREPARED_ENROLLED is not transaction PASS. Follower import
+is local readiness, with no second READY; writer READY remains. Activation rechecks
+local/peer certificate validity, source parity and retained restart context. Active
+runtime is at most 120 seconds and no later than local/peer expiry or the original
+600-second session. Monotonic preparation/peer deadlines and active transition
+overhead cannot extend those budgets. Restart retains START. Expiry never refreshes
+credentials or automatically retries. A late activation has a shorter runtime.
+
+Current runtime source digest:
+3fd812981f3a9e38b52173da220ebb02948f9a84ae81d912dab777da1812c7de
+Current node SHA-256:
+e225598e6296593d711ec18f8953c011dce902ba36b30296fc5a16d3b9350e16
+The Surface's 3dd065c1 result is historical parity, not parity for this new source.
+No installation or transfer performed. The other nine runtime closure files,
+including requirements, canonical validator and ledger, are byte-identical to the
+verified archive. Main remains unchanged. No private material is serialized.
+
+Tests: 58 focused prepared-lifecycle/record and real both-role coordinator cases
+PASS; 79 disjoint directly affected coordinator/handoff regressions PASS. Four new
+offline prepared-record rejection scenarios were then added and tested separately,
+all PASS: 141 unique cases, no failed/weakened tests. Superseded 300/420 timing tests
+were replaced with the approved certificate-bound policy, preserving expiry,
+interruption, writer READY, timeout, restart and cleanup coverage. Fake-clock cases
+prove 450-second preparation without early socket/state/session activity; at 590
+seconds activation is capped by remaining certificate lifetime. Initial START is
+created only at activation; restart does not replace it. EOF/cancellation, malformed,
+unverified, substituted, wrong-role/source/context and expired records reject.
+
+Actual final-source CLI: runtime-check exits 0, network_started=false; retired
+3dd065c1 digest rejects exit 1. Offline coordinator exits 0, prepared_public_records_verified=true,
+pinned_tls_and_hmac_verified=true, independent_validation=true, cleanup_complete=true;
+supply 28, balances 0/28, two transaction IDs, durable reopen agreement, replay
+rejection and terminal divergence halt. Four reason=replay stderr warnings are
+expected negative probes. All 11 negative CLI scenarios exit 1 with empty stdout:
+wrong-pin, wrong-peer, source-mismatch, interrupted, tamper, bootstrap-context,
+bootstrap-pin, unverified-record, substituted-record, wrong-record-source and
+wrong-record-role. Actual CLI checks include the new public-record parser and the
+shared real TLS/HMAC/ledger workflow. The console/state transition itself is tested
+through coordinator_main using offline transports and fake-clock inputs, not a
+native physical console. Offline physical_inspection_verified, physical_two_host_verified
+and physical_process_restart_verified are all false.
+State commitment: c2eb1737d98fbce27063605e5d368aae29729d8c8c79e404137fd200c8eb7b63.
+Transaction IDs:
+ebe9498b0656c6b68cd8d40ab8b08e0836fa3ec37e952c4030666aa7cc8e4263
+e1a56f5aec12e8095651a94fb0221aba5405c82a0de1212ef95521763472efee
+
+One consolidated local review: changed runtime scope is prepared public-record
+construction/validation, certificate-bound input/deadline transition, offline
+reproduction probes and their CLI choices. MemoryTLSIdentity, PinnedTLSHandoff,
+HMAC transport, canonical ledger/validation, economics/history, custody and F171
+are unchanged. No unresolved Critical/High implementation finding identified in
+this bounded review. NOT_INDEPENDENTLY_AUDITED=true; no managed scan/qualified
+approval claimed. Physical inspection cannot be machine-proven; trusted local
+hosts/clocks are assumed. Python/OpenSSL memory erasure, swap/core dumps, power-loss
+cleanup and Windows complete-record copy/input usability are not proven. The hard
+watchdog can still exit 124 without a coordinator-specific diagnostic; preserve
+numeric wrapper exit codes. No physical transaction or process restart is claimed.
+
+STATUS: prepared enrollment OFFLINE PASS; full physical slice NOT PASS.
+No physical session/listener, firewall change, secret transfer, deployment, commit,
+merge or push. Existing uncommitted work preserved. Next: synchronize this candidate
+to Surface through an approved method, verify native parity and prepared-record
+input compatibility, then obtain separate physical-session authorization. STOP.
+
+## FOLLOWER READY GATE CORRECTION — 2026-10-29 (HISTORICAL)
+
+Authorization: AUTHORIZE_L28_FOLLOWER_READY_GATE_CORRECTION. Existing seven-path
+scope, feature branch and base 530a307f56e7eb79007fb0309fc93a6e0b9f2c0b;
+offline verification only. No physical retry, firewall change or commit here.
+
+The follower now requests only the independently verified Mac public certificate
+pin. Valid local pin entry advances directly to FOLLOWER_LISTENING, without a
+second READY input. The writer still requires READY after observing that status.
+Pin entry confirms local readiness, not cryptographic peer authentication: exact
+pinned TLS and HMAC remain required before ledger activity. Automatic initial
+numeric START, restart retention, peer/source binding and all deadlines remain
+unchanged: 300 seconds enrollment, 120 active, 420 invocation, 600 network session.
+
+Current runtime source digest:
+3dd065c1a99e176d846839a45e71d55f22890934b358021c074840e8188550cd
+Current node SHA-256:
+9029d83ae008a15c67bc3e334352a5beb415fe1cc9fbe2fd80505585a4abc334
+The previous 3aaf995f archive remains unchanged and is not current Surface parity.
+
+Focused tests: 10 passed. Affected selection: 65 passed, including seven overlapping
+new negative cases; 68 unique cases passed (10 focused plus 58 additional distinct
+regressions). No failed or weakened tests. The both-role coordinator_main test
+uses real TLS/HMAC over offline byte transports, verifies one follower input and
+two writer inputs, matching independently validated states and listener cleanup.
+Fake-clock cases cover immediate/299-second pin entry, self/malformed/empty pins,
+300-second expiry, timeout mapping, EOF and cancellation, with no false PASS and
+identity/socket/watchdog cleanup. No physical TCP listener was opened.
+
+Actual CLI: runtime-check exits 0, network_started=false; retired 3aaf995f digest
+rejects exit 1, coordinator_source_parity_invalid. Offline coordinator exits 0,
+cleanup_complete=true, pinned_tls_and_hmac_verified=true, independent_validation=true,
+supply 28, balances 0/28, two transaction IDs, durable reopen agreement, replay
+rejection and divergence halt. Physical host/process restart flags remain false.
+State commitment: e267ac6788a47ac16137d9fbaec712a50532676baac60dbe9e84ed9f6f47d15e.
+Transaction IDs:
+37532af3fbda76b76b188cd9c16132fc9a48e4adab8f797fcd2fdf60d656bf33
+b81f9bb175b25083e273104200edb81f7c8bf59b2473f4ab826b5b46535742dd
+Wrong-pin and interrupted CLI cases exit 1 with empty stdout and respectively
+tls_peer_or_record_authentication_failed / coordinator_interrupted. Expected
+reason=replay warnings are negative-probe evidence, not initial transfer failures.
+The standalone offline CLI exercises the shared connected workflow; the changed
+input path itself is exercised by the both-role coordinator_main/fake-clock tests.
+
+One consolidated local review compared against the SHA-256-verified 3aaf995f ZIP:
+only coordinator_main changes, exactly replacing the shared READY branch with a
+writer-only branch. The other nine runtime closure files are byte-identical.
+TLS certificate verification, memory-only identities, HMAC, canonical validator,
+ledger, economics, history, custody and F171 are unchanged. No secret persistence
+or additional authority was introduced. No unresolved Critical/High finding was
+identified in this bounded local review; NOT_INDEPENDENTLY_AUDITED=true. No managed
+scan or qualified approval is claimed. Existing hard-watchdog exit 124 can still
+terminate without a coordinator-specific diagnostic; this diagnostic limitation
+is unchanged, and the prior Surface exit cause remains UNPROVEN. No cleanup or
+Windows console behavior beyond offline evidence is claimed.
+
+STATUS: follower READY correction OFFLINE PASS; physical slice NOT PASS.
+No physical session, Windows rule change, installation, transfer, commit, merge
+or push performed. Next: approved minimal Surface source synchronization and
+native parity at the new digest, then separately authorized physical verification.
+Do not reuse expired session credentials. STOP reached for this amendment.
+
+## ENROLLMENT TIMING AMENDMENT — 2026-10-29 (HISTORICAL)
+
+Authorization: AUTHORIZE_L28_ENROLLMENT_TIMING_AMENDMENT. Same seven paths,
+same feature branch/base; offline verification only. This supersedes prior
+physical attempt authority: no physical retry, firewall change or commit here.
+
+The existing coordinator now bounds offline public-pin enrollment/readiness at
+300 seconds before any socket or ledger activity. Surface additionally confirms
+READY before listening; Mac confirms READY after observing FOLLOWER_LISTENING.
+Only then is its initial numeric START generated and active runtime begun.
+Public pin entry remains operator-verified, not a network-learned pin or TOFU.
+Cryptographic peer authentication still occurs inside unchanged pinned TLS/HMAC.
+
+The active watchdog allows at most 120 seconds, with an absolute 420-second
+invocation ceiling. Remaining credential validity and the original 600-second
+session also cap runtime. Restart revalidates the retained START after enrollment;
+it never generates a replacement START. The enrollment watchdog starts before
+restart metadata loading. Switching watchdogs cannot extend the active deadline.
+Certificates remain in memory, keep the existing lifetime and are never replaced
+after pin approval; expired credentials/enrollment reject before opening sockets.
+No private material, CLI signing facility, dependency or authority path was added.
+
+Current runtime source digest:
+3aaf995fafc604749068d70a99d5212642d6b5bba289562e68aea5088be496c4
+Current node SHA-256:
+1a89008409ab30c6a88830d4ee3c3ed30a238fd885a13288708698918e88a10b
+The prior fe56e608 Surface result is historical preparation, not parity for this
+changed runtime. Other nine runtime closure files are unchanged. No transfer or
+dependency installation was performed by this amendment.
+
+Validation: 17 unique fake-clock timing cases and 41 directly affected coordinator
+regressions PASS. Initial focused 16 and regression 41 passed; review added a
+watchdog-transition budget case and the final combined selection passed 58 cases
+(82 deselected). A final review moved restart metadata loading under the existing
+enrollment watchdog; only its two directly affected restart cases were rechecked,
+both PASS. No tests failed or were weakened. Both-role real TLS/HMAC coordinator
+paths use offline byte transports; no real TCP listener was opened.
+
+Timing coverage includes 299-second enrollment/readiness retaining the runtime
+budget; expiry at 300/301; self/malformed pins; input timeout mapping; active
+timeout; credential expiry; watchdog-switch overhead; restart expiry and remaining
+session budget. Every failure checks credential/socket/watchdog cleanup and no
+false PASS. Existing regressions preserve pin mismatch, peer/source/session
+binding, tampering, nondisclosure and validation-before-persistence checks.
+
+Final-source native --runtime-check exits 0 with network_started=false and the
+current source digest above; the prior fe56e608 digest rejects, exit 1,
+coordinator_source_parity_invalid. Actual --offline-coordinator exits 0 with
+cleanup_complete=true, independently validated supply 28, balances 0/28, two IDs,
+durable reopen agreement, replay rejection and terminal divergence halt.
+State commitment: 326d7f84c0c123cfde3bbc46d9a8a0a6ad60151252de9608be082aa611ad358b.
+Transaction IDs:
+ae0b493787f6caf9bac0991105e9e07da0a6f6c06769683936584205807da67f
+40cc9a90963c894f5098b0eb519b852e60190a0d5fc5465f6d4f9d833865bb45
+Final-source wrong-pin and interrupted CLI cases both exit 1 with empty stdout,
+respectively tls_peer_or_record_authentication_failed and coordinator_interrupted.
+The CLI exercises the unchanged TLS/HMAC/ledger/reopen/replay/divergence workflow;
+the amended enrollment/activation path itself is exercised through coordinator_main
+in focused timing and both-role offline API tests. It is not a physical console
+timing demonstration. Physical two-host and physical process-restart flags are false.
+
+Consolidated local review: relative to the verified endpoint candidate, the only
+changed runtime definitions are coordinator_main and _coordinator_enrollment_input,
+plus the enrollment-bound constant. All nine other closure files match the pinned
+archive. Pin/certificate verification, memory-only identities, HMAC, validator,
+ledger, transaction identities, history, economics and production gates are
+unchanged. Review covered premature socket/state creation, phase/credential/session
+expiry, watchdog transitions, delayed input, false PASS and every cleanup branch.
+No unresolved Critical/High implementation finding identified in this bounded
+offline review. NOT_INDEPENDENTLY_AUDITED=true. The managed security-diff skill
+requires out-of-allowlist scan artifacts, so no managed scan or signoff is claimed.
+No application secret/key persistence was introduced; existing nondisclosure and
+cleanup regressions pass. Python/OpenSSL complete memory erasure, OS compromise,
+power-loss cleanup and real Windows console timing are not proven by these checks.
+
+STATUS: enrollment-timing amendment OFFLINE PASS; full physical slice NOT PASS.
+No physical session/listener, Windows rule change, dependency installation, source
+transfer, commit, merge or push. Candidate remains uncommitted. Prior failed local
+session cleanup must be operator-confirmed before any later physical attempt.
+Next: synchronize only this corrected candidate source/parity on Surface through
+an approved method, then obtain separate physical-session authorization. Do not
+reuse prior session material or continue physical work under this amendment.
+
+## SURFACE ENDPOINT AMENDMENT — 2026-10-29 (HISTORICAL)
+
+Authorization: AUTHORIZE_L28_SURFACE_ENDPOINT_AMENDMENT_192_168_68_54.
+Current scope: Mac writer 192.168.68.50, Surface follower 192.168.68.54, TCP 42828.
+Only LAN_FOLLOWER_IP changes in runtime code; socket/certificate/context bindings
+continue to derive from that shared constant. No authentication, ledger, validator,
+Protocol, economics, history, custody or F171 behavior is changed.
+
+Worktree recovery restored the missing .git link and 824 missing baseline files
+from exact HEAD 530a307, without replacing surviving files. All seven surviving
+candidate paths matched the verified archive before restoration. Main and the
+19-file verified runtime snapshot/archive are preserved. Candidate remains on
+codex/two-host-disposable-sync-v0-1, uncommitted at the same base.
+
+The Surface native preparation at the prior 2481871a digest is operator-reported
+PASS (Python 3.11.6, cryptography 49.0.0, pyOpenSSL 26.4.0). It does not establish
+parity after this endpoint edit. The original ZIP/manifest remain immutable
+provenance for the old candidate; use the corrected full runtime digest for parity.
+No physical session, firewall change, commit, merge or push is authorized here.
+The dated integration evidence below is retained, not a current digest assertion.
+
+Corrected runtime digest:
+fe56e6081232fb0752f78fa10b5c405fa4338a308bad4c0481453b34947ee7a4
+Corrected node SHA-256:
+41eeb2fa77a7df11ba8d593d81ec4fda263dfee9aba672beacea595aaec4dea3
+The old node SHA-256 d79c163dfdbdefbdc4bbeacac5f4645d0f16c61ecc99071017d6c673d9d1c72c
+is required before the one-line Surface correction. The complete ten-file runtime
+closure must match the approved old digest before writing and new digest after;
+do not alter the historical ZIP/manifest or claim its old manifest matches new bytes.
+
+Validation on Python 3.11.9 / cryptography 49.0.0 / pyOpenSSL 26.4.0:
+- 16 passed / 107 deselected, once: endpoint context/certificate/retired-peer
+  coverage, actual offline coordinator nondisclosure/cleanup, seven negative paths,
+  both coordinator CLI roles, runtime parity and socket-setup cleanup failures.
+  Command: python -B -m pytest -q -p no:cacheprovider
+  tests/test_persistent_disposable_testnet_node.py -k 'endpoint_amendment or
+  coordinator_actual_offline_execution or coordinator_negative_paths or
+  coordinator_both_cli_roles or coordinator_runtime_source_parity or
+  coordinator_socket_setup_failure'. No live IP socket was used by these checks.
+- Exact comparison with verified snapshot confirms the sole runtime delta is
+  LAN_FOLLOWER_IP .75 -> .54. Existing dependencies and nine other closure files
+  remain byte-identical. New runtime-check exits 0, network_started=false; old
+  digest exits 1 with coordinator_source_parity_invalid.
+- Actual --offline-coordinator exits 0: pinned TLS/HMAC, independent canonical
+  validation, supply 28, balances 0/28, two transaction IDs, durable reopen,
+  replay rejection, divergence halt and cleanup_complete=true. Physical two-host
+  and physical process restart flags remain false. Actual wrong-peer CLI exits 1,
+  no stdout, coordinator_peer_address_invalid. No session/listener/firewall started.
+- Consolidated local endpoint-delta review found no unresolved Critical/High issue:
+  no trust-check bypass or address-only socket override; certificate SAN, context,
+  peer checks and listener derive from the same constant. Not independent approval.
+
+STATUS: Mac correction/offline verification PASS. On 2026-10-29 the operator
+reported corrected Surface native preflight PASS: expected digest above,
+192.168.68.54, uma/Private, TCP 42828 available, retired firewall rule absent and
+network_started=false. Mac 192.168.68.50 was locally read and its runtime check
+passed; Mac SSID uma is explicitly operator-confirmed. No direct Surface control
+is available; its result is operator evidence, not a local measurement.
+
+The operator now authorizes one final bounded physical session per FROZEN_SLICE,
+including the narrow temporary Windows rule and a local commit only on full
+physical acceptance. Initial/restart transaction evidence remains PENDING.
+No physical PASS or commit is claimed from preflight. No implementation changes
+or repeated offline suites are required to start this authorized test.
+
+### Authorized physical attempt — deadline expired; NOT PASS
+
+After Surface ARMED confirmation, one Mac writer process was started with the
+approved runtime digest. It reached PUBLIC_ENROLLMENT but did not receive the
+Surface public certificate pin before its 120-second invocation deadline.
+The process exited 1 with coordinator_deadline_expired. No retry was started.
+The operator reports Surface reached its public-pin prompt; its cleanup remains
+pending confirmation. No peer authentication, connection, transaction, physical
+restart or state agreement was demonstrated. Do not reuse this retired attempt.
+The Mac process exited and its TCP 42828 listener check returned no entries.
+Surface must cancel its follower and verify removal of the exact temporary rule
+and listener. Physical acceptance remains NOT PASS; no commit is authorized.
+
+## PHYSICAL COORDINATOR INTEGRATION — OFFLINE PASS / PHYSICAL PENDING (2026-10-27)
+
+Operator authorized completion inside the same seven-path allowlist on 2026-10-27.
+Branch codex/two-host-disposable-sync-v0-1; base/HEAD remains
+530a307f56e7eb79007fb0309fc93a6e0b9f2c0b. The prior uncommitted work is preserved.
+No additional dependency or repository path was introduced. requirements-m2m.txt's
+existing pyOpenSSL 26.4.0 / cryptography 49.0.0 pins are unchanged in this batch.
+
+Implemented --coordinate for the actual writer and follower CLI. It displays only
+public role/certificate-pin/source enrollment data. The operator enters the peer's
+64-character public certificate pin after direct comparison on that physical
+machine's terminal; no network-learned pin, TOFU, secret prompt, manual START,
+secret argument/environment/file, credential file or alternate auth scheme exists.
+The writer generates the session and numeric START. Bounded public bootstrap data
+is UNTRUSTED until the exact peer/role/network/source/session/START/phase context
+matches inside pinned TLS and existing mutual HMAC; only then can the existing
+ledger path validate and persist events. A single peer-IP-checked connection uses
+TCP 42828, memory-BIO TLS, then unchanged HMAC/ledger frame semantics.
+
+Initial and restart invocations share the existing validator, ledger, state
+commitments, replay protection and Option A. Restart loads each host's own public
+session metadata and ledger, enrolls fresh public certificate pins, and retains
+the original numeric START/session window. The same connected ledger routine is
+reused by the old in-memory input interface; no second ledger or consensus engine.
+Successful phase reports include source, endpoints, session/START, PID, data path,
+state and cleanup status. No PASS is printed after failed enrollment/setup/auth.
+
+Current runtime source digest (supersedes all earlier archives/digests):
+2481871a789dcd301e874142d26c673445821a2e85ca1c7a153adb8af63240b5
+Node SHA-256:
+d79c163dfdbdefbdc4bbeacac5f4645d0f16c61ecc99071017d6c673d9d1c72c
+
+Verification on Python 3.11.9, cryptography 49.0.0, pyOpenSSL 26.4.0 using the prior
+disposable dependency target /private/tmp/l28-pyopenssl-2640.9o3lHB/runtime:
+
+- 41 unique new coordinator cases PASS. Coverage includes the integrated TLS wire
+  driver, public pin enrollment, both actual CLI-role paths over offline byte
+  transport, automatic START, source binding, Windows-style bounded public input,
+  malformed/oversized input, mode conflicts, restart metadata and listener/identity
+  cleanup on bind/listen/accept/connect/close failure. Windows input was emulated;
+  no Windows-native or physical runtime PASS is claimed.
+- 80 directly affected offline regressions PASS once (39 prior handoff cases and
+  41 prior core cases). The existing real loopback listener test was excluded by
+  the current no-listener authority; no passing unrelated suite was repeated.
+- Actual CLI --offline-coordinator exits 0 after real TLS memory-BIO handoff,
+  existing HMAC, the canonical-validator disposable 28 L28 coinbase/transfer,
+  independent ledger agreement, durable reopen, replay rejection and divergence
+  halt. State is supply 28, balances 0/28, two transaction IDs. Its report sets
+  physical_two_host_verified=false and physical_process_restart_verified=false.
+  Owned ephemeral ledger directories, identities, pipes and worker threads clean
+  up. This proves offline reopen, not physical process restart or persistence.
+- Seven actual CLI adversarial cases exit 1 with empty stdout and exact codes:
+  wrong-pin / tamper => tls_peer_or_record_authentication_failed;
+  wrong-peer => coordinator_peer_address_invalid;
+  source-mismatch => coordinator_enrollment_binding_invalid;
+  interrupted => coordinator_interrupted;
+  bootstrap-context => tls_frame_binding_invalid;
+  bootstrap-pin => coordinator_pin_mismatch.
+- Actual --runtime-check with the pinned source digest exits 0 and reports
+  network_started=false. Its source inventory covers all ten existing runtime
+  closure files, not only the changed node. Surface must use this Mac-approved
+  digest rather than deriving an expected value from unverified local files.
+- Nondisclosure guards verify generated auth bytes/hex are absent from reports,
+  logs and persisted disposable ledger files; TLS file loaders, key logging,
+  real IP sockets and subprocess creation are forbidden by the offline guard.
+  Existing asyncio uses AF_UNIX control socketpairs, not network peers/listeners.
+- Two initial fixture guards incorrectly blocked that asyncio IPC; one diagnostic
+  identified the self-pipe and only those failed cases were corrected/rechecked.
+  A bootstrap test initially preloaded the follower context unlike the real
+  coordinator; its diagnostic identified the mismatch, the fixture was corrected
+  to real initial behavior, and the unchanged binding-rejection assertion passed.
+  The evidence harness also diagnosed four expected public replay warnings on
+  stderr; successful evidence requires exit/result/state checks, not empty stderr.
+
+One consolidated local review covered all changed behavior: public-pin trust,
+bootstrap-as-untrusted-data, TLS/HMAC context/role/source binding, unchanged
+validation-before-persistence, framing/deadlines, fail-closed reports and cleanup.
+It corrected cleanup so a socket-close error cannot skip identity disposal or
+watchdog cancellation/join. No unresolved Critical/High implementation finding
+was identified in this offline scope. This is not independent security approval.
+No guarantee of complete Python/OpenSSL buffer erasure, protection from local OS
+compromise, power-loss cleanup or an authenticated source distribution is claimed.
+The operator's physical pin comparison and reviewed source digest are trust inputs.
+
+Mac en0 was independently read as 192.168.68.50 on 2026-10-27. Surface
+192.168.68.75 / trusted uma / Private profile remain operator-scoped prerequisites,
+not freshly measured here. README gives fail-closed Windows dependency/parity,
+IP/profile/port checks, public pin enrollment, initial/restart commands and the
+separately authorized narrowly scoped firewall wrapper with mandatory finally
+removal/verification. Normal failures close listener/socket/identity/input; the
+120-second last-resort process deadline closes OS handles on exit. Crash locks
+remain fail-closed. A killed shell/power loss requires independent rule cleanup.
+
+STOP: offline coordinator integration PASS; full physical frozen acceptance is
+still BLOCKED pending approved candidate transfer/dependencies, Windows-native
+verification, fresh endpoint/source checks, explicit runtime/firewall authorization,
+then actual Mac/Surface transaction, process restart and cleanup evidence. No
+physical session, live TCP/IP listener, firewall modification, commit, merge,
+push, deployment or production activation occurred. Primary main remains clean.
+Protocol v1.0.0, economics, history, validator, custody and F171 remain unchanged.
+
+## AUTHENTICATION-INPUT / TLS DEPENDENCY AMENDMENT — OFFLINE PASS
+
+Historical 2026-10-26 evidence below; its runtime digest is superseded above.
+
+Operator authorization 2026-10-26 added requirements-m2m.txt as the seventh
+authorized path and approved pyOpenSSL==26.4.0. Its wheel metadata requires
+Python >=3.9 and cryptography >=49,<51; compatibility was exercised on Python
+3.11.9 / cryptography 49.0.0 / OpenSSL 3.6.4. Only the approved wheel and its
+required typing_extensions 4.16.0 were installed into disposable target
+/private/tmp/l28-pyopenssl-2640.9o3lHB/runtime; the existing interpreter and
+cryptography installation were not changed. Wheel SHA-256:
+f0eb0cb2d581d3ad2b9c489468485e7f2ab6727d08401bcf9d824c3caddf3c1c.
+
+The existing node now implements TLS 1.3 memory-BIO handoff with mutually pinned
+disposable certificates, direct cryptography identity objects (no credential
+files), fresh undisplayed 32-byte authentication material, role/peer/source/
+session/phase/numeric-START binding, bounded frames/deadlines and single-use
+in-memory input into the existing mutual HMAC authentication. Manual getpass,
+secret copying and redirected-stdin assumptions are removed. CLI --lan without
+verified in-memory input fails closed before sockets or state creation.
+
+Offline actual-product command:
+PYTHONPATH=/private/tmp/l28-pyopenssl-2640.9o3lHB/runtime
+/Users/pjaydondup/.pyenv/versions/3.11.9/envs/l28-env/bin/python -B -m
+coin.persistent_disposable_testnet_node --offline-auth-handoff
+(PYTHONPATH is the public dependency location, not authentication material.)
+The assignment and command above form one shell command; see README for the
+portable interface after installation of the approved dependencies.
+
+Verified evidence in this amendment:
+
+- 39 unique new focused cases passed: initial 23, additional 13, final 3 cleanup
+  regressions. The final targeted run passed 11 cases (3 new plus 8 rechecks after
+  failure-cleanup changes). No failing test was hidden or weakened.
+- Existing directly affected offline regressions: 41 passed, once. The existing
+  loopback two-process listener test was intentionally excluded by this
+  amendment's no-listener boundary; its prior passing evidence is retained below.
+- Actual CLI: valid handoff exit 0, TLSv1.3, both roles HMAC authenticated, inputs
+  consumed, cleanup_complete=true, physical_two_host_verified=false. Runtime
+  source digest: 06f0efb424e55348c730497e12e91ea196de9c162a617ec3a4f02d4ecd3adb28.
+- Six actual CLI negative probes each exited 1 with no stdout: wrong-pin,
+  tamper and replay => tls_peer_or_record_authentication_failed; wrong-peer =>
+  tls_peer_binding_invalid; expired => lan_session_invalid_or_expired;
+  incomplete => tls_delivery_incomplete. Exact codes were asserted, not merely
+  nonzero status. HMAC mismatch, malformed material, context/source substitutions,
+  oversize, invalid START and partial credential initialization also reject.
+- Non-disclosure tests forbid socket/process creation, file writes, TLS file
+  loaders and key logging. Generated authentication bytes/hex are absent from
+  stdout/stderr/logs and captured ciphertext. Failed handoffs close identities,
+  endpoints and owned buffers; successful inputs are single-use and discarded.
+- Baseline AST comparison: all existing core functions/classes unchanged except
+  the main dispatcher; ledger/validator, protected economics/history, custody and
+  F171 paths unchanged. Exactly seven authorized changed paths; no staged edits.
+
+One consolidated local security review checked trust/pin binding, TLS version,
+context framing, authentication-before-ledger use, error disclosure, fail-closed
+input paths, resource cleanup and unchanged authority boundaries. No unresolved
+Critical/High issue was identified within this offline scope; this is not an
+independent cryptographic approval. Python/OpenSSL internal key conversions and
+immutable copies exist only in memory; complete erasure, OS swap/core-dump
+exclusion, local OS compromise protection and physical host identity are not
+claimed. The offline fixture directly enrolls public pins in one trusted process.
+
+Physical two-host acceptance remains BLOCKED: a physical ciphertext coordinator
+and independently authenticated public-pin enrollment are not supplied or tested
+by this offline amendment. Windows dependency verification, refreshed source
+parity and separate runtime approval remain necessary. Previous archives/digests
+are stale. No new physical session, node process, socket, firewall change,
+production activation, local commit, merge or push occurred in this amendment.
+The primary main checkout remains clean at 530a307; candidate remains uncommitted.
+The local TCP 42828 listener check returned no entries. A global process-list
+check was unavailable (sysmond service absent); no claim of an OS-wide process
+audit is made. All offline CLI children exited and owned worker threads joined.
+
+## PRIOR TWO-HOST CORE EVIDENCE — RETAINED, NOT CURRENT RUNTIME APPROVAL
+
+Authorization: `AUTHORIZE_FROZEN_SLICE_L28_TWO_HOST_DISPOSABLE_SYNC_V0_1`
+Base: `530a307f56e7eb79007fb0309fc93a6e0b9f2c0b`
+Branch: `codex/two-host-disposable-sync-v0-1`
+Isolated worktree: `/private/tmp/l28-two-host-disposable-sync-v0-1`
+Status: UNCOMMITTED; physical acceptance and completion remain BLOCKED.
+
+The existing persistent disposable node now has an opt-in private-LAN mode for
+Mac writer/client and Surface follower (endpoints superseded above). It reuses
+BlocklessLedger, canonical validation, disposable signing, durable replay and
+Option A without changes to those authority modules. HMAC-SHA256 challenge-response
+binds roles, endpoint/network/config identities, source digest, session and fresh
+challenges. Canonical bounded frames bind types and strict per-direction sequences.
+The same two events are incrementally validated and persisted; only a validated
+prefix can resume. Restart checks replay rejection and an expected terminal
+divergence probe. Divergence writes a public halt marker, never replacement history.
+Session expiry is 600 seconds; a hard watchdog bounds each invocation to 120 seconds.
+The initial candidate used a hidden interactive secret prompt; this is superseded
+by the in-memory TLS amendment above. Retired physical attempts did not pass and
+their authentication material must never be reused.
+
+Verified locally using Python 3.11.9 / cryptography 49.0.0:
+
+- Focused suite initially: 38 passed, one existing loopback subprocess test blocked
+  by sandbox socket permissions. A direct loopback-bind diagnostic confirmed
+  `PermissionError: Operation not permitted`. Only that failed regression was
+  rerun with loopback permission: 1 passed. No LAN socket was opened.
+- Review-strengthened tests: 14 passed, 28 deselected (11 binding cases now use
+  valid MACs over invalid bindings, plus three new CLI/path/nonprefix cases).
+  **All 42 unique focused cases passed**; passing unrelated tests were not repeated.
+- Affected regressions, once: **116 passed** across `test_protocol_conformance.py`,
+  `test_disposable_testnet_identity.py`,
+  `test_disposable_network_identity_genesis_binding.py`, and
+  `test_foundation146_149_option_a_offline.py`.
+- Commands used `python -B -m pytest -q -p no:cacheprovider` with the above paths.
+- Real CLI `--source-inventory`: exit 0; actual subprocess LAN invocation without
+  a private terminal then returned exit 1, `lan_secret_requires_private_terminal`.
+  The new guard is `lan_authentication_handoff_required`; neither is physical proof.
+- Offline in-memory transport tests authenticate both roles, synchronize two events,
+  reopen independently persisted state, resume a partial follower, reject replay,
+  compare supply/balances/IDs/commitments and persist terminal divergence halts.
+- Adversarial coverage: invalid keys/roles/network/session/source/phase/type/sequence,
+  Boolean substitutions, MAC tampering, old-frame replay across handshakes,
+  duplicate/malformed/noncanonical/oversized JSON, interrupted frames, invalid
+  transaction signatures, corrupt records, invalid state paths and stale/halt locks.
+
+One consolidated local implementation review inspected authentication/context and
+sequence binding, validation-before-persistence, bounded IO/watchdog, restart/halt
+behavior, public-only evidence, exact changed paths and unchanged production gates.
+No unresolved Critical/High implementation issue was identified in this bounded
+offline review. This is not an independent cryptographic review or a managed
+security-scan approval. The managed scan workflow requires out-of-scope artifacts;
+no extra review framework or scan configuration was created.
+Residual limits: HMAC provides no confidentiality; local OS compromise and traffic
+denial of service are not prevented; Python memory zeroization and power-loss
+durability are not claimed. A crash can leave a fail-closed lock requiring separate
+inspection; no automatic lock removal, history repair or reward regeneration exists.
+
+Earlier source-transfer and endpoint checks are historical evidence only; they do
+not establish current parity after the TLS amendment. Operator-reported current
+scope is Mac 192.168.68.50 and Surface 192.168.68.75 on trusted home LAN uma, with
+Surface Python 3.11.6 / cryptography 49.0.0 and Private profile. Those runtime
+prerequisites must be refreshed before any separately authorized physical session.
+No physical state commitment or two-host PASS is claimed. No local commit is
+permitted until both hosts complete the transaction/restart/rejection checks and
+clean shutdown required by the full frozen slice.
+
+Protocol v1.0.0, protected economics, historical artifacts, canonical validator,
+custody and F171 remain unchanged. Production authority remains BLOCKED. EVD-001
+is not integrated. No merge, push, deployment or other-project change occurred.
 
 ## COMPLETED HISTORICAL MANIFEST INTEGRITY — 2026-10-22
 
