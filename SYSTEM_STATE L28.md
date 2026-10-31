@@ -7,7 +7,113 @@ PROJECT_STATE: ACTIVE
 
 Only the operator may change PROJECT_STATE.
 
-## CURRENT — THREE-PEER DISPOSABLE RELAY v0.1 — 2026-10-31
+## CURRENT — INDEPENDENT PEER SPENDING v0.1 — 2026-10-31
+
+Authority: AUTHORIZE_FROZEN_SLICE_L28_INDEPENDENT_PEER_SPENDING_V0_1.
+Base: 4c2c82fabd4ca73220ce1db628bf92ee116e84dc.
+Branch: codex/independent-peer-spending-v0-1; exact six-path scope in FROZEN_SLICE.
+Implementation/actual-product acceptance PASS; COMPLETE_PENDING_OPERATOR.
+
+Final operator authority:
+AUTHORIZE_L28_INDEPENDENT_PEER_SPENDING_ACCEPTANCE_AND_LOCAL_COMMIT.
+Final acceptance reconciliation PASS against unchanged source/test and public
+evidence hashes, 35 focused / 385 affected passes and all six process reports.
+Independent spending, restart, rejections, cleanup and review qualifications are
+preserved. One exact six-path local commit authorized; prior UNCOMMITTED/no-commit
+statements below are build-phase history superseded only for this commit.
+Git records the resulting commit identity. PROJECT_STATE stays ACTIVE; slice
+status stays COMPLETE_PENDING_OPERATOR. No tests/runtime repeated, integration,
+publication or production authority. STOP after local commit verification.
+
+Three-peer relay is operator-closed COMPLETE
+at that base; its accepted evidence below remains unchanged historical evidence.
+PROJECT_STATE remains ACTIVE. No commit/merge/push or production authority.
+
+### Independent spending — verified evidence
+
+Opt-in `--three-peer --independent-spend` reuses the accepted CLI/TLS/HMAC,
+BlocklessLedger and canonical validator. Public Ed25519 ownership registrations
+bind each node ID/key/address to the complete source/network/endpoint/session
+bootstrap digest, and every node agrees on the identity map over authenticated
+links before ledger activity. A alone creates the fixed disposable 28 coinbase
+and funds B; B signs its own 28 payment only after accepted funding. B sends its
+unchanged signed bytes upstream to A and downstream to C. No A-C connection.
+Opt-in one-shard ledger configuration preserves cross-sender chronological replay;
+default relay/two-peer sharding and validation are unchanged. The fixed schedule
+is experiment ordering, not consensus/finality. Restart recovers public history
+without payment keys/re-signing/reissuance; it is not persistent wallet recovery.
+
+Focused: 35 PASS; first run 34 PASS and one sandbox-blocked loopback bind, then
+only that blocked CLI case PASS with authorized permission. No passing case rerun.
+Affected: 385 PASS once (remaining persistent-node tests, protocol conformance,
+disposable identity), disjoint from the focused cases. Existing Python 3.11.9,
+cryptography 49.0.0, pyOpenSSL 26.4.0 and pytest 8.4.1 reused; no installation.
+Focused adversarial cases cover unauthorized signer/sender/receiver, invalid
+signature, signed insufficient balance reaching the canonical balance gate,
+replay, competing prefix, stage/context/network/profile/schema/type tampering,
+duplicate coinbase, B spend before funding, malformed ownership/duplicate key,
+corrupt/truncated/reordered/duplicate/incomplete persistence and failed-handoff
+cleanup. Rejections preserve memory counters/indexes/balances and persisted bytes.
+
+Separate actual CLI execution: ACTUAL_INDEPENDENT_PEER_SPENDING_PASS.
+Session: 06f62ed48123b24f11d5d1dd3eb76df2.
+Runtime source digest:
+941baa864982bcf8d6f6d533ce1ca42797ad716a9608334e7a00516b9d7e1a10.
+Node SHA-256: 3bf8d276c89e1a29c4063362edf77d0a16ef1df595754de69293c3a14d5237ff.
+Tests SHA-256: fb540b1e4aef884988ea37251df08b4c29d70515c65c6585e5b97cc601d39e69.
+Initial A/B/C PIDs: 34251 / 34250 / 34249. Restart: 34254 / 34253 / 34252.
+All six exit zero; full-fingerprint comparisons/local PAIR inputs on AB/BC in
+both phases supplied by a trusted automated local PTY observer, not independent
+human/physical-host attestation. No node auto-approval switch was added.
+
+All three initial and restart reports match these original transaction IDs:
+
+- Coinbase: d6eb985a863e7c92c7cdd725859445ba0d54071cb247b349bb667cd8a3cfc498
+- A -> B: d7e160831ff9d8c3ac20b3ee9542b4b000d25d9110d3365851684750101933c1
+- B -> C: 528e8399a69fc8f7e22d88fce122feae8cff4c15bcd22119e23dd54cd2f8ba82
+
+Canonical original event-byte SHA-256 values, in order:
+e653183e2393a5d3feab1befa3fd77af066650a38d290e5facf469bd99fab66b;
+08dce848e30e649a6e77478eca3119b11b09dca4e5ebe0e3c1bbd1f44932e87a;
+8228d381e4752d289524b2021236ff055b8c6c18c617ffbc41e6bd67faee5ad7.
+One coinbase, issued supply 28, mint height 1, three transactions, volume 84;
+final A/B/C balances 0/0/28. Matching initial/restart commitment:
+c534aa087ad96d375948c8e0341ea609199493120e9b94ae1ee18cd666fc2450.
+Fresh restart PIDs/TLS pins, identical recovered events/state, replay rejection
+without mutation, all-peer agreement before terminal Option A divergence halt.
+Owned connections closed; locks removed; all six PIDs exited; both ports checked
+clear. Generated disposable runtime ledger/report directories were removed by the
+acceptance driver after verification; public original events/identities and six
+host reports remain below. No private material was serialized or logged.
+
+Public evidence directory:
+/private/var/folders/vf/ktxmbdkj6rs2d90q4ct335380000gn/T/l28-independent-spending-actual-g4pgvk10/
+product_evidence.json SHA-256:
+acb85aafd461447fce8a3824be4cc937f767d3f5d93de5aa8e69c7489f96b2c8.
+The public product evidence indexes hashes of bootstrap and all six full reports.
+Reproduction uses the README's actual CLI commands and fresh sessions/keys; IDs
+are expected to differ on new runs. Live context validation expires with the
+original session; retained signed bytes remain public evidence, not authority.
+
+One consolidated primary-agent security-diff review of all six paths and direct
+ledger/validator/transport consumers completed with zero reportable findings;
+no unresolved Critical/High affecting the bounded capability. Scan ID:
+6a12ce83-12cd-4973-b209-3be6a90e6ec6. Managed report:
+/Users/pjaydondup/.codex/state/plugins/codex-security/scans/l28-independent-peer-spending-v0-1/4c2c82fabd4ca73220ce1db628bf92ee116e84dc_20261031T232508Z_imb7pq70/report.md
+Completion-evidence-only records were subsequently checked against these reports;
+reviewed runtime/test bytes are unchanged. NOT_INDEPENDENTLY_AUDITED=true.
+HMAC application frames are authenticated, not encrypted; memory-only pinned TLS
+protects authentication-material delivery. Same-host loopback scope only.
+No consensus/finality, canonical continuation/settlement, physical/public network,
+production custody/F171 or independent cryptographic approval is implied.
+
+Main stays clean at base. Cached origin/main matches base; a fresh GitHub read
+failed DNS resolution during this offline build, so publication was not freshly
+reconfirmed. No integration/publication requested or attempted. Exactly six
+authorized files uncommitted; PROJECT_STATE ACTIVE. STOP pending separate operator
+acceptance/local commit. Production custody/F171 remain BLOCKED and unchanged.
+
+## HISTORICAL — THREE-PEER DISPOSABLE RELAY v0.1 — COMPLETE
 
 Authority: AUTHORIZE_FROZEN_SLICE_L28_THREE_PEER_DISPOSABLE_RELAY_V0_1.
 Base/published main: 61bf725c0c69040fc10976cc9508c540682a0f76.

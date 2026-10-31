@@ -4,7 +4,34 @@ Last updated: 2026-10-31
 
 PROJECT_STATE: ACTIVE
 
-## CURRENT AUTHORIZED SLICE — THREE-PEER DISPOSABLE RELAY v0.1
+## CURRENT AUTHORIZED SLICE — INDEPENDENT PEER SPENDING v0.1
+
+Finalization authority:
+AUTHORIZE_L28_INDEPENDENT_PEER_SPENDING_ACCEPTANCE_AND_LOCAL_COMMIT.
+Final evidence/criteria reconciliation PASS; authorize one exact six-path local
+commit only. Earlier UNCOMMITTED/no-commit text below is historical build status.
+PROJECT_STATE ACTIVE and COMPLETE_PENDING_OPERATOR remain. No deferred work,
+repeated tests, runtime, new development, merge, push or production is authorized.
+STOP after committed contents, parent, HEAD and clean-worktree verification.
+
+AUTHORIZE_FROZEN_SLICE_L28_INDEPENDENT_PEER_SPENDING_V0_1 authorizes only the
+six-path bounded loopback spending/recovery capability in FROZEN_SLICE. The
+accepted/published three-peer relay is operator-closed COMPLETE at 4c2c82f with
+all evidence preserved below. PROJECT_STATE stays ACTIVE. No deferred item grants
+authority. Persistent wallets, arbitrary-origin gossip, fork choice/finality,
+canonical continuation, public exposure, production custody/F171 and bridge stay
+deferred. No commit, merge, push, installation or deployment.
+
+Independent spending acceptance PASS / COMPLETE_PENDING_OPERATOR: 35 focused and
+385 disjoint affected regressions PASS; separate actual three-CLI initial/restart
+session 06f62ed48123b24f11d5d1dd3eb76df2 produced one coinbase/two independent
+signed payments, supply 28, balances A/B/C 0/0/28, identical original events/state,
+replay/divergence/recovery and cleanup. Evidence/qualifications in SYSTEM_STATE.
+No unresolved Critical/High affecting the capability; not independently audited.
+PROJECT_STATE ACTIVE, six files UNCOMMITTED. STOP pending separate operator
+acceptance and commit authorization. Deferred work remains unauthorized.
+
+## HISTORICAL — THREE-PEER DISPOSABLE RELAY v0.1 — COMPLETE
 
 AUTHORIZE_FROZEN_SLICE_L28_THREE_PEER_DISPOSABLE_RELAY_V0_1 permits only the
 six-path loopback implementation and acceptance in FROZEN_SLICE. The prior

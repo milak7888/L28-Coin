@@ -1,6 +1,85 @@
 # L28 — FROZEN_SLICE.md
 
-## CURRENT — THREE-PEER DISPOSABLE RELAY v0.1 — 2026-10-31
+## CURRENT — INDEPENDENT PEER SPENDING v0.1 — 2026-10-31
+
+PROJECT_STATE: ACTIVE
+Authority: AUTHORIZE_FROZEN_SLICE_L28_INDEPENDENT_PEER_SPENDING_V0_1.
+Base: 4c2c82fabd4ca73220ce1db628bf92ee116e84dc.
+Branch: codex/independent-peer-spending-v0-1.
+
+### OPERATOR ACCEPTANCE / ONE LOCAL COMMIT
+
+AUTHORIZE_L28_INDEPENDENT_PEER_SPENDING_ACCEPTANCE_AND_LOCAL_COMMIT.
+Final frozen-criteria/evidence reconciliation PASS: unchanged runtime/test hashes,
+35 focused and 385 affected passes, original session/commitment, all six process
+reports, independent signatures, restart/rejection/cleanup and security results.
+Authorize exactly one six-path local milestone commit after exact staged review.
+Earlier UNCOMMITTED/no-commit instructions below are build-phase history,
+superseded only for this commit. COMPLETE_PENDING_OPERATOR and PROJECT_STATE
+ACTIVE remain; no new tests/runtime/development, merge, push or production activity.
+STOP after parent, committed paths, final HEAD and clean-worktree verification.
+
+The operator closes Three-Peer Disposable Relay v0.1 as COMPLETE at the published
+base, preserving all acceptance evidence and qualifications below as history.
+
+Objective/deliverable: opt-in existing three-peer CLI with independent memory-only
+payment identities A/B/C, separate from TLS; exactly one disposable coinbase to A,
+A's signed 28 L28 funding to B, then B's independently signed 28 L28 payment to C.
+Only AB/BC links; B relays original signed bytes upstream/downstream. Authenticate
+public ownership proofs and the complete identity map against bootstrap/session;
+every node validates signatures, balance, fixed stage/prefix and identity before
+persistence through unchanged BlocklessLedger/canonical validator. Fixed ordering
+is experiment scheduling, not consensus. Conflicts halt without winner/rewrite.
+Restart fresh processes/TLS, replay the same three public events without keys,
+regeneration or reissuance. Preserve old relay/two-peer behavior.
+
+Exact allowlist: FROZEN_SLICE L28.md; SYSTEM_STATE L28.md; DEFER L28.md; README.md;
+coin/persistent_disposable_testnet_node.py;
+tests/test_persistent_disposable_testnet_node.py.
+
+Acceptance: focused tests once, disjoint affected regressions once, real three-CLI
+initial/restart execution; independent A/B signatures, original bytes/IDs and
+commitments equal everywhere; one coinbase/supply 28, A/B/C balances 0/0/28.
+Unauthorized spend, bad signature, insufficient balance, replay, corruption and
+competing histories reject without unauthorized mutation. Complete process/socket
+cleanup, sanitized public evidence, one consolidated security review with no
+unresolved Critical/High affecting this capability. Mocks/tests alone are not PASS.
+
+Safety: IPv4 127.0.0.1 only; max three L28 processes/two links; existing 65536-byte
+limits, 120-second active invocation/600-second session and certificate expiry.
+Disposable memory-only signing/TLS only; no private persistence/output. No protocol,
+economics/history/validator changes; no production custody/F171, mining, public
+network, settlement, consensus/finality, installation, deployment or other project.
+Stop at actual-product acceptance PASS/FAIL and evidence. No commit, merge or push.
+
+### ACCEPTANCE RESULT — PASS / COMPLETE_PENDING_OPERATOR
+
+35 focused cases PASS (34 passed on the first run; sandbox denied loopback bind
+before the CLI case could launch, then that one blocked case passed with the
+authorized loopback permission). 385 disjoint affected regressions PASS once,
+including preserved three-peer relay, protocol conformance and disposable identity.
+Separate actual CLI initial/restart run: ACTUAL_INDEPENDENT_PEER_SPENDING_PASS.
+Session: 06f62ed48123b24f11d5d1dd3eb76df2.
+Runtime digest: 941baa864982bcf8d6f6d533ce1ca42797ad716a9608334e7a00516b9d7e1a10.
+Commitment: c534aa087ad96d375948c8e0341ea609199493120e9b94ae1ee18cd666fc2450.
+Three separate initial processes and three genuinely fresh restart processes all
+exited zero. Each independently recorded the same three original events/IDs,
+one coinbase, A/B spending signatures, supply 28, balances A/B/C 0/0/28, durable
+agreement, replay rejection and terminal divergence halt after synchronization.
+Public original events and reports are retained at the evidence path in SYSTEM_STATE;
+generated disposable runtime state was removed after verified cleanup. No private
+material persisted. Both loopback ports clear, six PIDs exited, running locks gone.
+Full-fingerprint/local PAIR approval was supplied by a trusted automated local PTY
+observer; this is not independent human/physical-host attestation or runtime
+auto-approval. One primary-agent consolidated changed-path security review found
+no reportable findings/no unresolved Critical/High affecting this capability.
+NOT_INDEPENDENTLY_AUDITED=true. Protocol/economics/history/production gates unchanged.
+PROJECT_STATE ACTIVE; six-file candidate UNCOMMITTED. STOP pending operator
+acceptance and separate local-commit authorization; no further build/merge/push.
+
+---
+
+## HISTORICAL — THREE-PEER DISPOSABLE RELAY v0.1 — COMPLETE
 
 PROJECT_STATE: ACTIVE
 Authority: AUTHORIZE_FROZEN_SLICE_L28_THREE_PEER_DISPOSABLE_RELAY_V0_1.

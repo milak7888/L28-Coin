@@ -90,6 +90,8 @@ SIGN_DOMAIN = b"L28-PERSISTENT-DISPOSABLE-TRANSFER-V0.1\x00"
 LAN_PROFILE = "l28-two-host-disposable-sync/v0.1"
 PEER_PROFILE = "l28-two-network-disposable-peer/v0.1"
 RELAY_PROFILE = "l28-three-peer-disposable-relay/v0.1"
+SPEND_PROFILE = "l28-independent-peer-spending/v0.1"
+SPEND_DOMAIN = b"L28-INDEPENDENT-PEER-SPENDING-V0.1\x00"
 LAN_WRITER_IP = "192.168.68.50"
 LAN_FOLLOWER_IP = "192.168.68.54"
 LAN_PORT = 42828
@@ -1316,7 +1318,7 @@ def _peer_config(endpoints: Any = None) -> dict[str, Any]:
     if endpoints is None:
         return {"profile": LAN_PROFILE, "writer": LAN_WRITER_IP,
                 "follower": LAN_FOLLOWER_IP, "port": LAN_PORT}
-    if isinstance(endpoints, dict) and endpoints.get("profile") == RELAY_PROFILE:
+    if isinstance(endpoints, dict) and endpoints.get("profile") in (RELAY_PROFILE, SPEND_PROFILE):
         _exact_mapping(endpoints, {"profile", "writer", "follower", "port", "bootstrap",
                                   "sender_id", "receiver_id"}, "relay_link_invalid")
         expected = relay_link(endpoints["bootstrap"], endpoints["sender_id"], endpoints["receiver_id"])
@@ -1473,7 +1475,7 @@ def _handoff_context(context: Any) -> dict[str, Any]:
     if not isinstance(context, dict):
         raise PersistentNodeError("tls_context_invalid")
     endpoints = None
-    if context.get("profile") == RELAY_PROFILE:
+    if context.get("profile") in (RELAY_PROFILE, SPEND_PROFILE):
         expected = relay_context(context.get("bootstrap"), context.get("sender_id"),
                                  context.get("receiver_id"), context.get("phase"))
     elif context.get("profile") == PEER_PROFILE:
@@ -2004,7 +2006,8 @@ def _lan_agree(root: Path, local: Any, peer: Any) -> None:
     raise PersistentNodeError("lan_divergence_halted")
 
 
-def _lan_open_state(root: Path, context: dict[str, Any], role: str) -> BlocklessLedger:
+def _lan_open_state(root: Path, context: dict[str, Any], role: str,
+                    *, spending: dict[str, Any] | None = None) -> BlocklessLedger:
     # A new, explicitly named temporary directory; never an active ledger path.
     expected = "l28-disposable-lan-" + context["session"] + "-" + role
     if (root.name != expected or not root.is_absolute()
@@ -2013,6 +2016,8 @@ def _lan_open_state(root: Path, context: dict[str, Any], role: str) -> Blockless
         raise PersistentNodeError("lan_data_directory_invalid")
     metadata = {k: v for k, v in context.items() if k != "phase"}
     metadata["role"] = role
+    if spending is not None:
+        metadata["spending"] = spending
     if context["phase"] == "initial":
         root.mkdir(mode=0o700)  # Exclusive creation; never overwrite an old run.
         _lan_write_public(root / "session.json", metadata)
@@ -2031,10 +2036,14 @@ def _lan_open_state(root: Path, context: dict[str, Any], role: str) -> Blockless
                                 or p.name not in {f"shard_{n}.jsonl" for n in range(5)}
                                 or p.stat().st_size > MAX_FRAME_BYTES for p in files):
             raise PersistentNodeError("lan_persisted_records_invalid")
-    ledger = (asyncio.run(_load_ledger(directory)) if context["phase"] == "restart"
-              else _new_ledger(directory))
+    if spending is not None:
+        ledger = spend_open_ledger(directory, spending["bootstrap"], spending["identities"],
+                                   restart=context["phase"] == "restart")
+    else:
+        ledger = (asyncio.run(_load_ledger(directory)) if context["phase"] == "restart"
+                  else _new_ledger(directory))
     events = list(ledger.transactions.values())
-    if len(events) > 2 or (events and events[0]["type"] != "coinbase"):
+    if len(events) > (3 if spending is not None else 2) or (events and events[0]["type"] != "coinbase"):
         raise PersistentNodeError("lan_persisted_events_invalid")
     if role == "writer" and context["phase"] == "restart" and len(events) != 2:
         raise PersistentNodeError("lan_writer_incomplete_no_regeneration")
@@ -2425,7 +2434,7 @@ def _coordinator_record_peer(raw: str, identity: MemoryTLSIdentity, phase: str,
                 or hmac.compare_digest(peer["pin"], identity.pin)
                 or peer["source_digest"] != lan_source_inventory()["source_digest"]):
             raise ValueError
-        if peers["profile"] == RELAY_PROFILE:
+        if peers["profile"] in (RELAY_PROFILE, SPEND_PROFILE):
             if (phase not in ("initial", "restart") or context is None
                     or _canonical_bytes(_handoff_context(peer["context"])) != _canonical_bytes(_handoff_context(context))
                     or context["phase"] != phase
@@ -3102,11 +3111,13 @@ def lan_main(args: Any, *, authentication: HandoffMaterial | None = None) -> int
         watchdog.cancel()
 
 
-def relay_bootstrap(b_port: int = 42828, c_port: int = 42829) -> dict[str, Any]:
+def relay_bootstrap(b_port: int = 42828, c_port: int = 42829,
+                    *, independent_spend: bool = False) -> dict[str, Any]:
     """Public, bounded run configuration; generates no keys or sockets."""
     binding = persistent_testnet_binding()
     return validate_relay_bootstrap({
-        "profile": RELAY_PROFILE, "version": 1, "session": secrets.token_hex(16),
+        "profile": SPEND_PROFILE if independent_spend else RELAY_PROFILE,
+        "version": 1, "session": secrets.token_hex(16),
         "started": int(time.time()), "source_digest": lan_source_inventory()["source_digest"],
         "network": NETWORK_ID, "genesis": binding["genesis_hash"], "config": binding["config_hash"],
         "nodes": {"A": {"host": HOST, "port": None}, "B": {"host": HOST, "port": b_port},
@@ -3118,7 +3129,7 @@ def validate_relay_bootstrap(value: Any) -> dict[str, Any]:
     _exact_mapping(value, {"profile", "version", "session", "started", "source_digest",
         "network", "genesis", "config", "nodes", "links", "origin"}, "relay_bootstrap_invalid")
     binding = persistent_testnet_binding()
-    if (value["profile"] != RELAY_PROFILE or type(value["version"]) is not int or value["version"] != 1
+    if (value["profile"] not in (RELAY_PROFILE, SPEND_PROFILE) or type(value["version"]) is not int or value["version"] != 1
             or not _lan_hex(value["session"], 32) or not _exact_int(value["started"])
             or not value["started"] <= time.time() < value["started"] + LAN_SESSION_SECONDS
             or value["source_digest"] != lan_source_inventory()["source_digest"]
@@ -3158,7 +3169,7 @@ def relay_link(bootstrap: Any, sender: Any, receiver: Any) -> dict[str, Any]:
     boot = validate_relay_bootstrap(bootstrap)
     if [sender, receiver] not in boot["links"]:
         raise PersistentNodeError("relay_link_invalid")
-    return {"profile": RELAY_PROFILE, "writer": HOST, "follower": HOST,
+    return {"profile": boot["profile"], "writer": HOST, "follower": HOST,
             "port": boot["nodes"][receiver]["port"], "bootstrap": boot,
             "sender_id": sender, "receiver_id": receiver}
 
@@ -3171,7 +3182,7 @@ def relay_context(bootstrap: Any, sender: Any, receiver: Any, phase: Any) -> dic
     return {**link, "version": 1, "session": boot["session"], "started": boot["started"],
             "phase": phase, "source_digest": boot["source_digest"], "network": boot["network"],
             "genesis": boot["genesis"], "config": boot["config"],
-            "bootstrap_digest": hashlib.sha256(RELAY_PROFILE.encode() + b"\x00" + _canonical_bytes(boot)).hexdigest()}
+            "bootstrap_digest": hashlib.sha256(boot["profile"].encode() + b"\x00" + _canonical_bytes(boot)).hexdigest()}
 
 
 def _relay_authenticated_link(boot: Any, sender: str, receiver: str, node_id: str,
@@ -3216,10 +3227,247 @@ def _relay_authenticated_link(boot: Any, sender: str, receiver: str, node_id: st
             identity.close()
 
 
+def spend_bootstrap_digest(boot: Any) -> str:
+    boot = validate_relay_bootstrap(boot)
+    if boot["profile"] != SPEND_PROFILE:
+        raise PersistentNodeError("spending_profile_required")
+    return hashlib.sha256(SPEND_DOMAIN + b"bootstrap\x00" + _canonical_bytes(boot)).hexdigest()
+
+
+def spend_registration(private: Ed25519PrivateKey, node_id: str, boot: Any) -> dict[str, Any]:
+    public = _public_key_hex(private)
+    body = {"node_id": node_id, "public_key": public, "address": public_identity(public),
+            "bootstrap_digest": spend_bootstrap_digest(boot)}
+    return {**body, "signature": private.sign(
+        SPEND_DOMAIN + b"ownership\x00" + _canonical_bytes(body)).hex()}
+
+
+def spend_validate_registration(value: Any, node_id: str, boot: Any) -> dict[str, Any]:
+    _exact_mapping(value, {"node_id", "public_key", "address", "bootstrap_digest", "signature"},
+                   "spending_ownership_invalid")
+    try:
+        if (node_id not in ("A", "B", "C") or value["node_id"] != node_id
+                or not _lan_hex(value["public_key"], 64) or not _lan_hex(value["signature"], 128)
+                or value["address"] != public_identity(value["public_key"])
+                or value["bootstrap_digest"] != spend_bootstrap_digest(boot)):
+            raise ValueError
+        body = {k: v for k, v in value.items() if k != "signature"}
+        Ed25519PublicKey.from_public_bytes(bytes.fromhex(value["public_key"])).verify(
+            bytes.fromhex(value["signature"]), SPEND_DOMAIN + b"ownership\x00" + _canonical_bytes(body))
+    except (ValueError, TypeError, InvalidSignature):
+        raise PersistentNodeError("spending_ownership_invalid") from None
+    return deepcopy(value)
+
+
+def spend_validate_identities(value: Any, boot: Any) -> dict[str, Any]:
+    _exact_mapping(value, {"A", "B", "C"}, "spending_identities_invalid")
+    result = {n: spend_validate_registration(value[n], n, boot) for n in "ABC"}
+    if len({v["public_key"] for v in result.values()}) != 3:
+        raise PersistentNodeError("spending_identities_not_independent")
+    return result
+
+
+def spend_signable(tx: Mapping[str, Any]) -> bytes:
+    return SPEND_DOMAIN + b"transfer\x00" + _canonical_bytes(
+        {k: v for k, v in tx.items() if k not in ("id", "signature")})
+
+
+def spend_verify_signature(tx: Any, boot: Any, identities: Any) -> bool:
+    try:
+        if (not isinstance(tx, dict) or tx.get("type") != "transfer"
+                or tx.get("profile") != SPEND_PROFILE or tx.get("network") != NETWORK_ID
+                or type(tx.get("stage")) is not int or tx["stage"] not in (1, 2)
+                or tx.get("bootstrap_digest") != spend_bootstrap_digest(boot)):
+            return False
+        sender = identities["AB"[tx["stage"] - 1]]
+        if (tx.get("sender") != sender["address"] or tx.get("sender_public_key") != sender["public_key"]
+                or not _lan_hex(tx.get("signature"), 128)):
+            return False
+        Ed25519PublicKey.from_public_bytes(bytes.fromhex(sender["public_key"])).verify(
+            bytes.fromhex(tx["signature"]), spend_signable(tx))
+        return True
+    except (ValueError, TypeError, KeyError, InvalidSignature, PersistentNodeError):
+        return False
+
+
+def spend_validate_event(tx: Any, boot: Any, identities: Any) -> bool:
+    if not isinstance(tx, dict):
+        raise PersistentNodeError("spending_event_invalid")
+    coinbase = tx.get("type") == "coinbase"
+    _exact_mapping(tx, (COINBASE_FIELDS if coinbase else TRANSFER_FIELDS)
+                   | {"stage", "previous_id", "bootstrap_digest"}, "spending_event_schema_invalid")
+    stage = tx["stage"]
+    if (type(stage) is not int or stage not in (0, 1, 2)
+            or coinbase != (stage == 0) or tx["profile"] != SPEND_PROFILE
+            or tx["network"] != NETWORK_ID or tx["bootstrap_digest"] != spend_bootstrap_digest(boot)
+            or tx["id"] != compute_tx_id(tx)
+            or not all(_exact_int(tx[f]) for f in ("amount", "nonce", "timestamp"))
+            or tx["amount"] <= 0 or tx["timestamp"] != COINBASE_TIMESTAMP + stage
+            or tx["nonce"] != (0 if coinbase else 1)
+            or tx["previous_id"] != "" and not _lan_hex(tx["previous_id"], 64)):
+        raise PersistentNodeError("spending_event_binding_invalid")
+    if coinbase:
+        if (tx["sender"] != "COINBASE" or tx["coinbase"] is not True
+                or tx["signature"] != "COINBASE" or tx["miner"] != identities["A"]["address"]
+                or tx["receiver"] != identities["A"]["address"] or tx["amount"] != 28
+                or type(tx["height"]) is not int or tx["height"] != 0 or tx["previous_id"] != ""):
+            raise PersistentNodeError("spending_coinbase_invalid")
+    elif (tx["receiver"] != identities["BC"[stage - 1]]["address"]
+            or not spend_verify_signature(tx, boot, identities)):
+        raise PersistentNodeError("spending_signature_or_owner_invalid")
+    return True
+
+
+def spend_build_event(private: Ed25519PrivateKey, stage: int, previous_id: str,
+                       boot: Any, identities: Any, *, amount: int = 28) -> dict[str, Any]:
+    if type(stage) is not int or stage not in (0, 1, 2):
+        raise PersistentNodeError("spending_stage_invalid")
+    if stage == 0:
+        tx = _build_coinbase(identities["A"]["address"])
+    else:
+        public = _public_key_hex(private)
+        tx = {"sender": public_identity(public), "receiver": identities["BC"[stage-1]]["address"],
+              "sender_public_key": public, "amount": amount, "timestamp": COINBASE_TIMESTAMP + stage,
+              "type": "transfer", "network": NETWORK_ID, "nonce": 1}
+    tx.update(profile=SPEND_PROFILE, stage=stage, previous_id=previous_id,
+              bootstrap_digest=spend_bootstrap_digest(boot))
+    if stage:
+        tx["signature"] = private.sign(spend_signable(tx)).hex()
+    tx["id"] = compute_tx_id(tx)
+    spend_validate_event(tx, boot, identities)
+    return tx
+
+
+def _spend_order(tx: Any, ids: list[str]) -> None:
+    if tx["stage"] != len(ids) or tx["previous_id"] != (ids[-1] if ids else ""):
+        raise PersistentNodeError("spending_history_conflict_halt")
+    if tx["amount"] != 28:
+        raise PersistentNodeError("spending_fixed_amount_invalid")
+
+
+def spend_open_ledger(directory: Path, boot: Any, identities: Any, *, restart: bool = False) -> BlocklessLedger:
+    identities = spend_validate_identities(identities, boot)
+    # One existing ledger shard retains cross-sender chronological order on replay.
+    # Default five-shard behavior is unchanged outside this opt-in experiment.
+    ledger = BlocklessLedger(str(directory), num_shards=1, policy=TxPolicy(require_signatures=True),
+        verify_signature=lambda tx: spend_verify_signature(tx, boot, identities), require_signatures=True)
+    if restart:
+        ids: list[str] = []
+        def record(tx: Any) -> bool:
+            spend_validate_event(tx, boot, identities)
+            _spend_order(tx, ids)
+            ids.append(tx["id"])
+            return True
+        asyncio.run(ledger.load_from_disk(validate_replay=True, acknowledge_disposable_test_only=True,
+                                         expected_network=NETWORK_ID, validate_record=record))
+        if len(ids) != 3:
+            raise PersistentNodeError("spending_restart_incomplete_no_regeneration")
+    else:
+        ledger.initialize_disposable_test_issuance_state(mint_height=0, issued_supply=0,
+                                                         acknowledge_test_only=True)
+    return ledger
+
+
+def spend_classify(ledger: BlocklessLedger, tx: Any, boot: Any, identities: Any) -> tuple[bool, str, str]:
+    try:
+        spend_validate_event(tx, boot, identities)
+        outcome = validate_transaction(tx, policy=ledger.policy,
+            current_balance_lookup=ledger._current_balance_lookup, seen_tx_lookup=ledger._seen_tx_lookup,
+            verify_signature=ledger.verify_signature, current_height_lookup=lambda: ledger.mint_height,
+            current_issued_lookup=lambda: ledger.issued_supply, network=NETWORK_ID,
+            now_ts=COINBASE_TIMESTAMP + 2)
+        if not outcome[0]:
+            return outcome
+        _spend_order(tx, list(ledger.transactions))
+        return outcome
+    except PersistentNodeError as exc:
+        return False, "", exc.code
+
+
+def spend_apply(ledger: BlocklessLedger, tx: Any, boot: Any, identities: Any) -> None:
+    ok, tx_id, reason = spend_classify(ledger, tx, boot, identities)
+    if not ok or tx_id != tx["id"]:
+        raise PersistentNodeError(reason)
+    if not asyncio.run(ledger.add_transaction(tx)):
+        raise PersistentNodeError("spending_persistence_failed")
+
+
+def _spend_identity_exchange(node_id: str, own: Any, boot: Any,
+                              first: LanChannel, downstream: LanChannel | None) -> dict[str, Any]:
+    if node_id == "B":
+        a = first.receive("spending_identity")
+        c = downstream.receive("spending_identity")
+        identities = spend_validate_identities({"A": a, "B": own, "C": c}, boot)
+        first.send("spending_identities", identities)
+        downstream.send("spending_identities", identities)
+    else:
+        first.send("spending_identity", own)
+        identities = spend_validate_identities(first.receive("spending_identities"), boot)
+        if identities[node_id] != own:
+            raise PersistentNodeError("spending_local_identity_substituted")
+    digest = hashlib.sha256(SPEND_DOMAIN + b"identities\x00" + _canonical_bytes(identities)).hexdigest()
+    if node_id == "B":
+        if first.receive("spending_identity_ack") != digest or downstream.receive("spending_identity_ack") != digest:
+            raise PersistentNodeError("spending_identity_agreement_failed")
+        first.send("spending_identity_ready", digest)
+        downstream.send("spending_identity_ready", digest)
+    else:
+        first.send("spending_identity_ack", digest)
+        if first.receive("spending_identity_ready") != digest:
+            raise PersistentNodeError("spending_identity_agreement_failed")
+    return identities
+
+
+def _spend_sequence(node_id: str, private: Any, boot: Any, identities: Any, ledger: BlocklessLedger,
+                     root: Path, first: LanChannel, downstream: LanChannel | None) -> None:
+    def apply(tx: Any) -> None:
+        try:
+            spend_apply(ledger, tx, boot, identities)
+        except PersistentNodeError as exc:
+            if exc.code == "spending_history_conflict_halt":
+                _lan_halt(root, exc.code)
+            raise
+    if node_id == "A":
+        coinbase = spend_build_event(private, 0, "", boot, identities)
+        apply(coinbase)
+        payment = spend_build_event(private, 1, coinbase["id"], boot, identities)
+        apply(payment)
+        first.send("spending_funding", [coinbase, payment])
+        _lan_agree(root, ledger_state(ledger), first.receive("spending_funding_state"))
+        first.send("spending_funded", ledger_state(ledger))
+        tx = first.receive("spending_payment")
+        apply(tx)
+        first.send("spending_payment_ack", ledger_state(ledger))
+    else:
+        events = first.receive("spending_funding")
+        if not isinstance(events, list) or len(events) != 2:
+            raise PersistentNodeError("spending_funding_invalid")
+        for tx in events:
+            apply(tx)
+        if node_id == "B":
+            downstream.send("spending_funding", list(ledger.transactions.values()))
+            _lan_agree(root, ledger_state(ledger), downstream.receive("spending_funding_state"))
+        first.send("spending_funding_state", ledger_state(ledger))
+        if node_id == "B":
+            _lan_agree(root, ledger_state(ledger), first.receive("spending_funded"))
+            tx = spend_build_event(private, 2, events[-1]["id"], boot, identities)
+            apply(tx)
+            first.send("spending_payment", tx)
+            downstream.send("spending_payment", tx)
+            _lan_agree(root, ledger_state(ledger), first.receive("spending_payment_ack"))
+            _lan_agree(root, ledger_state(ledger), downstream.receive("spending_payment_ack"))
+        else:
+            apply(first.receive("spending_payment"))
+            first.send("spending_payment_ack", ledger_state(ledger))
+
+
 def relay_node_main(args: Any) -> int:
     """One independent process/ledger; link roles never grant fixture issuance."""
     assert_production_authority_inactive()
     boot = validate_relay_bootstrap(_relay_read_json(args.bootstrap))
+    spending = getattr(args, "independent_spend", False)
+    if spending != (boot["profile"] == SPEND_PROFILE):
+        raise PersistentNodeError("spending_mode_bootstrap_mismatch")
     node_id, phase = args.node_id, args.phase
     if node_id not in ("A", "B", "C") or phase not in ("initial", "restart"):
         raise PersistentNodeError("relay_node_arguments_invalid")
@@ -3242,6 +3490,7 @@ def relay_node_main(args: Any) -> int:
             raise PersistentNodeError("relay_restart_report_invalid")
     deadline = time.monotonic() + min(LAN_SESSION_SECONDS, boot["started"] + LAN_SESSION_SECONDS - time.time())
     channels, links, ledger, watchdog = [], [], None, None
+    private = identities = None
     def arm(limit: float) -> None:
         nonlocal watchdog
         if watchdog is not None:
@@ -3264,19 +3513,50 @@ def relay_node_main(args: Any) -> int:
     try:
         arm(deadline)
         first = connect("B", "C") if node_id == "C" else connect("A", "B")
-        ledger = _lan_open_state(root, first.context, node_id)
-        if phase == "restart" and len(ledger.transactions) != 2:
-            raise PersistentNodeError("relay_restart_incomplete_no_regeneration")
-        if phase == "initial" and node_id == "A":
-            private = Ed25519PrivateKey.generate()
-            events = [_build_coinbase(public_identity(_public_key_hex(private))),
-                      _build_signed_transfer(private, follower_identity(persistent_testnet_binding()))]
-            del private
-            asyncio.run(_apply_events(ledger, events))
-        lan_sync(first, ledger, root, terminal_probe=False)
+        downstream = None
+        if spending:
+            # Establish both links and independently owned public identities before funding.
+            if node_id == "B":
+                downstream = connect("B", "C")
+            if phase == "initial":
+                private = Ed25519PrivateKey.generate()
+                own = spend_registration(private, node_id, boot)
+            else:
+                own = spend_validate_identities(prior.get("spending_identities"), boot)[node_id]
+            identities = _spend_identity_exchange(node_id, own, boot, first, downstream)
+            if prior is not None and identities != prior["spending_identities"]:
+                raise PersistentNodeError("spending_restart_identity_mismatch")
+            ledger = _lan_open_state(root, first.context, node_id,
+                                    spending={"bootstrap": boot, "identities": identities})
+            if phase == "initial":
+                _spend_sequence(node_id, private, boot, identities, ledger, root, first, downstream)
+            private = None
+            state = ledger_state(ledger)
+            if (state["total_transactions"] != 3 or state["issued_supply"] != 28
+                    or state["mint_height"] != 1 or state["total_volume"] != 84
+                    or state["balances"] != {identities[n]["address"]: (28 if n == "C" else 0) for n in "ABC"}):
+                raise PersistentNodeError("spending_final_state_invalid")
+            before = {p.name: p.read_bytes() for p in (root / "ledger").iterdir()}
+            replay = list(ledger.transactions.values())[-1]
+            if spend_classify(ledger, replay, boot, identities)[2] != "replay" or asyncio.run(ledger.add_transaction(replay)):
+                raise PersistentNodeError("spending_replay_probe_failed")
+            if ledger_state(ledger) != state or before != {p.name: p.read_bytes() for p in (root / "ledger").iterdir()}:
+                raise PersistentNodeError("spending_replay_mutated_state")
+        else:
+            ledger = _lan_open_state(root, first.context, node_id)
+            if phase == "restart" and len(ledger.transactions) != 2:
+                raise PersistentNodeError("relay_restart_incomplete_no_regeneration")
+            if phase == "initial" and node_id == "A":
+                private = Ed25519PrivateKey.generate()
+                events = [_build_coinbase(public_identity(_public_key_hex(private))),
+                          _build_signed_transfer(private, follower_identity(persistent_testnet_binding()))]
+                private = None
+                asyncio.run(_apply_events(ledger, events))
+            lan_sync(first, ledger, root, terminal_probe=False)
         if node_id == "B":
-            downstream = connect("B", "C")
-            lan_sync(downstream, ledger, root, terminal_probe=False)
+            if not spending:
+                downstream = connect("B", "C")
+                lan_sync(downstream, ledger, root, terminal_probe=False)
             first.send("downstream_state", ledger_state(ledger))
             _lan_agree(root, ledger_state(ledger), first.receive("all_agreed"))
             downstream.send("all_agreed", ledger_state(ledger))
@@ -3303,7 +3583,7 @@ def relay_node_main(args: Any) -> int:
                 _lan_divergence_probe(channel, ledger, root)
             halted = True
         report = {"result": "RELAY_WORKFLOW_PASS" if prior else "RELAY_PHASE_PASS",
-            "profile": RELAY_PROFILE, "node_id": node_id, "phase": phase, "pid": os.getpid(),
+            "profile": boot["profile"], "node_id": node_id, "phase": phase, "pid": os.getpid(),
             "previous_pid": prior["pid"] if prior else None, "bootstrap": boot,
             "source_digest": boot["source_digest"], "state": state, "event_bytes_sha256": event_hashes,
             "links": links, "all_peers_agreed": True, "replay_rejected_without_mutation": True,
@@ -3311,11 +3591,16 @@ def relay_node_main(args: Any) -> int:
             "durable_restart_agreement": prior is not None, "production_authorized": False,
             "physical_cross_network_verified": False, "pairing_approval": "local_terminal",
             "data_dir": str(root), "report_dir": str(reports)}
+        if spending:
+            report.update(spending_identities=identities, events=list(ledger.transactions.values()),
+                          independent_spend_authorities=["A", "B"], payment_keys_persisted=False,
+                          consensus_finality_verified=False)
     except (OSError, ValueError, EOFError, KeyError, TypeError):
         raise PersistentNodeError("relay_io_or_state_failure") from None
     except KeyboardInterrupt:
         raise PersistentNodeError("relay_interrupted") from None
     finally:
+        private = None
         for channel in channels:
             channel.key = b""
             _close_socket(channel.sock)
@@ -3370,6 +3655,7 @@ def main(argv: list[str] | None = None, *, authentication: HandoffMaterial | Non
     parser.add_argument("--peer-port", type=int)
     parser.add_argument("--ack-encrypted-private-route", action="store_true")
     parser.add_argument("--three-peer", action="store_true")
+    parser.add_argument("--independent-spend", action="store_true")
     parser.add_argument("--relay-bootstrap", action="store_true")
     parser.add_argument("--bootstrap", type=Path)
     parser.add_argument("--node-id", choices=("A", "B", "C"))
@@ -3378,12 +3664,12 @@ def main(argv: list[str] | None = None, *, authentication: HandoffMaterial | Non
     parser.add_argument("--ack-loopback-disposable", action="store_true")
     try:
         args = parser.parse_args(sys.argv[1:] if argv is None else argv)
-        relay_options = (args.three_peer, args.relay_bootstrap, args.bootstrap is not None,
+        relay_options = (args.three_peer, args.independent_spend, args.relay_bootstrap, args.bootstrap is not None,
                          args.node_id is not None, args.b_port is not None, args.c_port is not None,
                          args.ack_loopback_disposable)
         if any(relay_options):
             permitted = {"three_peer", "relay_bootstrap", "bootstrap", "node_id", "b_port", "c_port",
-                         "ack_loopback_disposable", "phase", "role"}
+                         "ack_loopback_disposable", "phase", "role", "independent_spend"}
             if (authentication is not None or args.role != "parent"
                     or any(value is not None and value is not False for key, value in vars(args).items()
                            if key not in permitted)
@@ -3393,7 +3679,8 @@ def main(argv: list[str] | None = None, *, authentication: HandoffMaterial | Non
                 if args.bootstrap is not None or args.node_id is not None or args.phase is not None or args.ack_loopback_disposable:
                     raise PersistentNodeError("relay_bootstrap_arguments_invalid")
                 _emit(relay_bootstrap(args.b_port if args.b_port is not None else 42828,
-                                      args.c_port if args.c_port is not None else 42829))
+                                      args.c_port if args.c_port is not None else 42829,
+                                      independent_spend=args.independent_spend))
                 return 0
             if (args.bootstrap is None or args.node_id is None or args.phase is None
                     or not args.ack_loopback_disposable or args.b_port is not None or args.c_port is not None):

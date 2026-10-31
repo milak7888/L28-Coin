@@ -5,7 +5,57 @@ devices, autonomous systems, and AI agents. It is independent from the private
 Leap28 orchestration system and may be implemented or self-hosted under the
 Apache License 2.0.
 
-## Three-peer disposable relay v0.1 (loopback candidate)
+## Independent peer spending v0.1 (opt-in loopback candidate)
+
+The accepted relay below remains compatible. The spending experiment reuses its
+three CLI processes, AB/BC links, full-fingerprint pairing and ledger, but gives
+A/B/C independent memory-only payment identities separate from TLS. After both
+links authenticate, each node proves ownership of its public spending address
+with a signature over its role and complete bootstrap/session digest. All peers
+agree on the same three-identity map before ledger activity. A creates one 28 L28
+disposable coinbase and signs A -> B; only after B validates/persists funding and
+all peers acknowledge that prefix does B sign B -> C. B relays original signed
+bytes to A and C. Final A/B/C balances are 0/0/28, issued supply 28, three events.
+
+Using the existing pinned Python environment, generate a fresh PUBLIC bootstrap:
+
+```sh
+python -B -m coin.persistent_disposable_testnet_node --relay-bootstrap --independent-spend > /private/tmp/l28-spending-bootstrap.json
+```
+
+Launch independently in three terminals, C then B then A:
+
+```sh
+python -B -m coin.persistent_disposable_testnet_node --three-peer --independent-spend --node-id C --bootstrap /private/tmp/l28-spending-bootstrap.json --phase initial --ack-loopback-disposable
+python -B -m coin.persistent_disposable_testnet_node --three-peer --independent-spend --node-id B --bootstrap /private/tmp/l28-spending-bootstrap.json --phase initial --ack-loopback-disposable
+python -B -m coin.persistent_disposable_testnet_node --three-peer --independent-spend --node-id A --bootstrap /private/tmp/l28-spending-bootstrap.json --phase initial --ack-loopback-disposable
+```
+
+Compare the COMPLETE AB fingerprint locally on A/B and enter PAIR in each only
+when identical, then do the same for BC on B/C. No auto-approval flag exists.
+Each node validates the exact original three-event order/prefix, signatures and
+balances with the unchanged canonical validator before persistence. The opt-in
+ledger uses its existing single-shard setting to retain cross-sender replay order;
+default sharding is unchanged. Ordering is a bounded experiment, NOT fork choice.
+
+Require three exit-zero RELAY_PHASE_PASS reports with matching events/IDs/hashes,
+identity maps, state commitments, supply 28 and balances 0/0/28. Stop all initial
+processes, then repeat these commands with `--phase restart` in the SAME original
+600-second session. Compare both fingerprints again. Require RELAY_WORKFLOW_PASS,
+new PIDs and TLS credentials, identical public signed history, replay rejection,
+durable agreement and terminal Option A halt after every node synchronizes.
+Restart generates no payment keys, re-signs nothing and grants no new issuance.
+Lost ephemeral payment keys are not wallet recovery or production custody.
+
+Preserve printed public reports/data paths for diagnosis; any failure ends the
+attempt without automatic repair/retry. Verify all three processes exited, owned
+running locks removed and both configured loopback ports clear. No firewall rule
+or external route is needed/authorized. Keys never enter files/arguments/logs.
+Three nodes/two links maximum, existing frame/resource/certificate limits,
+120-second active invocations and original 600-second session. No production,
+canonical-history, consensus/finality, custody/F171 or protected-economics claim.
+
+## Three-peer disposable relay v0.1 (accepted historical capability)
 
 Three independently launched CLI processes can relay the existing fixed two-event
 fixture A -> B -> C. A alone originates one disposable 28 L28 coinbase and signed

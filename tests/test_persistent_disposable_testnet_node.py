@@ -158,15 +158,14 @@ def test_three_peer_rejected_event_does_not_mutate_disk_or_ledger(tmp_path):
         assert {p.name:p.read_bytes() for p in (tmp_path/"ledger").iterdir()}==before
 
 
-@pytest.mark.skipif(sys.platform == "win32", reason="PTY observer for actual loopback CLI processes")
-def test_three_peer_actual_cli_relay_restart_and_cleanup(tmp_path):
+def _actual_three_peer_cli(tmp_path, *, independent_spend=False):
     import os, pty, socket, tempfile, shutil, threading
     ports=[]
     for _ in range(2):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
             probe.bind((node.HOST, 0)); ports.append(probe.getsockname()[1])
     assert len(set(ports)) == 2
-    boot=node.relay_bootstrap(*ports)
+    boot=node.relay_bootstrap(*ports, independent_spend=independent_spend)
     bootstrap=tmp_path / "bootstrap.json"; bootstrap.write_bytes(node._canonical_bytes(boot))
     roots=[Path(tempfile.gettempdir()).resolve()/("l28-disposable-lan-"+boot["session"]+"-"+n) for n in "ABC"]
     reports=[Path(tempfile.gettempdir()).resolve()/("l28-relay-reports-"+boot["session"]+"-"+n) for n in "ABC"]
@@ -181,7 +180,8 @@ def test_three_peer_actual_cli_relay_restart_and_cleanup(tmp_path):
                 master,slave=pty.openpty(); masters[name]=master
                 process=subprocess.Popen([sys.executable,"-B","-m","coin.persistent_disposable_testnet_node",
                     "--three-peer","--node-id",name,"--bootstrap",str(bootstrap),"--phase",phase,
-                    "--ack-loopback-disposable"],stdin=slave,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+                    "--ack-loopback-disposable"] + (["--independent-spend"] if independent_spend else []),
+                    stdin=slave,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
                 os.close(slave); processes.append((name,process))
                 thread=threading.Thread(target=read_output,args=(name,process),daemon=True)
                 thread.start(); threads.append(thread)
@@ -209,7 +209,24 @@ def test_three_peer_actual_cli_relay_restart_and_cleanup(tmp_path):
             for thread in threads: thread.join(timeout=2)
             current=[json.loads((r/(phase+".json")).read_bytes()) for r in reports]
             assert all(r["state"]==current[0]["state"] and r["event_bytes_sha256"]==current[0]["event_bytes_sha256"] for r in current)
-            assert current[0]["state"]["issued_supply"]==28 and sorted(current[0]["state"]["balances"].values())==[0,28]
+            assert current[0]["state"]["issued_supply"]==28
+            assert sorted(current[0]["state"]["balances"].values())==([0,0,28] if independent_spend else [0,28])
+            if independent_spend:
+                identities = current[0]["spending_identities"]
+                assert len({v["public_key"] for v in identities.values()}) == 3
+                assert all(r["events"] == current[0]["events"] and r["spending_identities"] == identities for r in current)
+                events = current[0]["events"]
+                assert [t["stage"] for t in events] == [0,1,2]
+                assert [t["sender"] for t in events] == ["COINBASE",identities["A"]["address"],identities["B"]["address"]]
+                assert [t["receiver"] for t in events] == [identities[n]["address"] for n in "ABC"]
+                assert current[0]["state"]["mint_height"] == 1 and current[0]["state"]["total_transactions"] == 3
+                assert all(node.spend_verify_signature(t,boot,identities) for t in events[1:])
+                # Retain PUBLIC reports and original persisted bytes for standalone reproduction.
+                for n,r,root in zip("ABC",current,roots):
+                    (tmp_path / (phase+"-"+n+".json")).write_bytes(node._canonical_bytes(r))
+                    raw=(root/"ledger"/"shard_0.jsonl").read_bytes()
+                    assert raw == b"".join(node._canonical_bytes(t)+b"\n" for t in events)
+                    assert {p.name for p in (root/"ledger").iterdir()} == {"shard_0.jsonl"}
             assert [len(r["links"]) for r in current]==[1,2,1]
             assert all(r["connections_and_identities_closed"] and r["replay_rejected_without_mutation"] for r in current)
             assert all(link["link"] in [["A","B"],["B","C"]] for r in current for link in r["links"])
@@ -232,6 +249,149 @@ def test_three_peer_actual_cli_relay_restart_and_cleanup(tmp_path):
         for master in masters.values(): os.close(master)
         for root in roots+reports:
             if root.exists(): shutil.rmtree(root)
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="PTY observer for actual loopback CLI processes")
+def test_three_peer_actual_cli_relay_restart_and_cleanup(tmp_path):
+    _actual_three_peer_cli(tmp_path)
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="PTY observer for actual loopback CLI processes")
+def test_independent_spending_actual_cli_restart_and_cleanup(tmp_path):
+    _actual_three_peer_cli(tmp_path, independent_spend=True)
+
+
+@pytest.fixture
+def spending_fixture(tmp_path):
+    boot = node.relay_bootstrap(independent_spend=True)
+    keys = {n: Ed25519PrivateKey.generate() for n in "ABC"}
+    identities = {n: node.spend_registration(keys[n], n, boot) for n in "ABC"}
+    ledger = node.spend_open_ledger(tmp_path/"ledger", boot, identities)
+    events = []
+    for stage, signer in enumerate("AAB"):
+        events.append(node.spend_build_event(keys[signer], stage, events[-1]["id"] if events else "", boot, identities))
+    return boot, keys, identities, ledger, events
+
+
+def test_independent_spending_ordered_ledger_recovery(spending_fixture, tmp_path):
+    boot, keys, identities, ledger, events = spending_fixture
+    for index, tx in enumerate(events):
+        node.spend_apply(ledger, tx, boot, identities)
+        assert ledger.issued_supply == 28 and ledger.mint_height == 1
+        assert ledger.balances[identities["ABC"[index]]["address"]] == 28
+    del keys
+    recovered = node.spend_open_ledger(tmp_path/"ledger", boot, identities, restart=True)
+    assert node.ledger_state(recovered) == node.ledger_state(ledger)
+    assert list(recovered.transactions.values()) == events
+    assert len({events[i]["sender_public_key"] for i in (1,2)}) == 2
+
+
+@pytest.mark.parametrize("case", ["wrong_signer", "bad_signature", "unauthorized_sender", "wrong_receiver",
+    "insufficient_balance", "replay", "competing_prefix", "wrong_stage", "wrong_context", "wrong_network",
+    "wrong_profile", "extra", "bool_stage", "float_amount", "duplicate_coinbase", "valid_b_before_funding"])
+def test_independent_spending_rejects_without_mutation(case, spending_fixture, tmp_path):
+    boot, keys, identities, ledger, events = spending_fixture
+    apply_prefix = 1 if case == "valid_b_before_funding" else 2
+    for tx in events[:apply_prefix]: node.spend_apply(ledger, tx, boot, identities)
+    tx = deepcopy(events[2])
+    if case == "wrong_signer": tx["signature"] = keys["A"].sign(node.spend_signable(tx)).hex()
+    elif case == "bad_signature": tx["signature"] = "00"*64
+    elif case == "unauthorized_sender": tx["sender"] = identities["A"]["address"]
+    elif case == "wrong_receiver": tx["receiver"] = identities["A"]["address"]
+    elif case == "insufficient_balance": tx["amount"] = 29
+    elif case == "replay": tx = deepcopy(events[1])
+    elif case == "competing_prefix": tx["previous_id"] = "0"*64
+    elif case == "wrong_stage": tx["stage"] = 1
+    elif case == "wrong_context": tx["bootstrap_digest"] = "0"*64
+    elif case == "wrong_network": tx["network"] = "MAIN"
+    elif case == "wrong_profile": tx["profile"] = node.PROFILE
+    elif case == "extra": tx["unexpected"] = True
+    elif case == "bool_stage": tx["stage"] = True
+    elif case == "float_amount": tx["amount"] = 28.0
+    elif case == "duplicate_coinbase": tx = deepcopy(events[0])
+    if case in ("unauthorized_sender", "wrong_receiver", "insufficient_balance", "competing_prefix",
+                "wrong_stage", "wrong_context", "wrong_network", "wrong_profile", "extra", "bool_stage", "float_amount"):
+        tx["signature"] = keys["B"].sign(node.spend_signable(tx)).hex()
+    tx["id"] = node.compute_tx_id(tx)
+    state = node.ledger_state(ledger)
+    disk = {p.name:p.read_bytes() for p in ledger.data_dir.iterdir()}
+    outcome = node.spend_classify(ledger, tx, boot, identities)
+    assert not outcome[0]
+    if case in ("insufficient_balance", "valid_b_before_funding"): assert outcome[2] == "insufficient_balance"
+    if case == "competing_prefix": assert outcome[2] == "spending_history_conflict_halt"
+    if case == "replay": assert outcome[2] == "replay"
+    with pytest.raises(node.PersistentNodeError): node.spend_apply(ledger, tx, boot, identities)
+    assert state == node.ledger_state(ledger)
+    assert disk == {p.name:p.read_bytes() for p in ledger.data_dir.iterdir()}
+
+
+@pytest.mark.parametrize("case", ["node", "key", "address", "context", "signature", "extra", "duplicate_key"])
+def test_independent_spending_ownership_bindings(case, spending_fixture):
+    boot, keys, identities, ledger, events = spending_fixture
+    altered = deepcopy(identities)
+    if case == "node": altered["B"]["node_id"] = "A"
+    elif case == "key": altered["B"]["public_key"] = "00"*32
+    elif case == "address": altered["B"]["address"] = identities["A"]["address"]
+    elif case == "context": altered["B"]["bootstrap_digest"] = "00"*32
+    elif case == "signature": altered["B"]["signature"] = "00"*64
+    elif case == "extra": altered["B"]["private"] = "DISPOSABLE-NON-SECRET-MARKER"
+    elif case == "duplicate_key": altered["B"] = node.spend_registration(keys["A"], "B", boot)
+    with pytest.raises(node.PersistentNodeError): node.spend_validate_identities(altered, boot)
+
+
+@pytest.mark.parametrize("case", ["truncated", "changed", "blank", "reordered", "duplicate", "incomplete"])
+def test_independent_spending_corrupt_recovery_fails_closed(case, spending_fixture):
+    boot, keys, identities, ledger, events = spending_fixture
+    for tx in events: node.spend_apply(ledger, tx, boot, identities)
+    file = ledger.data_dir / "shard_0.jsonl"
+    original = file.read_bytes()
+    if case == "truncated": raw = original[:-1]
+    elif case == "changed": raw = original.replace(b'"amount":28', b'"amount":29', 1)
+    elif case == "blank": raw = original + b"\n"
+    elif case == "reordered": raw = b"".join(node._canonical_bytes(t)+b"\n" for t in (events[0],events[2],events[1]))
+    elif case == "duplicate": raw = original + node._canonical_bytes(events[-1])+b"\n"
+    else: raw = b"".join(node._canonical_bytes(t)+b"\n" for t in events[:2])
+    file.write_bytes(raw)
+    with pytest.raises((ValueError,node.PersistentNodeError)):
+        node.spend_open_ledger(ledger.data_dir, boot, identities, restart=True)
+    assert file.read_bytes() == raw
+
+
+def test_independent_spending_context_isolated_and_cli_fail_closed(monkeypatch, capsys):
+    boot = node.relay_bootstrap(independent_spend=True)
+    ab = node.relay_context(boot, "A", "B", "initial")
+    assert node._handoff_context(ab) == ab
+    assert ab["profile"] == node.SPEND_PROFILE
+    regular = deepcopy(boot); regular["profile"] = node.RELAY_PROFILE
+    assert node.relay_context(regular,"A","B","initial")["bootstrap_digest"] != ab["bootstrap_digest"]
+    def forbidden(*a,**k): pytest.fail("invalid CLI created credentials or transport")
+    monkeypatch.setattr(node.socket, "socket", forbidden)
+    for argv in (["--independent-spend"], ["--independent-spend","--runtime-check"]):
+        assert node.main(argv) == 1
+        assert "PASS" not in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("failure", ["spending_ownership_invalid", "spending_identity_agreement_failed", "lan_interrupted"])
+def test_independent_spending_failed_identity_exchange_cleans(failure, monkeypatch, tmp_path):
+    import tempfile
+    from types import SimpleNamespace
+    boot = node.relay_bootstrap(independent_spend=True)
+    file = tmp_path/"bootstrap.json"; file.write_bytes(node._canonical_bytes(boot))
+    context = node.relay_context(boot,"A","B","initial")
+    closed = []
+    class Wire:
+        def shutdown(self, how): pass
+        def close(self): closed.append(True)
+    channel = node.LanChannel(Wire(), b"z"*32, context, "writer", time.monotonic()+5)
+    monkeypatch.setattr(node,"_relay_authenticated_link",lambda *a: (channel, {}))
+    def fail(*a): raise node.PersistentNodeError(failure)
+    monkeypatch.setattr(node,"_spend_identity_exchange",fail)
+    args = SimpleNamespace(bootstrap=file,node_id="A",phase="initial",independent_spend=True)
+    with pytest.raises(node.PersistentNodeError,match=failure): node.relay_node_main(args)
+    assert channel.key == b"" and closed
+    root = Path(tempfile.gettempdir()).resolve()/("l28-disposable-lan-"+boot["session"]+"-A")
+    reports = Path(tempfile.gettempdir()).resolve()/("l28-relay-reports-"+boot["session"]+"-A")
+    assert not root.exists() and not reports.exists()
 
 
 def _two_network_peers():
