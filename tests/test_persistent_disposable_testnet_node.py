@@ -31,6 +31,212 @@ ROOT = Path(__file__).resolve().parents[1]
 IMPL_PATH = ROOT / "coin/persistent_disposable_testnet_node.py"
 
 
+def _two_network_peers():
+    return node.peer_endpoints("10.28.1.10", "100.77.2.20", 42828)
+
+
+def _two_network_argv():
+    return ["--peer-writer-ip", "10.28.1.10", "--peer-follower-ip", "100.77.2.20",
+            "--peer-port", "42828", "--ack-encrypted-private-route"]
+
+
+@pytest.mark.parametrize("writer,follower,port", [
+    ("10.28.1.10", "100.77.2.20", 42828), ("172.16.1.2", "192.168.2.3", 1024),
+    ("100.64.1.1", "100.127.2.2", 65535)])
+def test_two_network_valid_explicit_configuration(writer, follower, port):
+    peers = node.peer_endpoints(writer, follower, port)
+    assert peers == {"profile": node.PEER_PROFILE, "writer": writer, "follower": follower, "port": port}
+    assert node.LAN_WRITER_IP == "192.168.68.50" and node.LAN_FOLLOWER_IP == "192.168.68.54"
+
+
+@pytest.mark.parametrize("field,value", [
+    ("writer", "127.0.0.1"), ("writer", "0.0.0.0"), ("writer", "8.8.8.8"),
+    ("writer", "169.254.1.1"), ("writer", "224.0.0.1"), ("writer", "::1"),
+    ("writer", "::ffff:10.1.2.3"), ("writer", "host.local"), ("writer", "10.028.1.10"),
+    ("writer", " 10.28.1.10"), ("writer", "10.28.1.10;exit"), ("writer", None),
+    ("writer", 1234), ("writer", True), ("follower", "10.28.1.10"),
+    ("follower", "100.128.1.1"), ("port", True), ("port", False), ("port", "42828"),
+    ("port", 42828.0), ("port", 0), ("port", -1), ("port", 1023), ("port", 65536)])
+def test_two_network_invalid_configuration_fails_closed(field, value):
+    peers = {k: v for k, v in _two_network_peers().items() if k != "profile"}
+    peers[field] = value
+    with pytest.raises(node.PersistentNodeError, match="peer_endpoints_invalid"):
+        node.peer_endpoints(**peers)
+
+
+@pytest.mark.parametrize("argv", [
+    ["--peer-writer-ip", "10.28.1.10"], ["--ack-encrypted-private-route"],
+    _two_network_argv()[:-1], _two_network_argv(),
+    ["--lan", *_two_network_argv()], ["--coordinate", *_two_network_argv()],
+    ["--offline-auth-handoff", *_two_network_argv()],
+    ["--runtime-check", "--ack-private-lan", *_two_network_argv()]])
+def test_two_network_cli_modes_require_complete_explicit_configuration(argv, monkeypatch, capsys):
+    def forbidden(*args, **kwargs):
+        pytest.fail("invalid configuration reached credentials or transport")
+    monkeypatch.setattr(node.MemoryTLSIdentity, "__init__", forbidden)
+    monkeypatch.setattr(node.socket, "socket", forbidden)
+    assert node.main(argv) == 1
+    output = capsys.readouterr()
+    assert "PASS" not in output.out and output.err
+
+
+def test_two_network_certificate_context_and_public_records_bind_local_configuration():
+    from cryptography import x509
+    from ipaddress import ip_address
+    peers = _two_network_peers()
+    identities = [node.MemoryTLSIdentity(r, endpoints=peers) for r in ("writer", "follower")]
+    try:
+        context = node.lan_context("a" * 32, int(time.time()), "initial",
+            node.lan_source_inventory()["source_digest"], endpoints=peers)
+        assert node._handoff_context(context) == context
+        assert all(context[k] == v for k, v in peers.items())
+        records = [node._coordinator_prepared_record(i, "initial", None) for i in identities]
+        for i, identity in enumerate(identities):
+            san = identity.certificate.extensions.get_extension_for_class(x509.SubjectAlternativeName).value
+            assert san.get_values_for_type(x509.IPAddress) == [ip_address(peers[identity.role])]
+            node._coordinator_record_peer(node._canonical_bytes(records[1-i]).decode(), identity, "initial", None)
+        assert node._pair_fingerprint(*records) == node._pair_fingerprint(*reversed(records))
+        for field, value in (("writer", "10.28.1.11"), ("follower", "100.77.2.21"),
+                             ("port", 42829), ("role", "writer"), ("source_digest", "0" * 64)):
+            bad = deepcopy(records[1]); bad["enrollment"][field] = value
+            if field != "role":
+                assert node._pair_fingerprint(records[0], bad) != node._pair_fingerprint(*records)
+            with pytest.raises(node.PersistentNodeError):
+                node._coordinator_record_peer(node._canonical_bytes(bad).decode(), identities[0], "initial", None)
+        peers["writer"] = "10.28.1.99"
+        assert identities[0].endpoints["writer"] == "10.28.1.10", "caller mutated retained identity bindings"
+    finally:
+        for identity in identities:
+            identity.close()
+
+
+@pytest.mark.parametrize("field,value", [
+    ("writer", "10.28.1.11"), ("follower", "100.77.2.21"), ("port", 42829),
+    ("profile", node.LAN_PROFILE), ("network", "MAIN"), ("source_digest", "0" * 64)])
+def test_two_network_tls_rejects_context_substitution(field, value):
+    peers = _two_network_peers()
+    identity = node.MemoryTLSIdentity("writer", endpoints=peers)
+    context = node.lan_context("b" * 32, int(time.time()), "initial",
+        node.lan_source_inventory()["source_digest"], endpoints=peers)
+    context[field] = value
+    try:
+        with pytest.raises(node.PersistentNodeError):
+            node.PinnedTLSHandoff(identity, "1" * 64, context, peers["follower"])
+    finally:
+        identity.close()
+
+
+def test_two_network_hmac_binding_and_replay_do_not_advance_sequence():
+    context = node.lan_context("c" * 32, int(time.time()), "initial",
+        node.lan_source_inventory()["source_digest"], endpoints=_two_network_peers())
+    sender = node.LanChannel(None, b"x" * 32, context, "writer", time.monotonic()+5)
+    packet = sender.encode("state", {"public": True})[4:]
+    for field, value in (("writer", "10.28.1.11"), ("port", 42829), ("network", "MAIN")):
+        changed = {**context, field: value}
+        receiver = node.LanChannel(None, b"x" * 32, changed, "follower", time.monotonic()+5)
+        with pytest.raises(node.PersistentNodeError, match="lan_frame_auth_or_binding_invalid"):
+            receiver.decode(packet, "state")
+        assert receiver.received == 0
+    receiver = node.LanChannel(None, b"x" * 32, context, "follower", time.monotonic()+5)
+    assert receiver.decode(packet, "state") == {"public": True}
+    with pytest.raises(node.PersistentNodeError, match="lan_frame_auth_or_binding_invalid"):
+        receiver.decode(packet, "state")
+    assert receiver.received == 1
+
+
+def test_two_network_restart_rejects_changed_endpoint_configuration(tmp_path, monkeypatch):
+    monkeypatch.setattr(node.tempfile, "gettempdir", lambda: str(tmp_path))
+    peers = _two_network_peers()
+    context = node.lan_context("d" * 32, int(time.time()), "initial",
+        node.lan_source_inventory()["source_digest"], endpoints=peers)
+    root = tmp_path / ("l28-disposable-lan-" + context["session"] + "-writer")
+    node._lan_open_state(root, context, "writer")
+    (root / "running.lock").unlink()
+    before = (root / "session.json").read_bytes()
+    assert node._coordinator_restart_context(root, "writer", endpoints=peers) == {**context, "phase": "restart"}
+    for changed in (None, node.peer_endpoints("10.28.1.11", peers["follower"], peers["port"]),
+                    node.peer_endpoints(peers["writer"], peers["follower"], 42829)):
+        with pytest.raises(node.PersistentNodeError, match="coordinator_restart_peer_configuration_invalid"):
+            node._coordinator_restart_context(root, "writer", endpoints=changed)
+        assert (root / "session.json").read_bytes() == before and not (root / "running.lock").exists()
+
+
+@pytest.mark.parametrize("peer", ["10.28.1.10", "10.28.1.11"])
+def test_two_network_listener_scope_and_failure_cleanup_without_socket(peer, monkeypatch):
+    peers = _two_network_peers()
+    class FakeSocket:
+        closed = False
+        def setsockopt(self, *args): pass
+        def settimeout(self, value): pass
+        def bind(self, value): assert value == (peers["follower"], peers["port"])
+        def listen(self, value): assert value == 1
+        def accept(self): return connection, (peer, 12345)
+        def shutdown(self, how): pass
+        def close(self): self.closed = True
+    listener, connection = FakeSocket(), FakeSocket()
+    monkeypatch.setattr(node.socket, "socket", lambda *a, **k: listener)
+    if peer == peers["writer"]:
+        assert node._pair_open("follower", time.monotonic()+5, peers) is connection
+    else:
+        with pytest.raises(node.PersistentNodeError, match="coordinator_peer_address_invalid"):
+            node._pair_open("follower", time.monotonic()+5, peers)
+        assert connection.closed
+    assert listener.closed
+
+
+@pytest.mark.parametrize("platform,role", [("mac", "writer"), ("windows", "follower")])
+def test_two_network_launcher_generation_uses_configured_scope_only(platform, role, monkeypatch, capsys):
+    def forbidden(*args, **kwargs): pytest.fail("printing launcher started a runtime")
+    monkeypatch.setattr(node.MemoryTLSIdentity, "__init__", forbidden)
+    monkeypatch.setattr(node.socket, "socket", forbidden)
+    digest = node.lan_source_inventory()["source_digest"]
+    assert node.main(["--print-launcher", "--launcher-platform", platform, "--role", role,
+                      "--expected-source-digest", digest, *_two_network_argv()]) == 0
+    script = capsys.readouterr().out
+    assert "192.168.68.50" not in script and "192.168.68.54" not in script and "uma" not in script
+    assert "10.28.1.10" in script and "100.77.2.20" in script and "--ack-encrypted-private-route" in script
+    assert "--ack-private-lan" not in script and "@WRITER@" not in script and "@PORT@" not in script
+    if platform == "mac":
+        assert "ifconfig en0" not in script
+        syntax = subprocess.run(["/bin/zsh", "-n"], input=script, capture_output=True, text=True)
+        assert syntax.returncode == 0, syntax.stderr
+    else:
+        assert "netsh wlan" not in script and "L28-TEMP-TWONET-42828" in script
+        assert "-LocalAddress 100.77.2.20 -RemoteAddress 10.28.1.10 -LocalPort 42828" in script
+
+
+def test_two_network_actual_offline_coordinator_nondisclosure_and_cleanup(monkeypatch, capsys, caplog):
+    original_socket = node.socket.socket
+    def no_ip_socket(*args, **kwargs):
+        family = kwargs.get("family", args[0] if args else node.socket.AF_INET)
+        assert family == node.socket.AF_UNIX, "offline verification attempted an IP socket"
+        return original_socket(*args, **kwargs)
+    monkeypatch.setattr(node.socket, "socket", no_ip_socket)
+    marker = b"\xa5" * 32
+    monkeypatch.setattr(node.secrets, "token_bytes", lambda size: marker if size == 32 else bytes(size))
+    report = node.execute_offline_coordinator(endpoints=_two_network_peers())
+    assert report["result"] == "OFFLINE_COORDINATOR_PASS" and report["cleanup_complete"]
+    assert report["peer_configuration"] == _two_network_peers()
+    assert report["state"]["issued_supply"] == 28 and sorted(report["state"]["balances"].values()) == [0, 28]
+    assert all(report[k] for k in ("pinned_tls_and_hmac_verified", "independent_validation",
+        "durable_reopen_agreement", "replay_rejected", "divergence_halted"))
+    assert not any(report[k] for k in ("network_started", "physical_cross_network_verified", "encrypted_route_verified"))
+    output = capsys.readouterr()
+    public = output.out + output.err + caplog.text + json.dumps(report)
+    assert marker.hex() not in public and "PRIVATE KEY" not in public
+
+
+@pytest.mark.parametrize("case", ["wrong-pin", "wrong-peer", "source-mismatch", "interrupted", "tamper",
+    "bootstrap-context", "bootstrap-pin", "unverified-record", "substituted-record",
+    "wrong-record-source", "wrong-record-role"])
+def test_two_network_offline_adversarial_cases_fail_closed_and_clean(case, tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(node.tempfile, "gettempdir", lambda: str(tmp_path))
+    with pytest.raises(node.PersistentNodeError):
+        node.execute_offline_coordinator(case, endpoints=_two_network_peers())
+    assert not list(tmp_path.iterdir()), "failed offline session left owned state behind"
+    assert "PASS" not in capsys.readouterr().out
+
+
 def _events():
     private_key = Ed25519PrivateKey.generate()
     binding = node.persistent_testnet_binding()
@@ -1385,7 +1591,8 @@ def test_auto_pair_activation_deadlines_and_all_exit_cleanup(delay, stage, prepa
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Explicit POSIX-only AF_UNIX/PTY offline CLI interface")
-def test_auto_pair_real_process_restart_offline(tmp_path):
+@pytest.mark.parametrize("configured", [False, True], ids=["accepted_lan", "two_network"])
+def test_auto_pair_real_process_restart_offline(tmp_path, configured):
     """Two actual L28 processes at a time; PTY supplies PUBLIC test approvals only."""
     import os, pty, socket, tempfile, shutil
     reports_dirs=[Path(tempfile.mkdtemp(prefix="l28-pair-launch-")).resolve() for _ in range(2)]
@@ -1401,6 +1608,7 @@ def test_auto_pair_real_process_restart_offline(tmp_path):
                     "--offline-pair-role","--role",role,"--phase",phase,"--offline-fd",str(sockets[i].fileno()),
                     "--report-dir",str(reports_dirs[i]),"--expected-source-digest",digest]
                 if prior: argv += ["--data-dir",prior[i]["data_dir"]]
+                if configured: argv += _two_network_argv()
                 processes.append(subprocess.Popen(argv,stdin=slave,stdout=subprocess.PIPE,stderr=subprocess.PIPE,
                     text=True,pass_fds=(sockets[i].fileno(),)))
                 os.close(slave)
@@ -1429,6 +1637,9 @@ def test_auto_pair_real_process_restart_offline(tmp_path):
             assert current[0]["state"]==current[1]["state"]
             assert all(r["pid"]==p.pid and r["pinned_tls_handoff_verified"] and not r["physical_two_host_verified"] for r,p in zip(current,processes))
             assert all(r["transport"]=="OFFLINE_IPC" and r["physical_comparison"]=="offline_fixture" for r in current)
+            if configured:
+                assert all(r["peer_configuration"] == _two_network_peers()
+                           and not r["physical_cross_network_verified"] and not r["encrypted_route_verified"] for r in current)
             if prior:
                 assert all(r["previous_pid"]==before["pid"] and r["pid"]!=before["pid"]
                            and r["genuine_local_process_restart_verified"] and r["terminal_divergence_halt"]
@@ -1438,6 +1649,14 @@ def test_auto_pair_real_process_restart_offline(tmp_path):
             for master in masters: os.close(master)
             masters=[]
         assert all(r["state"]["issued_supply"]==28 and sorted(r["state"]["balances"].values())==[0,28] for r in evidence)
+        if configured:
+            print("TWO_NETWORK_OFFLINE_PROCESS_EVIDENCE=" + json.dumps({
+                "source_digest": digest, "pids": [r["pid"] for r in evidence],
+                "state": evidence[-1]["state"], "session": evidence[-1]["session"],
+                "session_start": evidence[-1]["session_start"], "transport": "OFFLINE_IPC",
+                "fresh_restart_credentials_verified": True, "genuine_process_restart": True,
+                "replay_rejected": True, "divergence_halted": True,
+                "physical_cross_network_verified": False}, sort_keys=True))
     finally:
         for process in processes:
             if process.poll() is None: process.kill()
@@ -1962,7 +2181,10 @@ def test_source_has_no_private_serialization_public_bind_or_mining_call():
     assert "private_bytes" not in source
     assert "from_private_bytes" not in source
     assert "mine_block" not in calls
-    assert "0.0.0.0" not in source
+    # Exact wildcard literal, not a substring of the allowed private 10/8 CIDR.
+    # Runtime rejection of wildcard endpoint input is independently tested above.
+    assert not any(isinstance(value, ast.Constant) and value.value == "0.0.0.0"
+                   for value in ast.walk(tree))
     assert "validate_transaction" in calls
     assert "add_transaction" in calls
     assert "assess_option_a" in calls

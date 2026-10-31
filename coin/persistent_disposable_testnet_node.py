@@ -31,6 +31,7 @@ import threading
 import time
 import platform
 import queue
+from ipaddress import IPv4Address, IPv4Network
 from datetime import datetime, timedelta, timezone
 from importlib.metadata import PackageNotFoundError, version
 from collections.abc import Mapping
@@ -87,6 +88,7 @@ SIGN_DOMAIN = b"L28-PERSISTENT-DISPOSABLE-TRANSFER-V0.1\x00"
 # This opt-in transport does not modify the production authority constants or
 # the existing disposable transaction/network identities.
 LAN_PROFILE = "l28-two-host-disposable-sync/v0.1"
+PEER_PROFILE = "l28-two-network-disposable-peer/v0.1"
 LAN_WRITER_IP = "192.168.68.50"
 LAN_FOLLOWER_IP = "192.168.68.54"
 LAN_PORT = 42828
@@ -1287,17 +1289,60 @@ def _lan_hex(value: Any, size: int) -> bool:
             and all(c in "0123456789abcdef" for c in value))
 
 
+def peer_endpoints(writer: Any, follower: Any, port: Any) -> dict[str, Any]:
+    """Explicit private-route configuration, never evidence that a route exists.
+
+    RFC1918 and shared address space only; no DNS, inference, public or local
+    loopback listeners. Encryption/ownership and physical topology need separate
+    operator verification. These are transport bindings, not consensus authority.
+    """
+    ranges = tuple(IPv4Network(value) for value in (
+        "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "100.64.0.0/10"))
+    try:
+        if type(writer) is not str or type(follower) is not str:
+            raise ValueError
+        addresses = [IPv4Address(value) for value in (writer, follower)]
+        if (writer == follower or not _exact_int(port) or not 1024 <= port <= 65535
+                or any(str(address) != value or not any(address in net for net in ranges)
+                       for address, value in zip(addresses, (writer, follower)))):
+            raise ValueError
+    except (ValueError, TypeError):
+        raise PersistentNodeError("peer_endpoints_invalid") from None
+    return {"profile": PEER_PROFILE, "writer": writer, "follower": follower, "port": port}
+
+
+def _peer_config(endpoints: Any = None) -> dict[str, Any]:
+    if endpoints is None:
+        return {"profile": LAN_PROFILE, "writer": LAN_WRITER_IP,
+                "follower": LAN_FOLLOWER_IP, "port": LAN_PORT}
+    _exact_mapping(endpoints, {"profile", "writer", "follower", "port"}, "peer_endpoints_invalid")
+    if endpoints["profile"] != PEER_PROFILE:
+        raise PersistentNodeError("peer_endpoints_invalid")
+    return peer_endpoints(endpoints["writer"], endpoints["follower"], endpoints["port"])
+
+
+def _configured_peers(args: Any) -> dict[str, Any] | None:
+    values = [getattr(args, name, None) for name in ("peer_writer_ip", "peer_follower_ip", "peer_port")]
+    acknowledged = getattr(args, "ack_encrypted_private_route", False)
+    if not any(value is not None for value in values) and not acknowledged:
+        return None
+    if not acknowledged or any(value is None for value in values):
+        raise PersistentNodeError("peer_configuration_and_route_ack_required")
+    return peer_endpoints(*values)
+
+
 def lan_context(session_id: str, started: int, phase: str, source_digest: str,
-                *, now: float | None = None) -> dict[str, Any]:
+                *, now: float | None = None, endpoints: Any = None) -> dict[str, Any]:
     now = time.time() if now is None else now
     if (not _lan_hex(session_id, 32) or not _exact_int(started)
             or not started <= now < started + LAN_SESSION_SECONDS
             or phase not in ("initial", "restart") or not _lan_hex(source_digest, 64)):
         raise PersistentNodeError("lan_session_invalid_or_expired")
     binding = persistent_testnet_binding()
-    return {"profile": LAN_PROFILE, "version": 1, "session": session_id,
+    peers = _peer_config(endpoints)
+    return {"profile": peers["profile"], "version": 1, "session": session_id,
             "started": started, "phase": phase, "source_digest": source_digest,
-            "writer": LAN_WRITER_IP, "follower": LAN_FOLLOWER_IP, "port": LAN_PORT,
+            "writer": peers["writer"], "follower": peers["follower"], "port": peers["port"],
             "network": NETWORK_ID, "genesis": binding["genesis_hash"],
             "config": binding["config_hash"]}
 
@@ -1419,8 +1464,11 @@ def _tls_backend() -> Any:
 def _handoff_context(context: Any) -> dict[str, Any]:
     if not isinstance(context, dict):
         raise PersistentNodeError("tls_context_invalid")
+    endpoints = None
+    if context.get("profile") == PEER_PROFILE:
+        endpoints = peer_endpoints(context.get("writer"), context.get("follower"), context.get("port"))
     expected = lan_context(context.get("session"), context.get("started"),
-                           context.get("phase"), context.get("source_digest"))
+                           context.get("phase"), context.get("source_digest"), endpoints=endpoints)
     if _canonical_bytes(context) != _canonical_bytes(expected):
         raise PersistentNodeError("tls_context_invalid")
     if expected["source_digest"] != lan_source_inventory()["source_digest"]:
@@ -1460,9 +1508,9 @@ class HandoffMaterial:
 
 class MemoryTLSIdentity:
     """Disposable TLS identity; no application key serialization or file writes."""
-    __slots__ = ("role", "certificate", "_key", "pin", "closed")
+    __slots__ = ("role", "certificate", "_key", "pin", "closed", "endpoints")
 
-    def __init__(self, role: str):
+    def __init__(self, role: str, *, endpoints: Any = None):
         if role not in ("writer", "follower"):
             raise PersistentNodeError("tls_role_invalid")
         from cryptography import x509
@@ -1470,13 +1518,14 @@ class MemoryTLSIdentity:
         from cryptography.hazmat.primitives.asymmetric import ec
         from cryptography.x509.oid import NameOID
         from ipaddress import ip_address
+        self.endpoints = _peer_config(endpoints)
         self.role, self.closed = role, False
         self._key = self.certificate = None
         try:
             self._key = ec.generate_private_key(ec.SECP256R1())
             name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "l28-disposable-" + role)])
             now = datetime.now(timezone.utc)
-            address = LAN_WRITER_IP if role == "writer" else LAN_FOLLOWER_IP
+            address = self.endpoints[role]
             self.certificate = (x509.CertificateBuilder().subject_name(name).issuer_name(name)
                                 .public_key(self._key.public_key()).serial_number(x509.random_serial_number())
                                 .not_valid_before(now - timedelta(seconds=30))
@@ -1521,7 +1570,8 @@ class PinnedTLSHandoff:
         try:
             self.context = _handoff_context(context)
             if (identity.closed or not _lan_hex(peer_pin, 64)
-                    or peer_ip != (LAN_FOLLOWER_IP if self.role == "writer" else LAN_WRITER_IP)):
+                    or any(self.context[k] != identity.endpoints[k] for k in identity.endpoints)
+                    or peer_ip != identity.endpoints[self.peer]):
                 raise PersistentNodeError("tls_peer_binding_invalid")
             self._ssl = _tls_backend()
             ctx = self._ssl.Context(self._ssl.TLS_METHOD)
@@ -1767,7 +1817,8 @@ class PinnedTLSHandoff:
 
 class _OfflinePipe:
     """Bounded byte transport for the offline interfaces only; never a socket."""
-    def __init__(self, role: str = "writer"):
+    def __init__(self, role: str = "writer", *, endpoints: Any = None):
+        self.endpoints = _peer_config(endpoints)
         self.queue = queue.Queue()
         self.pending, self.closed, self.role, self.timeout = b"", False, role, 2.0
         self.fault = None
@@ -1801,9 +1852,11 @@ class _OfflinePipe:
         result, self.pending = self.pending[:size], self.pending[size:]
         return result
     def getsockname(self):
-        return (LAN_WRITER_IP, 42829) if self.role == "writer" else (LAN_FOLLOWER_IP, LAN_PORT)
+        return ((self.endpoints["writer"], 42829) if self.role == "writer"
+                else (self.endpoints["follower"], self.endpoints["port"]))
     def getpeername(self):
-        return (LAN_FOLLOWER_IP, LAN_PORT) if self.role == "writer" else (LAN_WRITER_IP, 42829)
+        return ((self.endpoints["follower"], self.endpoints["port"]) if self.role == "writer"
+                else (self.endpoints["writer"], 42829))
     def shutdown(self, how):
         self.close()
     def close(self):
@@ -2074,7 +2127,7 @@ def _lan_connected_run(sock: Any, secret: bytes, context: dict[str, Any], role: 
             del private
             asyncio.run(_apply_events(ledger, events))
         result = lan_sync(channel, ledger, root)
-        result.update({"profile": LAN_PROFILE, "role": role, "phase": context["phase"],
+        result.update({"profile": context["profile"], "role": role, "phase": context["phase"],
                        "session": context["session"], "session_start": context["started"],
                        "source": lan_source_inventory(),
                        "local_endpoint": sock.getsockname(), "peer_endpoint": sock.getpeername(),
@@ -2195,11 +2248,11 @@ def _coordinator_connected(sock: Any, identity: MemoryTLSIdentity, peer: dict[st
     endpoint = material = None
     try:
         role = identity.role
-        local_ip, remote_ip = ((LAN_WRITER_IP, LAN_FOLLOWER_IP) if role == "writer"
-                               else (LAN_FOLLOWER_IP, LAN_WRITER_IP))
+        peers = identity.endpoints
+        local_ip, remote_ip = peers[role], peers["follower" if role == "writer" else "writer"]
         local, remote = sock.getsockname(), sock.getpeername()
         if (local[0] != local_ip or remote[0] != remote_ip
-                or (local[1] if role == "follower" else remote[1]) != LAN_PORT):
+                or (local[1] if role == "follower" else remote[1]) != peers["port"]):
             raise PersistentNodeError("coordinator_peer_address_invalid")
         # Public bootstrap is UNTRUSTED metadata, not enrollment or authority.
         # The pin comes only from the operator's direct peer-terminal comparison.
@@ -2250,7 +2303,7 @@ def _coordinator_connected(sock: Any, identity: MemoryTLSIdentity, peer: dict[st
     return result
 
 
-def _coordinator_restart_context(root: Path, role: str) -> dict[str, Any]:
+def _coordinator_restart_context(root: Path, role: str, *, endpoints: Any = None) -> dict[str, Any]:
     prefix, suffix = "l28-disposable-lan-", "-" + role
     if (not root.is_absolute() or root.parent.resolve() != Path(tempfile.gettempdir()).resolve()
             or not root.name.startswith(prefix) or not root.name.endswith(suffix)
@@ -2266,6 +2319,8 @@ def _coordinator_restart_context(root: Path, role: str) -> dict[str, Any]:
         context = {k: v for k, v in metadata.items() if k != "role"}
         context["phase"] = "restart"
         context = _handoff_context(context)
+        if any(context[k] != value for k, value in _peer_config(endpoints).items()):
+            raise PersistentNodeError("coordinator_restart_peer_configuration_invalid")
         expected = {k: v for k, v in context.items() if k != "phase"}
         expected["role"] = role
         if raw != _canonical_bytes(expected) or root.name != prefix + context["session"] + suffix:
@@ -2308,8 +2363,8 @@ def _coordinator_prepared_record(identity: MemoryTLSIdentity, phase: str,
         raise PersistentNodeError("coordinator_credentials_expired")
     return {"status": "PUBLIC_ENROLLMENT", "enrollment": {
         **_coordinator_enrollment(identity, context), "profile": PREPARED_ENROLLMENT_PROFILE,
-        "phase": phase, "writer": LAN_WRITER_IP, "follower": LAN_FOLLOWER_IP,
-        "port": LAN_PORT, "certificate_der": identity.certificate.public_bytes(Encoding.DER).hex()}}
+        "phase": phase, "writer": identity.endpoints["writer"], "follower": identity.endpoints["follower"],
+        "port": identity.endpoints["port"], "certificate_der": identity.certificate.public_bytes(Encoding.DER).hex()}}
 
 
 def _coordinator_prepared_peer(raw: str, identity: MemoryTLSIdentity, phase: str,
@@ -2345,10 +2400,11 @@ def _coordinator_record_peer(raw: str, identity: MemoryTLSIdentity, phase: str,
             "context", "phase", "writer", "follower", "port", "certificate_der"},
             "coordinator_prepared_record_invalid")
         role = "follower" if identity.role == "writer" else "writer"
+        peers = identity.endpoints
         if (peer["profile"] != PREPARED_ENROLLMENT_PROFILE or peer["role"] != role
-                or peer["phase"] != phase or peer["writer"] != LAN_WRITER_IP
-                or peer["follower"] != LAN_FOLLOWER_IP or not _exact_int(peer["port"])
-                or peer["port"] != LAN_PORT or not _lan_hex(peer["pin"], 64)
+                or peer["phase"] != phase or peer["writer"] != peers["writer"]
+                or peer["follower"] != peers["follower"] or not _exact_int(peer["port"])
+                or peer["port"] != peers["port"] or not _lan_hex(peer["pin"], 64)
                 or hmac.compare_digest(peer["pin"], identity.pin)
                 or peer["source_digest"] != lan_source_inventory()["source_digest"]):
             raise ValueError
@@ -2372,7 +2428,7 @@ def _coordinator_record_peer(raw: str, identity: MemoryTLSIdentity, phase: str,
                 or certificate.issuer != certificate.subject
                 or not hmac.compare_digest(certificate.fingerprint(hashes.SHA256()).hex(), peer["pin"])
                 or len(names) != 1 or names[0].value != "l28-disposable-" + role
-                or ips.get_values_for_type(x509.IPAddress) != [ip_address(LAN_WRITER_IP if role == "writer" else LAN_FOLLOWER_IP)]
+                or ips.get_values_for_type(x509.IPAddress) != [ip_address(peers[role])]
                 or not 0 < after - before <= LAN_SESSION_SECONDS + 30
                 or not isinstance(public_key, ec.EllipticCurvePublicKey)
                 or not isinstance(public_key.curve, ec.SECP256R1)
@@ -2448,16 +2504,19 @@ def _pair_exchange(sock: Any, identity: MemoryTLSIdentity, phase: str,
 
 class _PairOfflineSocket:
     """Explicit offline AF_UNIX adapter; never represents physical IP evidence."""
-    def __init__(self, fd: int, role: str):
+    def __init__(self, fd: int, role: str, *, endpoints: Any = None):
+        self.endpoints = _peer_config(endpoints)
         self.sock = socket.socket(fileno=fd)
         if self.sock.family != socket.AF_UNIX:
             self.sock.close()
             raise PersistentNodeError("pair_offline_transport_invalid")
         self.role = role
     def getsockname(self):
-        return (LAN_WRITER_IP, 42829) if self.role == "writer" else (LAN_FOLLOWER_IP, LAN_PORT)
+        return ((self.endpoints["writer"], 42829) if self.role == "writer"
+                else (self.endpoints["follower"], self.endpoints["port"]))
     def getpeername(self):
-        return (LAN_FOLLOWER_IP, LAN_PORT) if self.role == "writer" else (LAN_WRITER_IP, 42829)
+        return ((self.endpoints["follower"], self.endpoints["port"]) if self.role == "writer"
+                else (self.endpoints["writer"], 42829))
     def settimeout(self, value):
         self.sock.settimeout(value)
     def recv(self, size):
@@ -2470,18 +2529,19 @@ class _PairOfflineSocket:
         self.sock.close()
 
 
-def _pair_open(role: str, deadline: float) -> Any:
+def _pair_open(role: str, deadline: float, endpoints: Any = None) -> Any:
+    peers = _peer_config(endpoints)
     if role == "follower":
         listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             # Same restart binding as the existing disposable loopback listener.
             listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             listener.settimeout(max(0.001, deadline - time.monotonic()))
-            listener.bind((LAN_FOLLOWER_IP, LAN_PORT))
+            listener.bind((peers["follower"], peers["port"]))
             listener.listen(1)
             _emit({"status": "PAIRING_LISTENING", "role": role})
             sock, address = listener.accept()
-            if address[0] != LAN_WRITER_IP:
+            if address[0] != peers["writer"]:
                 _close_socket(sock)
                 raise PersistentNodeError("coordinator_peer_address_invalid")
             return sock
@@ -2493,8 +2553,8 @@ def _pair_open(role: str, deadline: float) -> Any:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             sock.settimeout(min(SOCKET_TIMEOUT_SECONDS, max(0.001, deadline - time.monotonic())))
-            sock.bind((LAN_WRITER_IP, 0))
-            sock.connect((LAN_FOLLOWER_IP, LAN_PORT))
+            sock.bind((peers["writer"], 0))
+            sock.connect((peers["follower"], peers["port"]))
             return sock
         except ConnectionRefusedError:
             _close_socket(sock)
@@ -2528,6 +2588,9 @@ def _pair_report_context(args: Any) -> Any:
                 or not _exact_int(report["pid"]) or report["pid"] == os.getpid()
                 or report["data_dir"] != str(args.data_dir)):
             raise ValueError
+        endpoints = _configured_peers(args)
+        if endpoints is not None and report.get("peer_configuration") != endpoints:
+            raise ValueError
         return report
     except (KeyError, TypeError, ValueError, UnicodeError, RecursionError):
         raise PersistentNodeError("pair_initial_report_invalid") from None
@@ -2535,23 +2598,27 @@ def _pair_report_context(args: Any) -> Any:
 
 def paired_coordinator_main(args: Any) -> int:
     assert_production_authority_inactive()
+    endpoints = _configured_peers(args)
+    peers = _peer_config(endpoints)
     offline = args.offline_pair_role
     if (args.role not in ("writer", "follower") or args.phase not in ("initial", "restart")
             or args.port is not None or args.session_id is not None or args.session_start is not None
             or (args.phase == "initial" and args.data_dir is not None)
             or (args.phase == "restart" and args.data_dir is None)
             or (offline and (os.name != "posix" or not _exact_int(args.offline_fd) or args.offline_fd < 0 or args.ack_private_lan))
-            or (not offline and (not args.ack_private_lan or args.offline_fd is not None))):
+            or (not offline and ((not args.ack_private_lan and endpoints is None) or args.offline_fd is not None))):
         raise PersistentNodeError("pair_arguments_invalid")
     coordinator_runtime_check(args.expected_source_digest)
     identity = sock = watchdog = None
     try:
         prior = _pair_report_context(args)
-        identity = MemoryTLSIdentity(args.role)
+        identity = (MemoryTLSIdentity(args.role) if endpoints is None
+                    else MemoryTLSIdentity(args.role, endpoints=endpoints))
         own_pin = identity.pin
         deadline = time.monotonic() + min(LAN_SESSION_SECONDS,
             identity.certificate.not_valid_after_utc.timestamp() - time.time())
-        context = None if args.phase == "initial" else _coordinator_restart_context(args.data_dir, args.role)
+        context = (None if args.phase == "initial" else
+                   _coordinator_restart_context(args.data_dir, args.role, endpoints=endpoints))
         if context is not None:
             deadline = min(deadline, time.monotonic() + context["started"] + LAN_SESSION_SECONDS - time.time())
         if deadline <= time.monotonic():
@@ -2559,17 +2626,22 @@ def paired_coordinator_main(args: Any) -> int:
         watchdog = threading.Timer(deadline - time.monotonic(), lambda: os._exit(124))
         watchdog.daemon = True
         watchdog.start()
-        sock = _PairOfflineSocket(args.offline_fd, args.role) if offline else _pair_open(args.role, deadline)
+        if offline:
+            sock = _PairOfflineSocket(args.offline_fd, args.role, endpoints=endpoints)
+        else:
+            sock = (_pair_open(args.role, deadline) if endpoints is None
+                    else _pair_open(args.role, deadline, endpoints))
         local, remote = sock.getsockname(), sock.getpeername()
-        if ((local[0], remote[0]) != ((LAN_WRITER_IP, LAN_FOLLOWER_IP) if args.role == "writer"
-                else (LAN_FOLLOWER_IP, LAN_WRITER_IP)) or (remote[1] if args.role == "writer" else local[1]) != LAN_PORT):
+        if ((local[0], remote[0]) != ((peers["writer"], peers["follower"]) if args.role == "writer"
+                else (peers["follower"], peers["writer"])) or (remote[1] if args.role == "writer" else local[1]) != peers["port"]):
             raise PersistentNodeError("coordinator_peer_address_invalid")
         peer, expiry, fingerprint, raw_peer = _pair_exchange(sock, identity, args.phase, context, deadline)
         deadline = min(deadline, time.monotonic() + expiry - time.time())
         if not identity.certificate.not_valid_before_utc.timestamp() <= time.time() < identity.certificate.not_valid_after_utc.timestamp():
             raise PersistentNodeError("coordinator_credentials_expired")
         if context is None and args.role == "writer":
-            context = lan_context(secrets.token_hex(16), int(time.time()), "initial", args.expected_source_digest)
+            context = lan_context(secrets.token_hex(16), int(time.time()), "initial", args.expected_source_digest,
+                                  endpoints=endpoints)
         def activate(resolved):
             nonlocal watchdog
             coordinator_runtime_check(args.expected_source_digest)
@@ -2596,7 +2668,9 @@ def paired_coordinator_main(args: Any) -> int:
         result.update(result="PAIR_PHASE_PASS", pairing_fingerprint=fingerprint,
             local_certificate_pin=own_pin, peer_certificate_pin=peer["pin"],
             physical_comparison="operator_attested" if not offline else "offline_fixture",
-            physical_two_host_verified=False, transport="OFFLINE_IPC" if offline else "PRIVATE_LAN")
+            physical_two_host_verified=False, physical_cross_network_verified=False,
+            peer_configuration=peers, encrypted_route_verified=False,
+            transport="OFFLINE_IPC" if offline else ("PRIVATE_ROUTE_OPERATOR_ATTESTED" if endpoints else "PRIVATE_LAN"))
         if prior is not None:
             if (result["state"] != prior["state"] or result["session"] != prior["session"]
                     or result["session_start"] != prior["session_start"]
@@ -2630,9 +2704,11 @@ def paired_coordinator_main(args: Any) -> int:
 def pairing_launcher(args: Any) -> str:
     """Print public-only native shell orchestration; never start a node here."""
     import shlex
+    endpoints = _configured_peers(args)
     if (args.role not in ("writer", "follower") or args.phase is not None or args.data_dir is not None
             or args.report_dir is not None or args.offline_fd is not None or args.port is not None
-            or args.session_id is not None or args.session_start is not None or not args.ack_private_lan):
+            or args.session_id is not None or args.session_start is not None
+            or (not args.ack_private_lan and endpoints is None)):
         raise PersistentNodeError("pair_launcher_arguments_invalid")
     coordinator_runtime_check(args.expected_source_digest)
     target = args.launcher_platform or ("windows" if sys.platform == "win32" else "mac")
@@ -2728,6 +2804,20 @@ try {
   Write-Host 'SURFACE_CLEANUP_VERIFIED'
 }
 }'''
+    if endpoints is not None:
+        # Render validated PUBLIC values only, leaving the accepted LAN template
+        # unchanged. Tokens avoid cascading substitutions when addresses overlap.
+        script = script.replace(LAN_WRITER_IP, "@WRITER@").replace(LAN_FOLLOWER_IP, "@FOLLOWER@")
+        script = script.replace("L28-TEMP-TWOHOST-42828", "L28-TEMP-TWONET-@PORT@")
+        script = script.replace("42828", "@PORT@")
+        script = script.replace("--ack-private-lan", "--peer-writer-ip @WRITER@ --peer-follower-ip @FOLLOWER@ --peer-port @PORT@ --ack-encrypted-private-route")
+        script = script.replace("/sbin/ifconfig en0 | /usr/bin/awk '$1==\"inet\" {print $2}'",
+                                "/sbin/ifconfig | /usr/bin/awk '$1==\"inet\" && $2==\"@WRITER@\" {print $2}'")
+        script = script.replace("NETWORK uma: operator-attested; scope", "ENCRYPTED PRIVATE ROUTE: operator-attested, not programmatically verified; scope")
+        script = script.replace("$l28Wifi = & netsh wlan show interfaces\nif ($LASTEXITCODE -ne 0 -or @($l28Wifi -match '^\\s*SSID\\s*:\\s*uma\\s*$').Count -ne 1) { throw 'STOP: uma not confirmed' }",
+                                "Write-Host 'ENCRYPTED PRIVATE ROUTE: operator-attested, not programmatically verified'")
+        values.update({"@WRITER@": endpoints["writer"], "@FOLLOWER@": endpoints["follower"],
+                       "@PORT@": str(endpoints["port"])})
     for key, value in values.items():
         script = script.replace(key, value)
     return script
@@ -2836,15 +2926,16 @@ def coordinator_main(args: Any) -> int:
     return 0
 
 
-def execute_offline_coordinator(case: str = "valid") -> dict[str, Any]:
+def execute_offline_coordinator(case: str = "valid", *, endpoints: Any = None) -> dict[str, Any]:
     """Integrated TLS wire driver -> HMAC -> ledger -> durable reopen, no sockets."""
     if case not in ("valid", "wrong-pin", "wrong-peer", "source-mismatch", "interrupted", "tamper",
                     "bootstrap-context", "bootstrap-pin", "unverified-record", "substituted-record",
                     "wrong-record-source", "wrong-record-role"):
         raise PersistentNodeError("coordinator_offline_case_invalid")
     assert_production_authority_inactive()
+    peers = _peer_config(endpoints)
     context = lan_context(secrets.token_hex(16), int(time.time()), "initial",
-                          lan_source_inventory()["source_digest"])
+                          lan_source_inventory()["source_digest"], endpoints=endpoints)
     roots = [Path(tempfile.gettempdir()).resolve() / ("l28-disposable-lan-" + context["session"] + "-" + r)
              for r in ("writer", "follower")]
     if any(root.exists() for root in roots):
@@ -2854,12 +2945,13 @@ def execute_offline_coordinator(case: str = "valid") -> dict[str, Any]:
     try:
         for phase in ("initial", "restart"):
             context = {**context, "phase": phase}
-            if phase == "restart" and any(_coordinator_restart_context(root, role) != context
+            if phase == "restart" and any(_coordinator_restart_context(root, role, endpoints=endpoints) != context
                     for root, role in zip(roots, ("writer", "follower"))):
                 raise PersistentNodeError("coordinator_offline_restart_failed")
             identities = []
             for role in ("writer", "follower"):
-                identities.append(MemoryTLSIdentity(role))
+                identities.append(MemoryTLSIdentity(role) if endpoints is None
+                                  else MemoryTLSIdentity(role, endpoints=endpoints))
             # Deterministic offline fixture stands in for direct physical inspection;
             # it is not evidence of physical/operator verification on two machines.
             prepared = [_coordinator_prepared_record(i, phase, context if phase == "restart" else None)
@@ -2877,12 +2969,13 @@ def execute_offline_coordinator(case: str = "valid") -> dict[str, Any]:
                 enrollments[1]["pin"] = "0" * 64
             if case == "source-mismatch":
                 enrollments[1]["source_digest"] = "0" * 64
-            pipes = [_OfflinePipe("writer"), _OfflinePipe("follower")]
+            pipes = ([_OfflinePipe("writer"), _OfflinePipe("follower")] if endpoints is None else
+                     [_OfflinePipe(role, endpoints=endpoints) for role in ("writer", "follower")])
             pipes[0].other, pipes[1].other = pipes[1], pipes[0]
             if case in ("interrupted", "tamper", "bootstrap-context", "bootstrap-pin"):
                 pipes[0].fault = case
             if case == "wrong-peer":
-                pipes[0].getpeername = lambda: (LAN_WRITER_IP, LAN_PORT)
+                pipes[0].getpeername = lambda: (peers["writer"], peers["port"])
             results, errors = [None, None], []
             def run(index):
                 try:
@@ -2933,6 +3026,8 @@ def execute_offline_coordinator(case: str = "valid") -> dict[str, Any]:
     if initial["issued_supply"] != 28 or sorted(initial["balances"].values()) != [0, 28]:
         raise PersistentNodeError("coordinator_offline_supply_invalid")
     return {"result": "OFFLINE_COORDINATOR_PASS", "source_digest": context["source_digest"],
+            "peer_configuration": peers, "network_started": False,
+            "encrypted_route_verified": False, "physical_cross_network_verified": False,
             "prepared_public_records_verified": True, "physical_inspection_verified": False,
             "state": initial, "pinned_tls_and_hmac_verified": True,
             "independent_validation": True, "durable_reopen_agreement": True,
@@ -3012,8 +3107,17 @@ def main(argv: list[str] | None = None, *, authentication: HandoffMaterial | Non
     parser.add_argument("--coordinator-case", choices=("valid", "wrong-pin", "wrong-peer", "source-mismatch", "interrupted", "tamper", "bootstrap-context", "bootstrap-pin", "unverified-record", "substituted-record", "wrong-record-source", "wrong-record-role"))
     parser.add_argument("--runtime-check", action="store_true")
     parser.add_argument("--expected-source-digest")
+    parser.add_argument("--peer-writer-ip")
+    parser.add_argument("--peer-follower-ip")
+    parser.add_argument("--peer-port", type=int)
+    parser.add_argument("--ack-encrypted-private-route", action="store_true")
     try:
         args = parser.parse_args(sys.argv[1:] if argv is None else argv)
+        endpoints = _configured_peers(args)
+        if endpoints is not None and (args.ack_private_lan or not any((
+                args.paired_coordinate, args.offline_pair_role, args.print_launcher,
+                args.offline_coordinator, args.runtime_check))):
+            raise PersistentNodeError("peer_configuration_mode_invalid")
         if authentication is not None and not args.lan:
             raise PersistentNodeError("lan_input_mode_required")
         if args.paired_coordinate or args.offline_pair_role or args.print_launcher:
@@ -3044,9 +3148,12 @@ def main(argv: list[str] | None = None, *, authentication: HandoffMaterial | Non
                     or (args.offline_coordinator and args.expected_source_digest is not None)):
                 raise PersistentNodeError("coordinator_arguments_invalid")
             if args.runtime_check:
-                _emit(coordinator_runtime_check(args.expected_source_digest))
+                result = coordinator_runtime_check(args.expected_source_digest)
+                if endpoints is not None:
+                    result.update(peer_configuration=endpoints, encrypted_route_verified=False)
+                _emit(result)
             else:
-                _emit(execute_offline_coordinator(args.coordinator_case or "valid"))
+                _emit(execute_offline_coordinator(args.coordinator_case or "valid", endpoints=endpoints))
             return 0
         if args.coordinator_case is not None or args.expected_source_digest is not None:
             raise PersistentNodeError("coordinator_mode_required")

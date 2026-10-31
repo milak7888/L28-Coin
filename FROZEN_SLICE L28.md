@@ -2,6 +2,140 @@
 
 Date: 2026-10-31
 PROJECT_STATE: ACTIVE
+Slice: Two-Network Disposable Peer v0.1
+
+<!-- TWO_NETWORK_COMPLETION_RECORD_BEGIN -->
+## FINAL ACCEPTANCE / COMPLETION-RECORD AUTHORIZATION — 2026-10-31
+
+AUTHORIZE_L28_TWO_NETWORK_COMPLETION_RECORD_FINALIZATION.
+Frozen acceptance: PASS. Slice status: COMPLETE_PENDING_OPERATOR.
+PROJECT_STATE remains ACTIVE. This is not production or publication approval.
+Physical execution was separately authorized by
+AUTHORIZE_L28_TWO_NETWORK_PHYSICAL_SESSION_AT_ECFCCB9D.
+Accepted session: 3e77acd81d574662cba3eb604020b01f.
+Runtime digest: ecfccb9db1ed6e4a650917f2e21ee3c827579129e0cc1d7713ccabc6e739833a.
+Matching state commitment:
+89ad1f4a556421765c5b606f8f38439abb9d3e7ca7c6edd86bccde44f6cf7c99.
+Mac reports inspected; Surface execution, two physical hosts on distinct access
+networks, Tailscale route, both full-fingerprint comparisons/local PAIR approvals
+and Surface cleanup are operator-attested. Initial/restart phases PASS on both
+hosts; supply 28, balances 0/28, matching IDs/state, fresh process credentials,
+durable restart, replay rejection without mutation and terminal divergence halt.
+Mac process/listener cleanup independently checked absent at final review.
+encrypted_route_verified=false and physical_cross_network_verified=false remain
+unchanged in original reports. No programmatic route/topology attestation or
+independent security audit is claimed. Exact evidence is in SYSTEM_STATE.
+Reuse the accepted 61 focused / 288 affected passing cases and prior consolidated
+local review; no unresolved Critical/High issue affecting this bounded capability
+was identified. No tests or runtime repeated for completion-record finalization.
+Protocol/economics/history, canonical validation and custody/F171 remain unchanged;
+production gates remain BLOCKED. Preserve all historical completion evidence.
+Only necessary completion records may change; no new slice, source work, runtime,
+firewall changes, commit, merge, push or PROJECT_STATE transition is authorized.
+STOP after git diff --check and exact-path review. Separate operator authority is
+required for a local milestone commit and any later integration/publication.
+
+The original frozen scope and pre-acceptance results below are preserved as
+historical evidence; their PENDING/offline-only statements are superseded only by
+this accepted, separately authorized physical session and record finalization.
+<!-- TWO_NETWORK_COMPLETION_RECORD_END -->
+
+## CURRENT OPERATOR AUTHORIZATION
+
+AUTHORIZE_FROZEN_SLICE_L28_TWO_NETWORK_DISPOSABLE_PEER_V0_1.
+Base: b6f9afdb12dee86639476d4fcd357a75843a2008 (published main).
+Branch: codex/two-network-disposable-peer-v0-1. Offline implementation only.
+The operator closes First Paid Text Summary v0.1 as COMPLETE at that accepted
+commit, preserving checkpoint a6a93c922ece5f40579dbefedccd61b996c7b287 and all
+prior evidence below. PROJECT_STATE remains ACTIVE; historical COMPLETE records
+are not project-wide production approval. Previous slice instructions below are
+historical and do not authorize new work.
+
+## OBJECTIVE / DELIVERABLE
+
+Reuse the accepted persistent disposable coordinator to support two explicitly
+configured IPv4 peers on an operator-approved encrypted private route between
+different access networks. No discovery, relay, new ledger or consensus engine.
+One initial disposable coinbase/transfer of 28 L28, independently validated,
+durable restart, replay rejection and Option A halt. Keep accepted LAN defaults
+and the existing loopback interface. Bind configuration through certificates,
+complete role-ordered pairing records/fingerprints, TLS/HMAC session context,
+socket peer checks and durable restart metadata. No global endpoint mutation.
+
+## AUTHORIZED PATHS — EXACTLY SIX
+
+- FROZEN_SLICE L28.md
+- SYSTEM_STATE L28.md
+- DEFER L28.md
+- README.md
+- coin/persistent_disposable_testnet_node.py
+- tests/test_persistent_disposable_testnet_node.py
+
+Dependency restoration amendment: AUTHORIZE_L28_RESTORE_PINNED_TLS_TEST_RUNTIME
+permits only the pinned public TLS runtime and its required dependencies in a new
+isolated temporary environment, using local cache first and the configured trusted
+Python index if needed. No repository dependency pins, global/system Python or
+existing environment may be modified. Verify actual imports and the existing
+memory-only pinned TLS handoff before resuming source implementation.
+Explicit peers
+must be distinct canonical RFC1918 or shared-address-space (100.64.0.0/10)
+IPv4 addresses, with an integer unprivileged TCP port. No DNS, public, wildcard,
+loopback, multicast or inferred addresses in the configurable route mode.
+These syntactic restrictions DO NOT prove route encryption, ownership, topology
+or network isolation. Those require operator verification and session approval.
+
+## VERIFICATION / ACCEPTANCE
+
+Run new focused tests once, disjoint directly affected offline regressions once,
+actual configurable coordinator CLI over memory-only transport, and genuine
+process restart over explicit local AF_UNIX IPC (no IP listener). Use disposable
+in-memory TLS/HMAC/payment test credentials only. Test malformed config/frames,
+wrong peers/network/source/context, replay, interruption, persistence and halt.
+Keep complete-fingerprint comparison and local approval on both physical hosts,
+fresh credentials after genuine restart, unchanged certificate expiry, at most
+120 seconds active runtime and the original 600-second session across restart.
+One consolidated local security review; no independent audit claim.
+
+Offline evidence is NOT frozen-slice PASS. Full acceptance requires separately
+authorized execution on two physical computers on different access networks over
+the approved encrypted route: matching transaction IDs/state commitments,
+supply 28, balances 0/28, genuine durable restart, adversarial rejection and
+complete process/listener/firewall cleanup. Physical acceptance stays PENDING.
+
+## SAFETY / STOP
+
+No IP nodes/listeners, VPN installation/configuration, firewall/router changes,
+public exposure, production keys/custody/signing/settlement, canonical mining or
+broadcast, historical import, bridge activity, unrelated dependency installation, commit,
+merge, push or deployment. No Protocol v1.0.0, economics/history, canonical
+validator, custody/F171 or production gate changes. At most two runtime roles
+concurrently in the offline interface. Stop after offline evidence/review and
+report exact route/endpoints/source parity/session authorization still required.
+
+## OFFLINE RESULT — 2026-10-31
+
+Offline implementation and verification PASS; full slice remains PENDING PHYSICAL
+ACCEPTANCE. Exactly six authorized files changed, no dependency-pin changes.
+61 focused cases PASS once. 288 disjoint affected cases covered by passing results:
+287 initially passed; the sole failure was a naive wildcard substring check matching
+the valid private 10/8 CIDR. Corrected that check to exact AST string-literal
+comparison (actual wildcard endpoint rejection retained); reran only that case,
+1 PASS. The IP-listener loopback workflow was intentionally not executed.
+Actual CLI configurable memory-TLS/HMAC/ledger path PASS, 11 negative CLI probes
+exit 1, runtime-check PASS/network_started=false. Two real runtime processes at a
+time over explicit AF_UNIX IPC completed initial/restart with fresh credentials,
+matching state and retained START. No physical network or topology claim.
+Runtime digest: ecfccb9db1ed6e4a650917f2e21ee3c827579129e0cc1d7713ccabc6e739833a.
+One consolidated local manual security review found no unresolved Critical/High
+implementation finding. Not a managed scan or independent audit. Production gates
+remain BLOCKED. No commit authorized. STOP pending route and physical-session scope.
+
+---
+
+## HISTORICAL — FIRST PAID TEXT SUMMARY v0.1 — COMPLETE
+
+Date: 2026-10-31
+PROJECT_STATE: ACTIVE
 Slice: First Paid Text Summary v0.1
 
 ## OPERATOR ACCEPTANCE / LOCAL FINALIZATION — 2026-10-31

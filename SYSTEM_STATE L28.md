@@ -7,7 +7,198 @@ PROJECT_STATE: ACTIVE
 
 Only the operator may change PROJECT_STATE.
 
-## CURRENT — FIRST PAID TEXT SUMMARY — 2026-10-31
+<!-- TWO_NETWORK_COMPLETION_RECORD_BEGIN -->
+## FINAL ACCEPTANCE — TWO-NETWORK DISPOSABLE PEER — 2026-10-31
+
+Record authority: AUTHORIZE_L28_TWO_NETWORK_COMPLETION_RECORD_FINALIZATION.
+Physical authority: AUTHORIZE_L28_TWO_NETWORK_PHYSICAL_SESSION_AT_ECFCCB9D.
+Frozen acceptance: PASS. Slice status: COMPLETE_PENDING_OPERATOR.
+PROJECT_STATE remains ACTIVE. Candidate remains UNCOMMITTED on
+codex/two-network-disposable-peer-v0-1 at base
+b6f9afdb12dee86639476d4fcd357a75843a2008; published main is unchanged.
+The earlier offline/PENDING statements below are historical pre-acceptance
+evidence, preserved rather than discarded. Prior completed milestones remain intact.
+
+Accepted session: 3e77acd81d574662cba3eb604020b01f.
+Runtime digest: ecfccb9db1ed6e4a650917f2e21ee3c827579129e0cc1d7713ccabc6e739833a.
+Mac writer 100.66.229.15 / Surface follower 100.106.219.67 / TCP 42828.
+Existing Tailscale route and distinct TP-Link/T-Mobile access networks are
+operator-attested, supported by the previously recorded Tailscale preflights.
+Surface native source parity and runtime preparation were operator-reported PASS.
+
+Mac public reports inspected (no original reports or disposable state modified):
+/private/var/folders/vf/ktxmbdkj6rs2d90q4ct335380000gn/T/l28-pair-launch-NBXTWSZ4/
+
+- initial.json SHA-256:
+  c9844a2c66217de8219949c5ed238d30236d3832413f37f4068ce16159f263c9
+- restart.json SHA-256:
+  5f468c61be1bc1e9af7865f675e178b6301f1e772dccbe6f336a6533262cdf45
+
+Initial PAIR_PHASE_PASS, restart PAIR_WORKFLOW_PASS. Writer PID 26940 -> 26960,
+previous_pid 26940, same session and START 1793479626, fresh local/peer certificate
+pins, durable_restart_agreement=true and genuine_local_process_restart_verified=true.
+Source inventory in both reports matches the unchanged candidate runtime bytes.
+Both hosts' initial/restart exit 0 and Surface agreement are operator-attested;
+raw Windows report files were not independently inspected in this review.
+
+Both phases retain identical two transaction IDs:
+f69fa34637fb52c05656b3dde123c648eb1437f6dfd4aa4fd173f5450ec0c727
+913425c4a50fb8c552da96ae8978a9fc06a227a2b553e4cf3d6e2f3f09e88451.
+Issued supply 28; balances 0/28; matching state commitment:
+89ad1f4a556421765c5b606f8f38439abb9d3e7ca7c6edd86bccde44f6cf7c99.
+Pinned TLS verified, replay rejected without mutation in both phases, terminal
+divergence halt true at restart (initial report false), connection/identity closed.
+Complete pairing fingerprints/local PAIR approvals on both hosts in both phases
+are operator-attested; no automatic peer approval or independent audit is claimed.
+Mac processes/listener independently checked absent during final acceptance;
+Surface process/listener/temporary-firewall-rule cleanup and L28_FINAL_CLEANUP=PASS
+are operator-attested. No further runtime or networking performed for these records.
+
+encrypted_route_verified=false and physical_cross_network_verified=false remain
+unchanged in host reports. They are not rewritten into machine-verified route or
+topology claims. Physical/route acceptance relies on the separate operator
+attestation above; the HMAC ledger frames themselves remain unencrypted and depend
+on the approved outer encrypted route. NOT_INDEPENDENTLY_AUDITED=true.
+Existing 61 focused / 288 affected passing cases, 11 negative CLI rejections and
+one consolidated local security review are retained without rerunning suites.
+No unresolved Critical/High issue affecting this bounded capability was identified.
+No Protocol v1.0.0, protected economics/history, canonical validator, ledger,
+custody/F171 or production authority change; production gates remain BLOCKED.
+
+Completion-record finalization only: git diff --check and exact-path review.
+No source/tests/README changes in this finalization, no PROJECT_STATE transition,
+new milestone, commit, merge, push, deployment or further network authorization.
+STOP. Remaining gate is separate operator authority for a local milestone commit;
+integration/publication and production actions remain separately authorized.
+<!-- TWO_NETWORK_COMPLETION_RECORD_END -->
+
+## CURRENT — TWO-NETWORK DISPOSABLE PEER — 2026-10-31
+
+Operator authority: AUTHORIZE_FROZEN_SLICE_L28_TWO_NETWORK_DISPOSABLE_PEER_V0_1.
+PROJECT_STATE remains ACTIVE. Published baseline:
+b6f9afdb12dee86639476d4fcd357a75843a2008. Isolated implementation branch:
+codex/two-network-disposable-peer-v0-1. Scope is the six paths in FROZEN_SLICE.
+Offline implementation/verification only; physical acceptance PENDING, no full
+slice PASS, commit, merge, push, networking or production authorization.
+
+The same operator authorization closes accepted First Paid Text Summary v0.1 as
+COMPLETE at b6f9afdb12dee86639476d4fcd357a75843a2008, published and independently
+verified on origin/main. COMPLETE checkpoint a6a93c922ece5f40579dbefedccd61b996c7b287
+and all prior build/acceptance evidence remain preserved below. This closes the
+slice, not PROJECT_STATE or the unresolved canonical/custody/F171 gates.
+
+### Historical offline execution blocker — 2026-10-31 (restored below)
+
+Implementation NOT STARTED; verification BLOCKED. The canonical Python 3.11.9
+environment has cryptography 49.0.0 but no pyOpenSSL installation. The previously
+recorded dependency target /private/tmp/l28-pyopenssl-2640.9o3lHB/runtime now has
+empty OpenSSL/package-metadata directories: OpenSSL imports only as a namespace,
+without an implementation, and its distribution version is None. No dependency
+was installed, repaired or substituted. Restore the pinned public TLS runtime
+under separate operator authority before implementing/verifying the endpoint
+change. No tests, network nodes/listeners or physical session were started.
+Only the three authorized control records have changed on this isolated branch;
+published main remains clean at b6f9afdb12dee86639476d4fcd357a75843a2008.
+
+### Authorized TLS runtime restoration — 2026-10-31
+
+AUTHORIZE_L28_RESTORE_PINNED_TLS_TEST_RUNTIME. New isolated environment:
+/private/tmp/l28-two-network-tls-TsqfgdJU/venv (Python 3.11.9).
+pyOpenSSL 26.4.0 downloaded through the configured Python package index;
+typing_extensions 4.16.0 and cryptography 49.0.0 reused from pip's HTTP cache.
+Installed those three exact wheels locally with --no-index --no-deps. Shared
+base cffi 2.0.0 / pycparser 2.23 satisfy the TLS dependencies; no global or
+previous environment changed. Test runner reuses existing pytest 8.4.1 with
+the new isolated site-packages on PYTHONPATH. Repository pins unchanged.
+Wheel SHA-256:
+pyOpenSSL: f0eb0cb2d581d3ad2b9c489468485e7f2ab6727d08401bcf9d824c3caddf3c1c
+typing_extensions: 481caa481374e813c1b176ada14e97f1f67a4539ce9cfeb3f350d78d6370c2e8
+cryptography: 966fe0e9c67490071f14c0d2b1cb2dfb3023c5ce39457343931415f08382f2db
+Actual imports/version checks PASS. Existing --offline-auth-handoff exits 0:
+OFFLINE_HANDOFF_PASS, TLSv1.3, mutual certificate pins, both authenticated roles,
+single-use inputs consumed, cleanup_complete=true. No IP sockets/listeners or
+physical-session claim. Dependency blocker removed; offline implementation resumes.
+
+### Offline implementation / acceptance boundary — 2026-10-31
+
+Offline implementation and verification PASS, UNCOMMITTED. Full frozen-slice
+acceptance remains PENDING actual physical cross-network verification. New explicit
+peer-writer-ip / peer-follower-ip / peer-port configuration requires a private-route
+acknowledgment, strict IPv4/range/type validation and distinct addresses. Configuration
+is copied through memory TLS identities/SANs, complete pairing records, role-ordered
+fingerprints, TLS/HMAC context, socket peer checks and restart metadata. LAN defaults
+and separate loopback interface retained; no global endpoint mutation or new engine.
+The acknowledgment does not establish route encryption or independently attest hosts.
+
+Validation: 61 focused cases PASS once, including genuine offline-process restart.
+288 disjoint affected cases covered by passing results (existing coordinator/LAN
+offline behavior, Protocol conformance, disposable identity). Initial affected run:
+287 PASS / 1 FAIL. Failure was the old substring check for wildcard binds matching
+the legitimate private 10/8 CIDR. Fixed only that structural check to exact AST
+string comparison, retaining actual wildcard rejection; targeted rerun 1 PASS.
+No full passing suite repeated. The existing actual IPv4 loopback process test was
+excluded: IP listeners are not authorized. Test-runner audit hook rejected creation
+of any AF_INET/AF_INET6 socket; IPC uses explicit AF_UNIX socketpairs only.
+
+Actual final-code --offline-coordinator with public example configuration
+writer 10.28.1.10 / follower 100.77.2.20 / port 42828 exits 0:
+OFFLINE_COORDINATOR_PASS; independently validated supply 28, balances 0/28,
+matching state, durable reopen, replay rejection, terminal divergence halt and
+cleanup_complete=true. State commitment:
+80193ef86bec9bf5ff98080dd73dc72c638a821c45edc58f42bbabacde6c6ef6.
+Transaction IDs:
+afdf112a281fc4ac3634effc0f501320d4e2a7f29c678b328fad6bde97023403
+11bf644dd7cabf0c8bdd49104fb5ac1361d59f43830e9cf6914930bfcaacca4a.
+This CLI uses two in-memory roles and durable reopen, not process restart.
+
+The focused real-CLI subprocess case separately exercised two processes at a
+time, initial PIDs 20197/20198 and restart PIDs 20211/20212, over AF_UNIX IPC.
+Session a4576a808aecc2a6bc2c4041f2b94630 retained START 1793471625. Matching
+state commitment 2bb335c02fc867e3fe8177e512a8f0a486dd0c5cc66da712e7bafb48c86b47aa;
+same IDs/state after restart, new certificates, full-fingerprint comparisons and
+PUBLIC fixture approvals, replay rejection and Option A halt. Both process phases
+exit zero; owned processes, IPC descriptors, ledger/report directories cleaned up.
+Those approvals are offline fixtures, NOT physical/operator attestations.
+
+All 11 actual adversarial CLI cases exit 1 with no PASS output: wrong pin/peer/
+source, interruption, ciphertext tamper, bootstrap-context/pin tamper, unverified,
+substituted, wrong-source and wrong-role enrollment records. Automated cases also
+cover wrong network, malformed/oversized frames, expired credentials, replay,
+changed restart endpoints, missing/invalid configuration, secret nondisclosure
+and failure cleanup. Native runtime-check PASS; network_started=false.
+
+Runtime source digest:
+ecfccb9db1ed6e4a650917f2e21ee3c827579129e0cc1d7713ccabc6e739833a
+Node SHA-256:
+f4012422c95ea0a77f8b3aeb3b7e3994e309ddd3f321f2f59e3ab0d630eb6bbf
+One consolidated local manual review of all six changed files and the existing
+TLS/HMAC, frame, state/validator and restart boundaries found no unresolved
+Critical/High implementation finding. Managed security-diff workflow requires
+additional scan artifacts outside this bounded scope and was not run. No
+independent audit or production approval is claimed.
+
+Residual/next gate: operator-approved encrypted private route covering PUBLIC
+pairing and later unencrypted HMAC payload frames; exact two hosts/IPv4s/port on
+different access networks; matching native source inventories and dependency
+checks; direct full-fingerprint comparison/local PAIR approval each phase; one
+bounded session and any exact temporary Private-profile firewall exception with
+cleanup. No VPN/firewall setup, source transfer, physical session or listener was
+performed. Machine reports retain physical_cross_network_verified=false and
+encrypted_route_verified=false. No production keys/signing, bridge, mining,
+canonical settlement/history change, commit, merge or push. Existing RC inventory
+remains historical at the accepted baseline; this working candidate is not a new
+release package. PROJECT_STATE ACTIVE; custody/F171 unchanged/BLOCKED. STOP.
+
+Final read-only scope check: exactly the six allowed paths, staging empty,
+git diff --check PASS, prior frozen/state/defer historical tails byte-preserved.
+Protected protocol/validator/ledger/history/bridge/dependency pins, summary runtime
+and existing release files have zero diff from baseline. Main remains clean and
+unchanged at b6f9afdb12dee86639476d4fcd357a75843a2008. Offline child PIDs
+20197/20198/20211/20212 independently confirmed absent; TCP 42828 has no listener.
+No firewall or VPN configuration was changed. Final test-file SHA-256:
+a3ad680b265f3a910f69ab531a147581c9fd1fdcca8e0fc934343c6fa62478bf.
+
+## HISTORICAL — FIRST PAID TEXT SUMMARY — COMPLETE — 2026-10-31
 
 Final operator authority:
 AUTHORIZE_L28_PAID_TEXT_SUMMARY_V0_1_ACCEPTANCE_AND_LOCAL_COMMIT.

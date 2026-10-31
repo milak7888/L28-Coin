@@ -5,6 +5,73 @@ devices, autonomous systems, and AI agents. It is independent from the private
 Leap28 orchestration system and may be implemented or self-hosted under the
 Apache License 2.0.
 
+## Configurable two-network disposable peers (offline candidate)
+
+The existing two-host coordinator now accepts explicitly configured, distinct
+private IPv4 peer addresses and an unprivileged TCP port. It reuses the same
+canonical transaction validator, ledger, pairing, pinned TLS handoff and HMAC
+frames; no discovery, relay or new consensus mechanism is added. The accepted
+LAN defaults and separate loopback workflow are retained. This is NOT native
+mainnet settlement, historical continuation or a production custody release.
+
+Physical cross-network acceptance is **PENDING**. No listener, route/VPN change,
+firewall change or physical session is authorized by the offline candidate.
+Private IP syntax does not prove encryption, host ownership or different access
+networks. Before any future execution the operator must approve the exact peers,
+an existing encrypted private route covering the entire connection (including
+the PUBLIC pre-authentication pairing exchange and later HMAC ledger frames),
+source parity, narrow firewall boundary and one bounded session. The HMAC ledger
+transport itself is authenticated but **not encrypted**. No automatic public
+fallback, DNS discovery or unauthenticated certificate trust is permitted.
+
+With Python 3.11, cryptography 49.0.0 and pyOpenSSL 26.4.0 already available, this
+command exercises the actual configurable TLS/HMAC/ledger path entirely offline
+over in-memory byte pipes, including durable reopen and rejection probes:
+
+```sh
+python -B -m coin.persistent_disposable_testnet_node --offline-coordinator \
+  --peer-writer-ip 10.28.1.10 --peer-follower-ip 100.77.2.20 \
+  --peer-port 42828 --ack-encrypted-private-route
+```
+
+These are example addresses, NOT approved physical endpoints. The acknowledgment
+is a required local assertion, not proof of encryption or execution permission.
+Require exit zero, OFFLINE_COORDINATOR_PASS, supply 28, balances 0/28, agreement,
+replay rejection, divergence halt and cleanup. Physical and encrypted-route
+verification flags remain false. Add `--coordinator-case wrong-peer`, `wrong-pin`,
+`source-mismatch`, `interrupted` or `tamper` to require nonzero rejection.
+
+`--source-inventory` prints the public runtime digest. `--runtime-check
+--expected-source-digest DIGEST` with the same peer arguments verifies the native
+runtime/configuration without networking. Both physical hosts must independently
+report identical source digests and peer configuration before a session.
+
+After separate physical authorization, `--print-launcher --launcher-platform mac
+--role writer` (or `windows --role follower`), `--expected-source-digest DIGEST`
+and those same four peer/route arguments **print**, but do not execute, the existing
+native initial/restart/cleanup launch procedure. Generate the launcher locally on
+each host so repository/Python paths are native. Do not execute the printed script
+before authorization; the Windows template includes a temporary Private-profile
+firewall rule restricted to the exact configured local/remote IPs and port.
+
+Each phase requires direct physical comparison of the complete role-ordered
+SHA-256 fingerprints and local PAIR approval on both hosts: one initial comparison,
+another after genuine process restart. Hosts can be physically beside each other
+while using different access networks. If direct physical comparison is unavailable,
+STOP until the operator approves a trusted comparison method; this candidate does
+not silently authorize remote enrollment. A network echo or chat from an
+unauthenticated peer is not a trusted comparison channel.
+Private TLS/payment credentials remain memory-only; restart generates fresh
+identities and cannot change the peers, source digest, session START or stored
+ledger identity. Certificates retain their expiration, active runtime is at most
+120 seconds and the original network session is at most 600 seconds across restart.
+Failure ends the attempt; owned handles/processes and any separately approved
+firewall rule must be cleaned up. No automatic retry or canonical history rewrite.
+
+The existing public-testnet v0.1.0-rc1 inventory remains pinned to the accepted
+baseline, not this changed working-tree README. This candidate is not a new release
+package; its physical source synchronization/publication needs separate approval.
+
 ## Current status
 
 - Protocol specification: frozen at v1.0.0
