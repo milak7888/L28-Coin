@@ -89,6 +89,7 @@ SIGN_DOMAIN = b"L28-PERSISTENT-DISPOSABLE-TRANSFER-V0.1\x00"
 # the existing disposable transaction/network identities.
 LAN_PROFILE = "l28-two-host-disposable-sync/v0.1"
 PEER_PROFILE = "l28-two-network-disposable-peer/v0.1"
+RELAY_PROFILE = "l28-three-peer-disposable-relay/v0.1"
 LAN_WRITER_IP = "192.168.68.50"
 LAN_FOLLOWER_IP = "192.168.68.54"
 LAN_PORT = 42828
@@ -1315,6 +1316,13 @@ def _peer_config(endpoints: Any = None) -> dict[str, Any]:
     if endpoints is None:
         return {"profile": LAN_PROFILE, "writer": LAN_WRITER_IP,
                 "follower": LAN_FOLLOWER_IP, "port": LAN_PORT}
+    if isinstance(endpoints, dict) and endpoints.get("profile") == RELAY_PROFILE:
+        _exact_mapping(endpoints, {"profile", "writer", "follower", "port", "bootstrap",
+                                  "sender_id", "receiver_id"}, "relay_link_invalid")
+        expected = relay_link(endpoints["bootstrap"], endpoints["sender_id"], endpoints["receiver_id"])
+        if endpoints != expected:
+            raise PersistentNodeError("relay_link_invalid")
+        return expected
     _exact_mapping(endpoints, {"profile", "writer", "follower", "port"}, "peer_endpoints_invalid")
     if endpoints["profile"] != PEER_PROFILE:
         raise PersistentNodeError("peer_endpoints_invalid")
@@ -1465,10 +1473,16 @@ def _handoff_context(context: Any) -> dict[str, Any]:
     if not isinstance(context, dict):
         raise PersistentNodeError("tls_context_invalid")
     endpoints = None
-    if context.get("profile") == PEER_PROFILE:
+    if context.get("profile") == RELAY_PROFILE:
+        expected = relay_context(context.get("bootstrap"), context.get("sender_id"),
+                                 context.get("receiver_id"), context.get("phase"))
+    elif context.get("profile") == PEER_PROFILE:
         endpoints = peer_endpoints(context.get("writer"), context.get("follower"), context.get("port"))
-    expected = lan_context(context.get("session"), context.get("started"),
-                           context.get("phase"), context.get("source_digest"), endpoints=endpoints)
+        expected = lan_context(context.get("session"), context.get("started"),
+                               context.get("phase"), context.get("source_digest"), endpoints=endpoints)
+    else:
+        expected = lan_context(context.get("session"), context.get("started"),
+                               context.get("phase"), context.get("source_digest"))
     if _canonical_bytes(context) != _canonical_bytes(expected):
         raise PersistentNodeError("tls_context_invalid")
     if expected["source_digest"] != lan_source_inventory()["source_digest"]:
@@ -2039,7 +2053,8 @@ def _lan_replay_probe(ledger: BlocklessLedger, root: Path) -> bool:
     return True
 
 
-def lan_sync(channel: LanChannel, ledger: BlocklessLedger, root: Path) -> dict[str, Any]:
+def lan_sync(channel: LanChannel, ledger: BlocklessLedger, root: Path,
+             *, terminal_probe: bool = True) -> dict[str, Any]:
     """Finite two-event protocol. A partial follower resumes only a validated prefix."""
     if channel.role == "writer":
         final = ledger_state(ledger)
@@ -2082,32 +2097,34 @@ def lan_sync(channel: LanChannel, ledger: BlocklessLedger, root: Path) -> dict[s
     replay = _lan_replay_probe(ledger, root)
     # Deliberate terminal negative probe in the authorized restart invocation.
     # Both hosts persist a halt marker; this disposable session cannot run again.
-    halted = False
-    if channel.context["phase"] == "restart":
-        divergent = deepcopy(final)
-        divergent["total_volume"] += 1
-        divergent["state_commitment"] = _state_commitment({
-            k: v for k, v in divergent.items() if k != "state_commitment"})
-        if channel.role == "writer":
-            channel.send("divergence_probe", divergent)
-            if channel.receive("halted") != "HALTED_BY_OPTION_A":
-                raise PersistentNodeError("lan_divergence_probe_failed")
-        else:
-            peer_probe = channel.receive("divergence_probe")
-            if peer_probe != divergent:
-                raise PersistentNodeError("lan_divergence_probe_invalid")
-        try:
-            _lan_agree(root, ledger_state(ledger), divergent)
-        except PersistentNodeError as exc:
-            if exc.code != "lan_divergence_halted":
-                raise
-            halted = True
-        if not halted:
-            raise PersistentNodeError("lan_divergence_probe_failed")
-        if channel.role == "follower":
-            channel.send("halted", "HALTED_BY_OPTION_A")
+    halted = (_lan_divergence_probe(channel, ledger, root)
+              if terminal_probe and channel.context["phase"] == "restart" else False)
     return {"state": ledger_state(ledger), "replay_rejected_without_mutation": replay,
             "terminal_divergence_halt": halted}
+
+
+def _lan_divergence_probe(channel: LanChannel, ledger: BlocklessLedger, root: Path) -> bool:
+    """Terminal probe only after every required synchronization has completed."""
+    divergent = deepcopy(ledger_state(ledger))
+    divergent["total_volume"] += 1
+    divergent["state_commitment"] = _state_commitment({
+        k: v for k, v in divergent.items() if k != "state_commitment"})
+    if channel.role == "writer":
+        channel.send("divergence_probe", divergent)
+        if channel.receive("halted") != "HALTED_BY_OPTION_A":
+            raise PersistentNodeError("lan_divergence_probe_failed")
+    elif channel.receive("divergence_probe") != divergent:
+        raise PersistentNodeError("lan_divergence_probe_invalid")
+    try:
+        _lan_agree(root, ledger_state(ledger), divergent)
+    except PersistentNodeError as exc:
+        if exc.code != "lan_divergence_halted":
+            raise
+    else:
+        raise PersistentNodeError("lan_divergence_probe_failed")
+    if channel.role == "follower":
+        channel.send("halted", "HALTED_BY_OPTION_A")
+    return True
 
 
 def _lan_connected_run(sock: Any, secret: bytes, context: dict[str, Any], role: str,
@@ -2408,7 +2425,13 @@ def _coordinator_record_peer(raw: str, identity: MemoryTLSIdentity, phase: str,
                 or hmac.compare_digest(peer["pin"], identity.pin)
                 or peer["source_digest"] != lan_source_inventory()["source_digest"]):
             raise ValueError
-        if phase == "initial":
+        if peers["profile"] == RELAY_PROFILE:
+            if (phase not in ("initial", "restart") or context is None
+                    or _canonical_bytes(_handoff_context(peer["context"])) != _canonical_bytes(_handoff_context(context))
+                    or context["phase"] != phase
+                    or any(context[k] != v for k, v in peers.items())):
+                raise ValueError
+        elif phase == "initial":
             if context is not None or peer["context"] is not None:
                 raise ValueError
         elif phase == "restart":
@@ -3079,6 +3102,241 @@ def lan_main(args: Any, *, authentication: HandoffMaterial | None = None) -> int
         watchdog.cancel()
 
 
+def relay_bootstrap(b_port: int = 42828, c_port: int = 42829) -> dict[str, Any]:
+    """Public, bounded run configuration; generates no keys or sockets."""
+    binding = persistent_testnet_binding()
+    return validate_relay_bootstrap({
+        "profile": RELAY_PROFILE, "version": 1, "session": secrets.token_hex(16),
+        "started": int(time.time()), "source_digest": lan_source_inventory()["source_digest"],
+        "network": NETWORK_ID, "genesis": binding["genesis_hash"], "config": binding["config_hash"],
+        "nodes": {"A": {"host": HOST, "port": None}, "B": {"host": HOST, "port": b_port},
+                  "C": {"host": HOST, "port": c_port}},
+        "links": [["A", "B"], ["B", "C"]], "origin": "A"})
+
+
+def validate_relay_bootstrap(value: Any) -> dict[str, Any]:
+    _exact_mapping(value, {"profile", "version", "session", "started", "source_digest",
+        "network", "genesis", "config", "nodes", "links", "origin"}, "relay_bootstrap_invalid")
+    binding = persistent_testnet_binding()
+    if (value["profile"] != RELAY_PROFILE or type(value["version"]) is not int or value["version"] != 1
+            or not _lan_hex(value["session"], 32) or not _exact_int(value["started"])
+            or not value["started"] <= time.time() < value["started"] + LAN_SESSION_SECONDS
+            or value["source_digest"] != lan_source_inventory()["source_digest"]
+            or value["network"] != NETWORK_ID or value["genesis"] != binding["genesis_hash"]
+            or value["config"] != binding["config_hash"] or value["origin"] != "A"
+            or value["links"] != [["A", "B"], ["B", "C"]]):
+        raise PersistentNodeError("relay_bootstrap_binding_invalid")
+    nodes = _exact_mapping(value["nodes"], {"A", "B", "C"}, "relay_members_invalid")
+    for name, endpoint in nodes.items():
+        _exact_mapping(endpoint, {"host", "port"}, "relay_endpoint_invalid")
+        if endpoint["host"] != HOST or (name == "A" and endpoint["port"] is not None):
+            raise PersistentNodeError("relay_endpoint_invalid")
+        if name != "A" and (not _exact_int(endpoint["port"]) or not 1024 <= endpoint["port"] <= 65535):
+            raise PersistentNodeError("relay_endpoint_invalid")
+    if nodes["B"]["port"] == nodes["C"]["port"]:
+        raise PersistentNodeError("relay_endpoint_invalid")
+    return deepcopy(value)
+
+
+def _relay_read_json(path: Path) -> Any:
+    if (not path.is_absolute() or any(p.is_symlink() for p in (path, *path.parents))
+            or not path.is_file() or not 0 < path.stat().st_size <= MAX_FRAME_BYTES):
+        raise PersistentNodeError("relay_public_file_invalid")
+    raw = path.read_bytes()
+    if raw.endswith(b"\n"):
+        raw = raw[:-1]  # CLI output has exactly one final newline.
+    try:
+        value = json.loads(raw.decode("utf-8"), object_pairs_hook=_reject_duplicate_keys)
+        if _canonical_bytes(value) != raw:
+            raise ValueError
+        return value
+    except (ValueError, UnicodeError, RecursionError):
+        raise PersistentNodeError("relay_public_file_noncanonical") from None
+
+
+def relay_link(bootstrap: Any, sender: Any, receiver: Any) -> dict[str, Any]:
+    boot = validate_relay_bootstrap(bootstrap)
+    if [sender, receiver] not in boot["links"]:
+        raise PersistentNodeError("relay_link_invalid")
+    return {"profile": RELAY_PROFILE, "writer": HOST, "follower": HOST,
+            "port": boot["nodes"][receiver]["port"], "bootstrap": boot,
+            "sender_id": sender, "receiver_id": receiver}
+
+
+def relay_context(bootstrap: Any, sender: Any, receiver: Any, phase: Any) -> dict[str, Any]:
+    link = relay_link(bootstrap, sender, receiver)
+    boot = link["bootstrap"]
+    if phase not in ("initial", "restart"):
+        raise PersistentNodeError("relay_phase_invalid")
+    return {**link, "version": 1, "session": boot["session"], "started": boot["started"],
+            "phase": phase, "source_digest": boot["source_digest"], "network": boot["network"],
+            "genesis": boot["genesis"], "config": boot["config"],
+            "bootstrap_digest": hashlib.sha256(RELAY_PROFILE.encode() + b"\x00" + _canonical_bytes(boot)).hexdigest()}
+
+
+def _relay_authenticated_link(boot: Any, sender: str, receiver: str, node_id: str,
+                              phase: str, deadline: float) -> tuple[LanChannel, dict[str, Any]]:
+    context = relay_context(boot, sender, receiver, phase)
+    if node_id not in (sender, receiver):
+        raise PersistentNodeError("relay_local_peer_invalid")
+    role = "writer" if node_id == sender else "follower"
+    identity = endpoint = material = sock = channel = None
+    try:
+        identity = MemoryTLSIdentity(role, endpoints=relay_link(boot, sender, receiver))
+        own_pin = identity.pin
+        sock = _pair_open(role, deadline, identity.endpoints)
+        local, remote = sock.getsockname(), sock.getpeername()
+        if (local[0] != HOST or remote[0] != HOST
+                or (remote[1] if role == "writer" else local[1]) != context["port"]):
+            raise PersistentNodeError("relay_socket_peer_invalid")
+        _emit({"status": "RELAY_PAIRING", "node_id": node_id, "link": [sender, receiver], "phase": phase})
+        peer, expiry, fingerprint, _ = _pair_exchange(sock, identity, phase, context, deadline)
+        deadline = min(deadline, time.monotonic() + expiry - time.time(),
+                       time.monotonic() + identity.certificate.not_valid_after_utc.timestamp() - time.time())
+        endpoint = PinnedTLSHandoff(identity, peer["pin"], context, HOST)
+        material = _coordinator_handoff(sock, endpoint, deadline)
+        channel = LanChannel(sock, material.consume(role, context), context, role, deadline)
+        channel.authenticate()
+        info = {"link": [sender, receiver], "fingerprint": fingerprint,
+                "local_certificate_pin": own_pin, "peer_certificate_pin": peer["pin"],
+                "local_endpoint": list(local), "peer_endpoint": list(remote),
+                "pinned_tls_handoff_verified": True, "hmac_authenticated": True}
+        return channel, info
+    except BaseException:
+        if channel is not None:
+            channel.key = b""
+        _close_socket(sock)
+        raise
+    finally:
+        if material is not None:
+            material.close()
+        if endpoint is not None:
+            endpoint.close()
+        if identity is not None:
+            identity.close()
+
+
+def relay_node_main(args: Any) -> int:
+    """One independent process/ledger; link roles never grant fixture issuance."""
+    assert_production_authority_inactive()
+    boot = validate_relay_bootstrap(_relay_read_json(args.bootstrap))
+    node_id, phase = args.node_id, args.phase
+    if node_id not in ("A", "B", "C") or phase not in ("initial", "restart"):
+        raise PersistentNodeError("relay_node_arguments_invalid")
+    root = Path(tempfile.gettempdir()).resolve() / ("l28-disposable-lan-" + boot["session"] + "-" + node_id)
+    reports = Path(tempfile.gettempdir()).resolve() / ("l28-relay-reports-" + boot["session"] + "-" + node_id)
+    if any(p.is_symlink() for p in (root, reports, *root.parents)):
+        raise PersistentNodeError("relay_state_path_invalid")
+    prior = None
+    if phase == "initial":
+        if root.exists() or reports.exists():
+            raise PersistentNodeError("relay_state_already_exists")
+        reports.mkdir(mode=0o700)
+    else:
+        if not reports.is_dir() or {p.name for p in reports.iterdir()} != {"initial.json"}:
+            raise PersistentNodeError("relay_restart_report_invalid")
+        prior = _relay_read_json(reports / "initial.json")
+        if (prior.get("result") != "RELAY_PHASE_PASS" or prior.get("node_id") != node_id
+                or prior.get("bootstrap") != boot or prior.get("pid") == os.getpid()
+                or not _exact_int(prior.get("pid"))):
+            raise PersistentNodeError("relay_restart_report_invalid")
+    deadline = time.monotonic() + min(LAN_SESSION_SECONDS, boot["started"] + LAN_SESSION_SECONDS - time.time())
+    channels, links, ledger, watchdog = [], [], None, None
+    def arm(limit: float) -> None:
+        nonlocal watchdog
+        if watchdog is not None:
+            watchdog.cancel(); watchdog.join(timeout=1)
+        remaining = limit - time.monotonic()
+        if remaining <= 0:
+            raise PersistentNodeError("relay_deadline_expired")
+        watchdog = threading.Timer(remaining, lambda: os._exit(124))
+        watchdog.daemon = True
+        watchdog.start()
+    def connect(sender: str, receiver: str) -> LanChannel:
+        nonlocal deadline
+        channel, info = _relay_authenticated_link(boot, sender, receiver, node_id, phase, deadline)
+        channels.append(channel); links.append(info)
+        if len(channels) == 1:
+            deadline = min(channel.deadline, time.monotonic() + PARENT_DEADLINE_SECONDS)
+            arm(deadline)
+        channel.deadline = deadline = min(deadline, channel.deadline)
+        return channel
+    try:
+        arm(deadline)
+        first = connect("B", "C") if node_id == "C" else connect("A", "B")
+        ledger = _lan_open_state(root, first.context, node_id)
+        if phase == "restart" and len(ledger.transactions) != 2:
+            raise PersistentNodeError("relay_restart_incomplete_no_regeneration")
+        if phase == "initial" and node_id == "A":
+            private = Ed25519PrivateKey.generate()
+            events = [_build_coinbase(public_identity(_public_key_hex(private))),
+                      _build_signed_transfer(private, follower_identity(persistent_testnet_binding()))]
+            del private
+            asyncio.run(_apply_events(ledger, events))
+        lan_sync(first, ledger, root, terminal_probe=False)
+        if node_id == "B":
+            downstream = connect("B", "C")
+            lan_sync(downstream, ledger, root, terminal_probe=False)
+            first.send("downstream_state", ledger_state(ledger))
+            _lan_agree(root, ledger_state(ledger), first.receive("all_agreed"))
+            downstream.send("all_agreed", ledger_state(ledger))
+            if downstream.receive("barrier_ready") != "C":
+                raise PersistentNodeError("relay_barrier_invalid")
+            first.send("barrier_ready", "B-C")
+        elif node_id == "A":
+            _lan_agree(root, ledger_state(ledger), first.receive("downstream_state"))
+            first.send("all_agreed", ledger_state(ledger))
+            if first.receive("barrier_ready") != "B-C":
+                raise PersistentNodeError("relay_barrier_invalid")
+        else:
+            _lan_agree(root, ledger_state(ledger), first.receive("all_agreed"))
+            first.send("barrier_ready", "C")
+        state = ledger_state(ledger)
+        event_hashes = [hashlib.sha256(_canonical_bytes(tx)).hexdigest() for tx in ledger.transactions.values()]
+        if prior is not None and (prior["state"] != state or prior["event_bytes_sha256"] != event_hashes
+                or any(new[k] == old[k] for new, old in zip(links, prior["links"])
+                       for k in ("local_certificate_pin", "peer_certificate_pin"))):
+            raise PersistentNodeError("relay_restart_mismatch")
+        halted = False
+        if phase == "restart":
+            for channel in channels:
+                _lan_divergence_probe(channel, ledger, root)
+            halted = True
+        report = {"result": "RELAY_WORKFLOW_PASS" if prior else "RELAY_PHASE_PASS",
+            "profile": RELAY_PROFILE, "node_id": node_id, "phase": phase, "pid": os.getpid(),
+            "previous_pid": prior["pid"] if prior else None, "bootstrap": boot,
+            "source_digest": boot["source_digest"], "state": state, "event_bytes_sha256": event_hashes,
+            "links": links, "all_peers_agreed": True, "replay_rejected_without_mutation": True,
+            "terminal_divergence_halt": halted, "genuine_process_restart": prior is not None,
+            "durable_restart_agreement": prior is not None, "production_authorized": False,
+            "physical_cross_network_verified": False, "pairing_approval": "local_terminal",
+            "data_dir": str(root), "report_dir": str(reports)}
+    except (OSError, ValueError, EOFError, KeyError, TypeError):
+        raise PersistentNodeError("relay_io_or_state_failure") from None
+    except KeyboardInterrupt:
+        raise PersistentNodeError("relay_interrupted") from None
+    finally:
+        for channel in channels:
+            channel.key = b""
+            _close_socket(channel.sock)
+        if watchdog is not None:
+            watchdog.cancel(); watchdog.join(timeout=1)
+        lock = root / "running.lock"
+        if lock.is_file() and not lock.is_symlink():
+            if json.loads(lock.read_bytes()).get("pid") == os.getpid():
+                lock.unlink()
+        if reports.is_dir() and not any(reports.iterdir()):
+            reports.rmdir()
+    # The empty initial report directory was removed by cleanup; recreate it
+    # exclusively for successful public evidence, never overwrite prior evidence.
+    if phase == "initial":
+        reports.mkdir(mode=0o700)
+    report["connections_and_identities_closed"] = True
+    _lan_write_public(reports / (phase + ".json"), report)
+    _emit(report)
+    return 0
+
+
 def main(argv: list[str] | None = None, *, authentication: HandoffMaterial | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="python -m coin.persistent_disposable_testnet_node"
@@ -3111,8 +3369,36 @@ def main(argv: list[str] | None = None, *, authentication: HandoffMaterial | Non
     parser.add_argument("--peer-follower-ip")
     parser.add_argument("--peer-port", type=int)
     parser.add_argument("--ack-encrypted-private-route", action="store_true")
+    parser.add_argument("--three-peer", action="store_true")
+    parser.add_argument("--relay-bootstrap", action="store_true")
+    parser.add_argument("--bootstrap", type=Path)
+    parser.add_argument("--node-id", choices=("A", "B", "C"))
+    parser.add_argument("--b-port", type=int)
+    parser.add_argument("--c-port", type=int)
+    parser.add_argument("--ack-loopback-disposable", action="store_true")
     try:
         args = parser.parse_args(sys.argv[1:] if argv is None else argv)
+        relay_options = (args.three_peer, args.relay_bootstrap, args.bootstrap is not None,
+                         args.node_id is not None, args.b_port is not None, args.c_port is not None,
+                         args.ack_loopback_disposable)
+        if any(relay_options):
+            permitted = {"three_peer", "relay_bootstrap", "bootstrap", "node_id", "b_port", "c_port",
+                         "ack_loopback_disposable", "phase", "role"}
+            if (authentication is not None or args.role != "parent"
+                    or any(value is not None and value is not False for key, value in vars(args).items()
+                           if key not in permitted)
+                    or args.three_peer == args.relay_bootstrap):
+                raise PersistentNodeError("relay_mode_conflict")
+            if args.relay_bootstrap:
+                if args.bootstrap is not None or args.node_id is not None or args.phase is not None or args.ack_loopback_disposable:
+                    raise PersistentNodeError("relay_bootstrap_arguments_invalid")
+                _emit(relay_bootstrap(args.b_port if args.b_port is not None else 42828,
+                                      args.c_port if args.c_port is not None else 42829))
+                return 0
+            if (args.bootstrap is None or args.node_id is None or args.phase is None
+                    or not args.ack_loopback_disposable or args.b_port is not None or args.c_port is not None):
+                raise PersistentNodeError("relay_node_arguments_invalid")
+            return relay_node_main(args)
         endpoints = _configured_peers(args)
         if endpoints is not None and (args.ack_private_lan or not any((
                 args.paired_coordinate, args.offline_pair_role, args.print_launcher,

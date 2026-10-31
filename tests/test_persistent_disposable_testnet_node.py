@@ -31,6 +31,209 @@ ROOT = Path(__file__).resolve().parents[1]
 IMPL_PATH = ROOT / "coin/persistent_disposable_testnet_node.py"
 
 
+@pytest.mark.parametrize("case", ["unknown", "source", "network", "genesis", "config", "origin",
+    "links", "members", "external", "duplicate_port", "bool_port", "float_port", "small_port",
+    "origin_listener", "expired", "future", "bool_version"])
+def test_three_peer_bootstrap_fail_closed(case):
+    boot = node.relay_bootstrap()
+    if case == "unknown": boot["unexpected"] = True
+    elif case in ("source", "genesis", "config"): boot[{"source": "source_digest"}.get(case, case)] = "0" * 64
+    elif case == "network": boot["network"] = "MAIN"
+    elif case == "origin": boot["origin"] = "B"
+    elif case == "links": boot["links"] = [["A", "C"], ["B", "C"]]
+    elif case == "members": boot["nodes"]["D"] = boot["nodes"]["C"]
+    elif case == "external": boot["nodes"]["C"]["host"] = "100.106.219.67"
+    elif case == "duplicate_port": boot["nodes"]["C"]["port"] = boot["nodes"]["B"]["port"]
+    elif case in ("bool_port", "float_port", "small_port"):
+        boot["nodes"]["B"]["port"] = {"bool_port": True, "float_port": 42828.0, "small_port": 80}[case]
+    elif case == "origin_listener": boot["nodes"]["A"]["port"] = 42827
+    elif case == "expired": boot["started"] -= 601
+    elif case == "future": boot["started"] += 10
+    elif case == "bool_version": boot["version"] = True
+    with pytest.raises(node.PersistentNodeError): node.validate_relay_bootstrap(boot)
+
+
+def test_three_peer_public_bootstrap_strict_json(tmp_path):
+    path = tmp_path / "bootstrap.json"
+    boot = node.relay_bootstrap()
+    raw = node._canonical_bytes(boot)
+    path.write_bytes(raw + b"\n")
+    assert node.validate_relay_bootstrap(node._relay_read_json(path)) == boot
+    for bad in (b'{"x":1,"x":2}', raw + b"\n\n", b" " + raw, b"x" * (node.MAX_FRAME_BYTES+1)):
+        path.write_bytes(bad)
+        with pytest.raises(node.PersistentNodeError): node._relay_read_json(path)
+
+
+@pytest.mark.parametrize("phase", ["initial", "restart"])
+def test_three_peer_all_context_and_certificate_bindings(phase):
+    boot = node.relay_bootstrap()
+    context = node.relay_context(boot, "A", "B", phase)
+    assert node._handoff_context(context) == context
+    identity = node.MemoryTLSIdentity("writer", endpoints=node.relay_link(boot, "A", "B"))
+    peer = node.MemoryTLSIdentity("follower", endpoints=node.relay_link(boot, "A", "B"))
+    try:
+        record = node._coordinator_prepared_record(peer, phase, context)
+        node._coordinator_record_peer(node._canonical_bytes(record).decode(), identity, phase, context)
+        for field, value in (("sender_id", "B"), ("receiver_id", "C"),
+            ("bootstrap_digest", "0"*64), ("network", "MAIN"), ("session", "0"*32), ("writer", "192.168.1.2")):
+            altered = deepcopy(context); altered[field] = value
+            with pytest.raises(node.PersistentNodeError): node._handoff_context(altered)
+        wrong = deepcopy(record); wrong["enrollment"]["context"] = node.relay_context(boot, "B", "C", phase)
+        with pytest.raises(node.PersistentNodeError):
+            node._coordinator_record_peer(node._canonical_bytes(wrong).decode(), identity, phase, context)
+        with pytest.raises(node.PersistentNodeError): node.relay_link(boot, "A", "C")
+        with pytest.raises(node.PersistentNodeError): node.relay_link(boot, "C", "B")
+    finally:
+        identity.close(); peer.close()
+
+
+def test_three_peer_hmac_rejects_cross_link_and_replay():
+    boot = node.relay_bootstrap()
+    ab = node.relay_context(boot, "A", "B", "initial")
+    bc = node.relay_context(boot, "B", "C", "initial")
+    sender = node.LanChannel(None, b"q"*32, ab, "writer", time.monotonic()+5)
+    packet = sender.encode("event", {"public": True})[4:]
+    wrong = node.LanChannel(None, b"q"*32, bc, "follower", time.monotonic()+5)
+    with pytest.raises(node.PersistentNodeError): wrong.decode(packet, "event")
+    assert wrong.received == 0
+    receiver = node.LanChannel(None, b"q"*32, ab, "follower", time.monotonic()+5)
+    assert receiver.decode(packet, "event") == {"public": True}
+    for bad in (packet, b'{"body":', b'x'*(node.MAX_FRAME_BYTES+1)):
+        with pytest.raises(node.PersistentNodeError): receiver.decode(bad, "event")
+    assert receiver.received == 1
+
+
+@pytest.mark.parametrize("argv", [["--three-peer"], ["--node-id", "A"],
+    ["--three-peer", "--relay-bootstrap"], ["--relay-bootstrap", "--phase", "initial"],
+    ["--relay-bootstrap", "--runtime-check"], ["--three-peer", "--bootstrap", "/tmp/no-such", "--node-id", "A", "--phase", "initial"]])
+def test_three_peer_cli_conflicts_before_transport(argv, monkeypatch, capsys):
+    def forbidden(*a, **k): pytest.fail("invalid arguments reached transport/credentials")
+    monkeypatch.setattr(node.socket, "socket", forbidden)
+    monkeypatch.setattr(node.MemoryTLSIdentity, "__init__", forbidden)
+    assert node.main(argv) == 1
+    assert "PASS" not in capsys.readouterr().out
+
+
+def test_three_peer_bootstrap_print_is_public_only(monkeypatch, capsys):
+    def forbidden(*a, **k): pytest.fail("bootstrap created transport/keys")
+    monkeypatch.setattr(node.socket, "socket", forbidden)
+    monkeypatch.setattr(node.MemoryTLSIdentity, "__init__", forbidden)
+    assert node.main(["--relay-bootstrap"]) == 0
+    boot = json.loads(capsys.readouterr().out)
+    assert node.validate_relay_bootstrap(boot) == boot
+
+
+@pytest.mark.parametrize("error", ["pairing_not_approved", "coordinator_prepared_record_invalid",
+    "coordinator_peer_credentials_expired", "tls_peer_or_record_authentication_failed", "lan_interrupted"])
+def test_three_peer_failed_enrollment_cleans_without_ledger(error, monkeypatch, capsys):
+    boot=node.relay_bootstrap(); closed=[]; identities=[]
+    original=node.MemoryTLSIdentity
+    def identity(*args,**kwargs):
+        value=original(*args,**kwargs); identities.append(value); return value
+    class Wire:
+        def getsockname(self): return (node.HOST,50000)
+        def getpeername(self): return (node.HOST,boot["nodes"]["B"]["port"])
+        def shutdown(self,how): pass
+        def close(self): closed.append(True)
+    monkeypatch.setattr(node,"MemoryTLSIdentity",identity)
+    monkeypatch.setattr(node,"_pair_open",lambda *a: Wire())
+    def reject(*a): raise node.PersistentNodeError(error)
+    monkeypatch.setattr(node,"_pair_exchange",reject)
+    with pytest.raises(node.PersistentNodeError,match=error):
+        node._relay_authenticated_link(boot,"A","B","A","initial",time.monotonic()+5)
+    assert closed and all(i.closed and i._key is None for i in identities)
+    output=capsys.readouterr()
+    assert "PASS" not in output.out and "PRIVATE KEY" not in output.out+output.err
+
+
+def test_three_peer_rejected_event_does_not_mutate_disk_or_ledger(tmp_path):
+    ledger=node._new_ledger(tmp_path/"ledger")
+    events=_events()
+    asyncio.run(node._apply_events(ledger,events))
+    state=node.ledger_state(ledger)
+    before={p.name:p.read_bytes() for p in (tmp_path/"ledger").iterdir()}
+    for event in (events[-1],{**events[-1],"amount":29},{**events[-1],"signature":"00"*64}):
+        with pytest.raises(node.PersistentNodeError): asyncio.run(node._apply_events(ledger,[event]))
+        assert node.ledger_state(ledger)==state
+        assert {p.name:p.read_bytes() for p in (tmp_path/"ledger").iterdir()}==before
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="PTY observer for actual loopback CLI processes")
+def test_three_peer_actual_cli_relay_restart_and_cleanup(tmp_path):
+    import os, pty, socket, tempfile, shutil, threading
+    ports=[]
+    for _ in range(2):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+            probe.bind((node.HOST, 0)); ports.append(probe.getsockname()[1])
+    assert len(set(ports)) == 2
+    boot=node.relay_bootstrap(*ports)
+    bootstrap=tmp_path / "bootstrap.json"; bootstrap.write_bytes(node._canonical_bytes(boot))
+    roots=[Path(tempfile.gettempdir()).resolve()/("l28-disposable-lan-"+boot["session"]+"-"+n) for n in "ABC"]
+    reports=[Path(tempfile.gettempdir()).resolve()/("l28-relay-reports-"+boot["session"]+"-"+n) for n in "ABC"]
+    processes,masters,threads=[],{},[]
+    evidence=[]
+    try:
+        for phase in ("initial","restart"):
+            messages=queue.Queue(); processes=[]; masters={}; threads=[]; pending={}; paired=0
+            def read_output(name,process):
+                for line in process.stdout: messages.put((name,line))
+            for name in "CBA":
+                master,slave=pty.openpty(); masters[name]=master
+                process=subprocess.Popen([sys.executable,"-B","-m","coin.persistent_disposable_testnet_node",
+                    "--three-peer","--node-id",name,"--bootstrap",str(bootstrap),"--phase",phase,
+                    "--ack-loopback-disposable"],stdin=slave,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+                os.close(slave); processes.append((name,process))
+                thread=threading.Thread(target=read_output,args=(name,process),daemon=True)
+                thread.start(); threads.append(thread)
+            link_for={}; until=time.monotonic()+35
+            while paired<2 and time.monotonic()<until:
+                try: name,line=messages.get(timeout=.2)
+                except queue.Empty:
+                    assert all(p.poll() is None or p.returncode==0 for _,p in processes), [(n,p.returncode) for n,p in processes]
+                    continue
+                if not line.startswith('{'): continue
+                value=json.loads(line)
+                if value.get("status")=="RELAY_PAIRING": link_for[name]=tuple(value["link"])
+                if value.get("status")=="PAIRING_REQUIRED":
+                    edge=link_for[name]; assert edge in (("A","B"),("B","C"))
+                    pending.setdefault(edge,{})[name]=value["fingerprint"]
+                    if len(pending[edge])==2:
+                        assert set(pending[edge])==set(edge) and len(set(pending[edge].values()))==1
+                        assert all(node._lan_hex(v,64) for v in pending[edge].values())
+                        for member in edge: os.write(masters[member],b"PAIR\n")
+                        paired+=1
+            assert paired==2
+            for name,process in processes:
+                process.wait(timeout=20)
+                assert process.returncode==0,(name,process.stderr.read())
+            for thread in threads: thread.join(timeout=2)
+            current=[json.loads((r/(phase+".json")).read_bytes()) for r in reports]
+            assert all(r["state"]==current[0]["state"] and r["event_bytes_sha256"]==current[0]["event_bytes_sha256"] for r in current)
+            assert current[0]["state"]["issued_supply"]==28 and sorted(current[0]["state"]["balances"].values())==[0,28]
+            assert [len(r["links"]) for r in current]==[1,2,1]
+            assert all(r["connections_and_identities_closed"] and r["replay_rejected_without_mutation"] for r in current)
+            assert all(link["link"] in [["A","B"],["B","C"]] for r in current for link in r["links"])
+            if phase=="restart":
+                assert all(r["state"]==old["state"] and r["previous_pid"]==old["pid"] and r["pid"]!=old["pid"]
+                    and r["genuine_process_restart"] and r["terminal_divergence_halt"] for r,old in zip(current,evidence))
+            evidence=current
+            for master in masters.values(): os.close(master)
+            masters={}
+        for root in roots:
+            assert (root/"halted.json").is_file() and not (root/"running.lock").exists()
+        for port in ports:
+            with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as probe:
+                assert probe.connect_ex((node.HOST,port))!=0
+    finally:
+        for _,process in processes:
+            if process.poll() is None: process.kill()
+            process.wait(timeout=5)
+        for thread in threads: thread.join(timeout=2)
+        for master in masters.values(): os.close(master)
+        for root in roots+reports:
+            if root.exists(): shutil.rmtree(root)
+
+
 def _two_network_peers():
     return node.peer_endpoints("10.28.1.10", "100.77.2.20", 42828)
 

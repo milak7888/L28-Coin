@@ -4,6 +4,27 @@ Last updated: 2026-10-31
 
 PROJECT_STATE: ACTIVE
 
+## CURRENT AUTHORIZED SLICE — THREE-PEER DISPOSABLE RELAY v0.1
+
+AUTHORIZE_FROZEN_SLICE_L28_THREE_PEER_DISPOSABLE_RELAY_V0_1 permits only the
+six-path loopback implementation and acceptance in FROZEN_SLICE. The prior
+two-network slice is operator-closed COMPLETE at published 61bf725, with original
+evidence/qualifications preserved below. PROJECT_STATE remains ACTIVE.
+Peer discovery, arbitrary gossip/multiple origins, fork choice/finality, canonical
+continuation, external/private/public exposure, production custody/F171 and bridge
+work remain deferred; no deferred item is authority. No commit, merge or push.
+
+Current slice acceptance PASS / COMPLETE_PENDING_OPERATOR: 35 focused and 350
+affected cases PASS; actual three-process loopback CLI initial/restart, identical
+event bytes/IDs/state, 28 supply, 0/28 balances, replay/divergence and cleanup PASS.
+Full evidence/qualifications in SYSTEM_STATE. Local automated observer approved
+complete fingerprints; no independent audit or physical-host claim. No unresolved
+Critical/High finding affecting this capability. PROJECT_STATE stays ACTIVE.
+STOP pending separate operator acceptance/local commit; no additional build,
+external exposure, merge or push. No deferred item becomes execution authority.
+
+## HISTORICAL — TWO-NETWORK SLICE — COMPLETE
+
 <!-- TWO_NETWORK_COMPLETION_RECORD_BEGIN -->
 ## CURRENT ACCEPTED SLICE — STOP — 2026-10-31
 

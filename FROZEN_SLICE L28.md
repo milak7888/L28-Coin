@@ -1,5 +1,93 @@
 # L28 — FROZEN_SLICE.md
 
+## CURRENT — THREE-PEER DISPOSABLE RELAY v0.1 — 2026-10-31
+
+PROJECT_STATE: ACTIVE
+Authority: AUTHORIZE_FROZEN_SLICE_L28_THREE_PEER_DISPOSABLE_RELAY_V0_1.
+Base: 61bf725c0c69040fc10976cc9508c540682a0f76.
+Branch: codex/three-peer-disposable-relay-v0-1.
+
+### OPERATOR ACCEPTANCE / ONE LOCAL COMMIT
+
+AUTHORIZE_L28_THREE_PEER_RELAY_ACCEPTANCE_AND_LOCAL_COMMIT.
+Final evidence reconciliation: PASS. Frozen acceptance PASS;
+COMPLETE_PENDING_OPERATOR; PROJECT_STATE remains ACTIVE. Existing 35 focused /
+350 regression results, actual three-process/restart reports, eight negative CLI
+cases, corruption/replay and cleanup evidence reconcile with unchanged accepted
+source/test bytes. Session, commitment and all security qualifications below are
+preserved. Authorize one local commit of exactly the six allowed paths, after
+diff/staged review. Earlier no-commit/UNCOMMITTED instructions are build-phase
+history, superseded only for this one commit. No new implementation, tests,
+runtime, project-state transition, merge, push, deployment or further milestone.
+STOP after parent, contents, final HEAD and clean-worktree verification.
+
+The operator closes the accepted/published two-network slice as COMPLETE at that
+commit. Its COMPLETE_PENDING_OPERATOR/build records below are preserved historical
+evidence, superseded only for that slice's closure. PROJECT_STATE stays ACTIVE.
+
+Objective/deliverable: one independently launched three-process A -> B -> C
+loopback relay. A alone creates the existing fixed disposable coinbase/transfer;
+B validates/persists and serves the identical events; C independently validates
+before persistence. Reuse BlocklessLedger, canonical validator, pinned memory TLS,
+HMAC, full-fingerprint/local PAIR approval, durable prefix sync and Option A halt.
+Strict public bootstrap binds exactly A/B/C, directed AB/BC links, loopback
+endpoints, source/network/genesis/config, session/START and bootstrap digest.
+Separate node identity/fixture origin from per-link writer/follower roles.
+Synchronize all peers before the deliberate final restart divergence probe.
+
+Exact authorized paths:
+
+- FROZEN_SLICE L28.md
+- SYSTEM_STATE L28.md
+- DEFER L28.md
+- README.md
+- coin/persistent_disposable_testnet_node.py
+- tests/test_persistent_disposable_testnet_node.py
+
+Acceptance: focused tests once, disjoint affected regressions once, actual CLI
+execution of three independent processes with separate persisted states; no A-C
+connection; identical original event bytes/IDs, supply 28, balances 0/28 and state
+commitments; genuine process restart with fresh credentials and durable recovery;
+invalid peer/bootstrap/frame, replay, corruption and divergence reject without
+unauthorized mutation. Complete process/listener cleanup and one consolidated
+security review, no unresolved Critical/High finding affecting this capability.
+Reproducible public evidence, not mocks or passing tests alone, is mandatory.
+
+Safety: only 127.0.0.1, three node processes, two links, existing 65536-byte frame
+and persisted-record limits, 120-second active invocation / 600-second session
+limits and unchanged certificate expiry. Disposable memory-only credentials.
+No external networking, installation, historical import/mutation, mining,
+production signing/custody/settlement, consensus winner/finality, public testnet,
+bridge, deployment, commit, merge or push. Protocol/economics/validator and
+production gates remain unchanged. Preserve prior two-peer behavior.
+STOP after actual-product acceptance PASS/FAIL and evidence/review. No subsequent
+milestone, publication or project-state transition is authorized.
+
+### ACCEPTANCE RESULT — PASS / COMPLETE_PENDING_OPERATOR
+
+35 focused cases and 350 disjoint affected regressions PASS, each run once.
+Actual independent CLI processes A/B/C completed initial and genuine restart,
+four full-fingerprint comparisons/local PTY approvals, pinned TLS/HMAC, unchanged
+event bytes/IDs/state, supply 28, balances 0/28, replay rejection and terminal halt
+after all synchronization. No A-C link. Nodes/listeners closed; no firewall change.
+Session: 68d7158555f6ca81bf1f1db45e51c8be.
+Runtime digest: ee02778af4f19e0d9cf3b7db837a121eab560d0128b8dc052bfb936b20d2ab70.
+Commitment: 2ab1f509cc5bc0d2a38154a60cf5e83abd57d508efd48a2db4965084e97af71d.
+Eight actual invalid-bootstrap CLI cases reject; corrupt public disposable replay
+rejects without mutation. Full sanitized evidence/hashes are in SYSTEM_STATE.
+One consolidated local manual security review found no unresolved Critical/High
+issue affecting this capability; NOT_INDEPENDENTLY_AUDITED=true. Pair approvals
+were provided by a trusted local automated observer comparing both complete
+fingerprints, not an independent human/three-physical-host attestation. No runtime
+auto-approval switch exists. The result proves three processes on ONE host only,
+not consensus, finality, remote operation or production readiness.
+PROJECT_STATE ACTIVE. Candidate UNCOMMITTED. STOP pending operator acceptance and
+separate commit authorization; no merge, push, external runtime or new milestone.
+
+---
+
+## HISTORICAL — TWO-NETWORK DISPOSABLE PEER — COMPLETE
+
 Date: 2026-10-31
 PROJECT_STATE: ACTIVE
 Slice: Two-Network Disposable Peer v0.1

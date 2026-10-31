@@ -5,7 +5,76 @@ devices, autonomous systems, and AI agents. It is independent from the private
 Leap28 orchestration system and may be implemented or self-hosted under the
 Apache License 2.0.
 
-## Configurable two-network disposable peers (offline candidate)
+## Three-peer disposable relay v0.1 (loopback candidate)
+
+Three independently launched CLI processes can relay the existing fixed two-event
+fixture A -> B -> C. A alone originates one disposable 28 L28 coinbase and signed
+transfer. B persists its independently validated events and serves those same
+canonical event bytes to C. Each node uses its own BlocklessLedger/data directory.
+This is bounded replication, NOT consensus, finality, public testnet or canonical
+historical continuation. No new ledger, reward schedule or settlement authority.
+
+With the existing Python 3.11 / cryptography 49.0.0 / pyOpenSSL 26.4.0 environment,
+prepare one PUBLIC bootstrap file in a fresh temporary directory:
+
+```sh
+python -B -m coin.persistent_disposable_testnet_node --relay-bootstrap > /private/tmp/l28-relay-bootstrap.json
+```
+
+The output contains only the exact A/B/C membership, AB/BC links, 127.0.0.1
+endpoints (B:42828, C:42829; A has no listener), disposable network/genesis/config,
+source digest, fresh session and numeric START. `--b-port` / `--c-port` select
+distinct unprivileged ports before starting. Copy no secrets. Use a new bootstrap
+per authorized run; the original session expires after 600 seconds, including
+restart. Noncanonical/duplicate JSON, wrong source/network/config and external
+endpoints fail closed. The bootstrap is trusted local public configuration, not
+an assertion that a peer has authenticated.
+
+Start C, B and A in separate terminals using the same absolute bootstrap path:
+
+```sh
+python -B -m coin.persistent_disposable_testnet_node --three-peer --node-id C --bootstrap /private/tmp/l28-relay-bootstrap.json --phase initial --ack-loopback-disposable
+python -B -m coin.persistent_disposable_testnet_node --three-peer --node-id B --bootstrap /private/tmp/l28-relay-bootstrap.json --phase initial --ack-loopback-disposable
+python -B -m coin.persistent_disposable_testnet_node --three-peer --node-id A --bootstrap /private/tmp/l28-relay-bootstrap.json --phase initial --ack-loopback-disposable
+```
+
+Compare the COMPLETE 64-character fingerprint for AB on A and B, then type PAIR
+locally in both terminals only if identical. Repeat for BC on B and C. There is no
+automatic approval mode. Existing pinned TLS proves possession after approval;
+fresh memory-only material authenticates HMAC frames. HMAC frames themselves are
+not encrypted. This mode is strictly same-host loopback; it does not authorize a
+LAN, overlay, Internet listener or external route. Each process has at most 120
+seconds active execution, further bounded by credential/session expiration.
+
+Require three exit-zero RELAY_PHASE_PASS reports with identical state/IDs and
+canonical event-byte hashes, supply 28 and balances 0/28. Public `data_dir` and
+`report_dir` paths are printed; retain them. Run the same three commands with
+`--phase restart`, preserving the bootstrap. This launches genuinely fresh
+processes/credentials; repeat the two full comparisons. Require three exit-zero
+RELAY_WORKFLOW_PASS reports, unchanged ledger state, new PIDs/pins, replay rejected
+without mutation, and terminal divergence halt AFTER all peers synchronize.
+No automatic retry, reissuance, history selection or recovery of halted state.
+
+At most three node processes and two links exist. Failure closes owned sockets,
+listeners and memory-only identities; public failed state may remain for diagnosis
+and must not be silently reused/repaired. Successful restart intentionally leaves
+a halt marker in each disposable state. Confirm both ports have no listeners and
+all node PIDs have exited. No firewall exception is needed or authorized. Public
+reports are evidence, not machine attestation of independent physical hosts or
+production eligibility. All previous two-peer modes remain available unchanged.
+
+Bounded candidate acceptance: PASS / COMPLETE_PENDING_OPERATOR. 35 focused and
+350 affected cases passed; separate actual CLI execution and genuine restart
+passed on three independent local processes. Sanitized evidence, source hashes,
+automated local pairing-observer qualification and remaining boundaries are in
+SYSTEM_STATE. This is not three physical operators, consensus or public-testnet
+release approval. No commit/publication or further runtime is implied.
+
+## Configurable two-network disposable peers (accepted historical milestone)
+
+Accepted and published at 61bf725c0c69040fc10976cc9508c540682a0f76;
+operator-closed COMPLETE. The pre-acceptance instructions below remain historical
+operating context, not the current milestone's status or new runtime authority.
 
 The existing two-host coordinator now accepts explicitly configured, distinct
 private IPv4 peer addresses and an unprivileged TCP port. It reuses the same

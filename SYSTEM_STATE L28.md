@@ -7,6 +7,119 @@ PROJECT_STATE: ACTIVE
 
 Only the operator may change PROJECT_STATE.
 
+## CURRENT — THREE-PEER DISPOSABLE RELAY v0.1 — 2026-10-31
+
+Authority: AUTHORIZE_FROZEN_SLICE_L28_THREE_PEER_DISPOSABLE_RELAY_V0_1.
+Base/published main: 61bf725c0c69040fc10976cc9508c540682a0f76.
+Branch: codex/three-peer-disposable-relay-v0-1; six-path scope in FROZEN_SLICE.
+Implementation/actual-product acceptance PASS; COMPLETE_PENDING_OPERATOR.
+
+Final operator authority:
+AUTHORIZE_L28_THREE_PEER_RELAY_ACCEPTANCE_AND_LOCAL_COMMIT.
+Final evidence reconciliation PASS: unchanged accepted source/test hashes,
+35 focused / 350 regression results, six initial/restart process reports, eight
+invalid-bootstrap CLI rejections, corruption/replay and cleanup evidence.
+Authorize exactly one six-path local commit after staged review. The earlier
+UNCOMMITTED/no-commit statements below describe the build/verification phase;
+Git records the resulting commit identity without a self-referential hash here.
+PROJECT_STATE remains ACTIVE; COMPLETE_PENDING_OPERATOR is a slice status only.
+Automated local fingerprint approval, one-host scope, no independent audit and
+absence of consensus/finality evidence remain explicit. No repeated tests,
+runtime, production activity, project-state transition, merge, push or deployment.
+STOP after the local commit and verification.
+
+IPv4 loopback only, maximum three node
+processes/two links; independent validation, relay and durable restart of the
+existing two-event disposable fixture. No consensus/finality or production claim.
+
+The operator closes Two-Network Disposable Peer v0.1 as COMPLETE at the published
+baseline, preserving accepted session 3e77acd81d574662cba3eb604020b01f, commitment
+89ad1f4a556421765c5b606f8f38439abb9d3e7ca7c6edd86bccde44f6cf7c99,
+original evidence, operator-attestation qualifications and both false route/
+physical verification flags. Earlier COMPLETE_PENDING_OPERATOR/UNCOMMITTED text
+below is historical; Git records the accepted commit/integration/publication.
+PROJECT_STATE remains ACTIVE; Protocol/economics/history and custody/F171 remain
+unchanged/BLOCKED. No commit, merge, push, deployment or external runtime authority.
+
+### Three-peer implementation and verified evidence — 2026-10-31
+
+Candidate UNCOMMITTED; PROJECT_STATE ACTIVE. Strict public bootstrap permits only
+A origin, B relay, C receiver, AB/BC links and 127.0.0.1 endpoints. Source, session,
+original numeric START, bootstrap digest, peer IDs/direction, network/genesis/config
+are bound in public enrollment, pinned memory-only TLS and per-link HMAC contexts.
+The original two-peer defaults/interfaces are preserved. B relays its validated
+persisted original transactions; link-writer status cannot generate another reward.
+All three synchronize and complete a state-agreement barrier before the terminal
+restart divergence probes. Existing BlocklessLedger and canonical validator reused;
+neither was changed. No new ledger, consensus, fork winner or finality authority.
+
+Focused: 35 PASS once (including the three-process CLI/restart case).
+Affected: 350 PASS once, disjoint from the focused cases: remaining persistent-node
+tests, Protocol conformance and disposable identity. No failed cases or suite retries.
+Existing Python 3.11.9 / cryptography 49.0.0 / pyOpenSSL 26.4.0 / pytest 8.4.1 reused;
+no installation. Public tests cover malformed bootstrap/JSON/endpoints, source/
+network/roles/link substitution, HMAC cross-link/replay, declined/failed enrollment,
+credential expiry, cleanup, and rejected events leaving ledger/disk unchanged.
+Existing replay/corruption and adversarial TLS/frame behavior remains passing.
+
+Separate ACTUAL user-facing CLI run: ACTUAL_THREE_PROCESS_RELAY_PASS.
+Session: 68d7158555f6ca81bf1f1db45e51c8be.
+Runtime source digest:
+ee02778af4f19e0d9cf3b7db837a121eab560d0128b8dc052bfb936b20d2ab70.
+Node file SHA-256:
+ef723ecef44fe6c17e28f827b96fc73b4db9baa3490c2ce9b915e99cf05d81f5.
+Test file SHA-256:
+234e99caa6ba8b42c647e531fca1585f2a3fcda62075d44f78ca607099e3721a.
+Initial A/B/C PIDs: 30934 / 30933 / 30932. Restart: 30941 / 30940 / 30939.
+All six processes exited 0. Each phase used AB and BC only (no A-C connection),
+separate persistent state directories, full-fingerprint comparisons and local PAIR
+inputs from an automated observer of trusted local CLI PTYs. This is NOT an
+independent human/physical-host attestation or automatic approval inside the node.
+All three report matching transaction IDs and canonical event-byte SHA-256s:
+
+- Coinbase ID: 06b0bc057d9cab94be88fffedc8ca8f222a0614c561fe3e11a1a47dbe1ad0e51
+  Event bytes: 27c8f4816f5d3c7b5749344d2c14918607f2296e0762204abdfcf85f57659de7
+- Transfer ID: 9756f1334152292dc4c50684bbde3223fa574a113ad764f3fd414781214e8e48
+  Event bytes: ed5a6562a5e4337da892192c8784f41331a10a73478f4558d6676f0deed338d7
+
+Supply 28; balances 0/28; two transactions; matching initial/restart commitment:
+2ab1f509cc5bc0d2a38154a60cf5e83abd57d508efd48a2db4965084e97af71d.
+Fresh TLS credentials after actual process restart, unchanged persisted state,
+replay rejected without mutation and terminal divergence halt on A/B/C verified.
+Owned connections/identities closed, own running locks removed, all node PIDs exited
+and TCP 42828/42829 listeners independently checked absent. Original public state,
+halt markers and evidence retained; no firewall/VPN changes or external traffic.
+
+Public evidence directory:
+/private/var/folders/vf/ktxmbdkj6rs2d90q4ct335380000gn/T/l28-three-peer-actual-nczq_ck6/
+product_evidence.json SHA-256:
+31013054e244a73c0b6c0bd30f9f05109e5920c270052b87dc1351912e643be7.
+negative_evidence.json SHA-256:
+3b8dec97f7b8efda614d696ca276ea5fbfa1e9530adf9841ace261b0d53b2e4b.
+Per-node initial.json/restart.json remain in the sibling public report directories
+named l28-relay-reports-68d7158555f6ca81bf1f1db45e51c8be-A / -B / -C.
+Eight real CLI negative inputs exit 1 without PASS: wrong source/network/link,
+external endpoint, expired session, Boolean port, duplicate JSON, oversized input.
+A corrupted copy of the public disposable persisted ledger was independently
+rejected through the existing replay loader, with zero disk mutation; temporary
+negative state was removed and successful evidence remained unchanged.
+
+One consolidated local manual security review covered all six changed files and
+supporting validation/persistence, bootstrap/peer/pin binding, TLS/HMAC lifecycle,
+replay, barriers, deadlines, resource limits, nondisclosure and failure cleanup.
+No unresolved Critical/High issue affecting the bounded capability identified.
+The managed security-diff skill requires scan artifacts outside this six-path
+slice and was not executed; no managed scan or independent audit is claimed.
+NOT_INDEPENDENTLY_AUDITED=true. HMAC event frames remain authenticated but not
+encrypted; the new mode is loopback-only. Three physical hosts, arbitrary gossip,
+multiple origins, consensus/finality and external exposure are NOT established.
+Protocol v1.0.0, protected economics/history, canonical validator/ledger, previous
+milestones and production custody/F171 gates remain unchanged/BLOCKED.
+Acceptance PASS / COMPLETE_PENDING_OPERATOR; STOP. Separate operator acceptance
+and local-commit authorization required. No staging, commit, merge or push.
+
+## HISTORICAL — TWO-NETWORK DISPOSABLE PEER — COMPLETE
+
 <!-- TWO_NETWORK_COMPLETION_RECORD_BEGIN -->
 ## FINAL ACCEPTANCE — TWO-NETWORK DISPOSABLE PEER — 2026-10-31
 
