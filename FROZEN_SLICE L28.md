@@ -1,5 +1,105 @@
 # L28 — FROZEN_SLICE.md
 
+Date: 2026-10-31
+PROJECT_STATE: ACTIVE
+Slice: First Paid Text Summary v0.1
+
+## OPERATOR ACCEPTANCE / LOCAL FINALIZATION — 2026-10-31
+
+AUTHORIZE_L28_PAID_TEXT_SUMMARY_V0_1_ACCEPTANCE_AND_LOCAL_COMMIT.
+Final acceptance: PASS. Slice status: COMPLETE_PENDING_OPERATOR.
+PROJECT_STATE remains ACTIVE; this is not a project-state transition.
+The operator accepts the recorded 54 focused cases, 112 affected regressions,
+two actual HTTP purchases/REUSE, payment/result/receipt bindings, five adversarial
+rejections and cleanup, conditional on final verification. Final read-only review
+reconciled those criteria, exact source/test/evidence hashes, ten-path scope,
+release inventory and preserved COMPLETE checkpoint a6a93c922ece5f40579dbefedccd61b996c7b287.
+No acceptance blocker or unresolved Critical/High issue was identified. No tests,
+runtime sessions or source changes were repeated for finalization.
+Authorize exactly one local implementation commit of the ten paths below after
+staged diff/acceptance verification. Earlier UNCOMMITTED/no-commit statements
+describe the previous authority and are superseded only for this one commit.
+No merge, push, deployment, new milestone, production activation or further
+runtime. Protocol/economics/history and custody/F171 remain unchanged/BLOCKED.
+STOP after commit contents, parent/HEAD and clean-worktree verification.
+
+## CURRENT AUTHORIZATION
+
+AUTHORIZE_FROZEN_SLICE_L28_FIRST_PAID_TEXT_SUMMARY_V0_1 explicitly reopens
+ACTIVE and replaces the completed slice below. Checkpoint a6a93c922ece5f40579dbefedccd61b996c7b287
+preserves the three operator-authorized COMPLETE records, based on accepted
+commit a85c653fcb5241b635d16628ba207337355fae93. Branch:
+codex/paid-text-summary-v0-1. Prior completion/evidence remains historical and
+unchanged below; it does not authorize further physical sessions.
+
+## OBJECTIVE / DELIVERABLE
+
+One opt-in l28.service.text_summary/v0.1 purchase at 28 disposable L28 through
+existing HTTP/JSON discovery, signed request/quote, canonical payment acceptance,
+useful work, signed result/receipt and requester verification. Preserve the
+structured-analysis service as default. No new payment/ledger engine or framework.
+Input is nonblank text of at most 4096 characters. Deterministic extractive
+output selects at most three source sentences, preserving source order, and
+includes source indices and the SHA-256 of the exact UTF-8 input. Return the
+actual output and complete public verification artifacts, not success flags alone.
+
+## CURRENT AUTHORIZED PATHS — EXACTLY TEN
+
+- FROZEN_SLICE L28.md
+- SYSTEM_STATE L28.md
+- DEFER L28.md
+- coin/two_agent_service_transaction_demo.py
+- coin/public_testnet_service_demo.py
+- tests/test_two_agent_service_transaction_demo.py
+- tests/test_public_testnet_service_demo.py
+- docs/paid_text_summary_v0.1.md
+- release/public-testnet-v0.1.0-rc1/manifest.json
+- release/public-testnet-v0.1.0-rc1/SHA256SUMS
+
+## ACCEPTANCE / VERIFICATION
+
+Run focused tests once and directly affected regressions once. Exercise the real
+two-process HTTP/JSON product, then REUSE with different input and a fresh
+disposable session. Independently verify summary and signed receipt bindings.
+Payment uses the existing disposable 100/0 -> 72/28 fixture, not new issuance.
+Invalid payment/signature/quote, wrong parties/amount, replay and tampered
+artifacts reject; rejected payments cause no work or ledger mutation. Preserve
+default-service behavior. Repair existing release byte inventories without
+changing release/deployment authority. Capture public transaction/result/receipt
+evidence and verify process/listener cleanup. One consolidated security review;
+no unresolved Critical/High issue. Acceptance requires actual-product PASS,
+not just tests. No independent audit is claimed.
+
+## SAFETY / STOP
+
+IPv4 loopback only, at most two concurrent processes, 120-second execution limit.
+Disposable test signing is memory-only; no private-material serialization.
+No installations, public/LAN/physical-host networking, production credentials or
+custody, canonical issuance/settlement, mining, broadcast, historical import,
+deployment or cross-project work. Protocol v1.0.0, economics/history, canonical
+validator, F171/custody and production blocks remain unchanged. No EVD-001 integration.
+Only the separate three-file COMPLETE checkpoint commit is authorized.
+Implementation remains UNCOMMITTED. No merge/push. Stop at acceptance PASS/FAIL
+with actual-product evidence; no next milestone or PROJECT_STATE transition.
+
+### Acceptance result — 2026-10-31
+
+PASS: 54 distinct focused cases covered by passing results, 112 affected
+regressions PASS once, two actual final-code HTTP purchases with fresh identities
+and distinct PIDs/transaction IDs, 100/0 -> 72/28, independently verified summary
+and signed public artifacts, replay rejection, five actual adversarial HTTP 400
+rejections, process/listener cleanup and public-bundle reverification. The initial
+CLI canonical-order defect and confirmed absolute-deadline gap were corrected and
+checked only with their targeted cases. One consolidated local review found no
+unresolved Critical/High issue; no independent audit is claimed. Exact evidence,
+source hashes, public sample artifacts and limitations are in SYSTEM_STATE and
+docs/paid_text_summary_v0.1.md. Implementation remains UNCOMMITTED; ACTIVE is not
+changed to COMPLETE. Stop; no commit/merge/push or next milestone authorized.
+
+---
+
+## HISTORICAL COMPLETED FROZEN SLICE (preserved)
+
 Date: 2026-10-23
 PROJECT_STATE: COMPLETE
 Slice: Two-Host Disposable Synchronization v0.1

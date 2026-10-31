@@ -1,8 +1,28 @@
 # L28 — DEFER.md
 
-Last updated: 2026-10-30
+Last updated: 2026-10-31
 
-PROJECT_STATE: COMPLETE
+PROJECT_STATE: ACTIVE
+
+Finalization authority:
+AUTHORIZE_L28_PAID_TEXT_SUMMARY_V0_1_ACCEPTANCE_AND_LOCAL_COMMIT.
+Summary slice final acceptance PASS; status COMPLETE_PENDING_OPERATOR, not a
+PROJECT_STATE change. One exact ten-path local commit is authorized; STOP after
+verification. No deferred item, new slice, runtime, merge, push or deployment is
+authorized. Previous uncommitted/build-phase statements below are historical.
+
+Current operator authority: AUTHORIZE_FROZEN_SLICE_L28_FIRST_PAID_TEXT_SUMMARY_V0_1.
+Only the ten-path summary purchase slice is open; no deferred item is authorized.
+Local checkpoint a6a93c922ece5f40579dbefedccd61b996c7b287 preserves the previous
+COMPLETE records. They are historical below, not overwritten or discarded.
+
+Current summary slice acceptance: PASS with actual two-process HTTP purchase and
+fresh-session REUSE, 54 focused cases covered, 112 affected regressions, rejection
+and cleanup evidence. Implementation remains uncommitted; STOP pending separate
+operator authority. Generative model access, MCP/SDK summary integration,
+persistent wallets, public/LAN exposure and marketplace work remain deferred.
+
+### Historical operator completion — preserved
 
 Operator authorization: L28 — FINAL PROJECT COMPLETION RECORD explicitly closes
 the accepted physical two-host slice at a85c653fcb5241b635d16628ba207337355fae93.

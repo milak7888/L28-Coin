@@ -4,8 +4,9 @@
 The frozen slice authorizes this experiment only. Identity-module runtime,
 network, testnet-start, signing, mining, broadcast, and settlement flags stay
 false. The provider listens on loopback so an already-available public HTTPS
-ingress can forward one transaction. Localhost and LAN request paths are not
-product evidence. Private keys stay in the owning process and are not serialized.
+ingress can forward one transaction. The explicitly selected local-example is
+LOCAL_ONLY product evidence, never public reachability. Private keys stay in
+the owning process and are not serialized.
 """
 
 from __future__ import annotations
@@ -14,12 +15,17 @@ import argparse
 import http.client
 import ipaddress
 import json
+import os
+import selectors
 import socket
+import subprocess
 import sys
 import threading
+import time
 import urllib.parse
 from collections.abc import Mapping
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from typing import Any
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -30,6 +36,7 @@ from coin.disposable_offline_transfer_demo import (
     _public_key_hex,
     build_signed_transfer,
     public_identity,
+    verify_transfer_signature,
 )
 from coin.disposable_testnet_identity import (
     BROADCAST_AUTHORIZED,
@@ -56,6 +63,8 @@ from coin.two_agent_service_transaction_demo import (
     MAX_INPUT_CHARS,
     PRICE_L28,
     SERVICE_ID,
+    SERVICE_IDS,
+    SUMMARY_SERVICE_ID,
     DemoError as ServiceDemoError,
     _perform_paid_service,
     build_payment_authorization,
@@ -63,12 +72,13 @@ from coin.two_agent_service_transaction_demo import (
     build_service_receipt,
     build_service_request,
     build_service_result,
-    structured_text_analysis,
+    verify_payment_intent_binding,
     verify_service_quote,
     verify_service_receipt,
     verify_service_request,
     verify_service_result,
 )
+from coin.tx_validation import TxPolicy, validate_transaction
 
 
 DEMO_PROFILE = "l28-public-testnet-service/v0.1"
@@ -180,9 +190,11 @@ def public_testnet_binding() -> dict[str, Any]:
     return binding
 
 
-def build_service_discovery(binding: Mapping[str, Any]) -> dict[str, Any]:
+def build_service_discovery(binding: Mapping[str, Any], *, service_id: str = SERVICE_ID) -> dict[str, Any]:
     """Return the exact public catalog without advancing the one-shot session."""
     assert_identity_flags_unchanged()
+    if service_id not in SERVICE_IDS:
+        raise PublicTestnetError("service_invalid")
     if (
         binding.get("network_id") != NETWORK_ID
         or not isinstance(binding.get("genesis_hash"), str)
@@ -210,7 +222,7 @@ def build_service_discovery(binding: Mapping[str, Any]) -> dict[str, Any]:
         },
         "services": [
             {
-                "service_id": SERVICE_ID,
+                "service_id": service_id,
                 "asset_id": ASSET_ID,
                 "price": PRICE_L28,
                 "max_input_chars": MAX_INPUT_CHARS,
@@ -221,7 +233,7 @@ def build_service_discovery(binding: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-def validate_service_discovery(body: bytes, binding: Mapping[str, Any]) -> dict[str, Any]:
+def validate_service_discovery(body: bytes, binding: Mapping[str, Any], *, service_id: str = SERVICE_ID) -> dict[str, Any]:
     """Fail closed unless discovery is the exact catalog for this binding."""
     enforce_body_bound(len(body))
     try:
@@ -237,7 +249,7 @@ def validate_service_discovery(body: bytes, binding: Mapping[str, Any]) -> dict[
         raise
     except (TypeError, UnicodeError, ValueError, json.JSONDecodeError) as exc:
         raise PublicTestnetError("discovery_invalid") from exc
-    expected = build_service_discovery(binding)
+    expected = build_service_discovery(binding, service_id=service_id)
     canonical_expected = json.dumps(
         expected,
         sort_keys=True,
@@ -329,7 +341,10 @@ def parse_frame(body: bytes, *, expected_sequence: int, binding: Mapping[str, An
 
 
 class PublicProvider:
-    def __init__(self) -> None:
+    def __init__(self, *, service_id: str = SERVICE_ID) -> None:
+        if service_id not in SERVICE_IDS:
+            raise PublicTestnetError("service_invalid")
+        self.service_id = service_id
         self.binding = public_testnet_binding()
         self._key = Ed25519PrivateKey.generate()
         self.public_key = _public_key_hex(self._key)
@@ -366,7 +381,7 @@ class PublicProvider:
             raise PublicTestnetError("wrong_sequence")
 
     def _quote_for(self, request: dict[str, Any]) -> dict[str, Any]:
-        verified = verify_service_request(request)
+        verified = verify_service_request(request, service_id=self.service_id)
         if verified["provider_identity"] != self.identity:
             raise PublicTestnetError("wrong_provider_identity")
         quote = build_service_quote(self._key, request=request)
@@ -386,6 +401,18 @@ class PublicProvider:
         authorization = package["payment_authorization"]
         if not isinstance(payment_tx, dict) or not isinstance(authorization, dict):
             raise PublicTestnetError("malformed_json")
+        # Validate against the existing read-only disposable opening fixture before
+        # opening/persisting a ledger. Rejected payment must create no state/work.
+        verify_payment_intent_binding(request=self._request, quote=self._quote,
+                                      payment_tx=payment_tx, payment_authorization=authorization)
+        accepted, checked_id, reason = validate_transaction(
+            payment_tx, policy=TxPolicy(require_signatures=True),
+            current_balance_lookup=lambda identity, _network: 100 if identity == self._request["payer_identity"] else 0,
+            seen_tx_lookup=lambda _tx_id: False, verify_signature=verify_transfer_signature,
+            now_ts=DEMO_TIMESTAMP,
+        )
+        if not accepted or reason != "ok" or checked_id != payment_tx.get("id"):
+            raise PublicTestnetError("canonical_validation_failed")
         from tempfile import TemporaryDirectory
 
         from coin.disposable_offline_transfer_demo import _open_ledger
@@ -401,7 +428,7 @@ class PublicProvider:
                 )
         except LimitedTestnetError as exc:
             raise PublicTestnetError(exc.code) from exc
-        output = _perform_paid_service(self._request["input"]["text"], payment_verified=True)
+        output = _perform_paid_service(self._request["input"]["text"], payment_verified=True, service_id=self.service_id)
         service_result = build_service_result(
             self._key,
             request=self._request,
@@ -450,15 +477,36 @@ class PublicProvider:
         )
 
 
-def run_requester(exchange: Any, input_text: str, binding: Mapping[str, Any]) -> dict[str, Any]:
+def verify_purchase_artifacts(
+    artifacts: Mapping[str, Any], *, input_text: str, service_id: str = SERVICE_ID,
+) -> dict[str, Any]:
+    """Public verification of delivery, not proof of canonical settlement/finality."""
+    fields = {"request", "quote", "payment_tx", "payment_authorization", "service_result", "receipt"}
+    if not isinstance(artifacts, dict) or set(artifacts) != fields or any(not isinstance(artifacts[key], dict) for key in fields):
+        raise PublicTestnetError("purchase_artifacts_invalid")
+    request, quote, payment = artifacts["request"], artifacts["quote"], artifacts["payment_tx"]
+    verified = verify_service_request(request, service_id=service_id)
+    if verified["input"] != {"text": input_text}:
+        raise PublicTestnetError("input_binding_invalid")
+    verify_service_quote(quote, request=request)
+    verify_payment_intent_binding(request=request, quote=quote, payment_tx=payment, payment_authorization=artifacts["payment_authorization"])
+    if not verify_transfer_signature(payment):
+        raise PublicTestnetError("payment_signature_invalid")
+    result, receipt = artifacts["service_result"], artifacts["receipt"]
+    verify_service_result(result, request=request, quote=quote, payment_tx_id=payment["id"])
+    verify_service_receipt(receipt, request=request, quote=quote, service_result=result, payment_tx_id=payment["id"])
+    return dict(result["output"])
+
+
+def run_requester(exchange: Any, input_text: str, binding: Mapping[str, Any], *, service_id: str = SERVICE_ID) -> dict[str, Any]:
     discovery_body = exchange("GET", DISCOVERY_PATH, None)
-    discovery = validate_service_discovery(discovery_body, binding)
+    discovery = validate_service_discovery(discovery_body, binding, service_id=service_id)
     service = discovery["services"][0]
     payer = Ed25519PrivateKey.generate()
     hello_body = exchange("GET", HELLO_PATH, None)
     hello_frame = parse_frame(hello_body, expected_sequence=1, binding=binding)
     hello = verify_provider_hello(hello_frame["payload"])
-    request = build_service_request(payer, provider_identity=hello["provider_identity"], input_text=input_text)
+    request = build_service_request(payer, provider_identity=hello["provider_identity"], input_text=input_text, service_id=service_id)
     quote_body = exchange("POST", SESSION_PATH, frame_bytes("service_request", 2, request, binding))
     quote_frame = parse_frame(quote_body, expected_sequence=3, binding=binding)
     quote = quote_frame["payload"]
@@ -489,16 +537,9 @@ def run_requester(exchange: Any, input_text: str, binding: Mapping[str, Any]) ->
         raise PublicTestnetError("unexpected_field")
     service_result = package["service_result"]
     receipt = package["receipt"]
-    verify_service_result(service_result, request=request, quote=quote, payment_tx_id=payment_tx["id"])
-    verify_service_receipt(
-        receipt,
-        request=request,
-        quote=quote,
-        service_result=service_result,
-        payment_tx_id=payment_tx["id"],
-    )
-    if service_result["output"] != structured_text_analysis(input_text):
-        raise PublicTestnetError("tampered_result")
+    artifacts = {"request": request, "quote": quote, "payment_tx": payment_tx,
+                 "payment_authorization": authorization, "service_result": service_result, "receipt": receipt}
+    output = verify_purchase_artifacts(artifacts, input_text=input_text, service_id=service_id)
     del payer
     return {
         "service_discovery_received": True,
@@ -516,6 +557,8 @@ def run_requester(exchange: Any, input_text: str, binding: Mapping[str, Any]) ->
         "receipt_verified": True,
         "service_executed": True,
         "payment_tx_id": payment_tx["id"],
+        "service_output": output,
+        "public_artifacts": artifacts,
         "production_keys_used": False,
     }
 
@@ -672,7 +715,7 @@ class _Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         if self.path == DISCOVERY_PATH:
             try:
-                self._ok(build_service_discovery(self.server.provider.binding))
+                self._ok(build_service_discovery(self.server.provider.binding, service_id=self.server.provider.service_id))
             except PublicTestnetError as exc:
                 self._error(exc.code)
             return
@@ -696,6 +739,8 @@ class _Handler(BaseHTTPRequestHandler):
                 threading.Thread(target=self.server.shutdown, daemon=True).start()
         except (PublicTestnetError, ServiceDemoError, LimitedTestnetError) as exc:
             self._error(getattr(exc, "code", "request_rejected"))
+        except (TypeError, ValueError, KeyError):
+            self._error("malformed_json")
 
 
 class _Server(ThreadingHTTPServer):
@@ -713,8 +758,8 @@ class _Server(ThreadingHTTPServer):
             raise PublicTestnetError("localhost_request_path")
 
 
-def start_one_shot_server(port: int = 0) -> tuple[_Server, threading.Thread, PublicProvider]:
-    provider = PublicProvider()
+def start_one_shot_server(port: int = 0, *, service_id: str = SERVICE_ID) -> tuple[_Server, threading.Thread, PublicProvider]:
+    provider = PublicProvider(service_id=service_id)
     server = _Server(provider, port)
     thread = threading.Thread(target=server.serve_forever, kwargs={"poll_interval": 0.05}, daemon=True)
     thread.start()
@@ -733,6 +778,8 @@ def http_exchange(base_url: str, method: str, path: str, body: bytes | None, tim
         require_public_https_endpoint(base_url)
     parsed = urllib.parse.urlsplit(base_url)
     host = parsed.hostname or ""
+    if allow_local_harness and (parsed.scheme != "http" or host != LOOPBACK_HOST or parsed.username or parsed.password):
+        raise PublicTestnetError("local_endpoint_invalid")
     port = parsed.port or (443 if parsed.scheme == "https" else 80)
     connection_type = http.client.HTTPSConnection if parsed.scheme == "https" else http.client.HTTPConnection
     if parsed.scheme == "http" and not allow_local_harness:
@@ -754,7 +801,7 @@ def http_exchange(base_url: str, method: str, path: str, body: bytes | None, tim
         payload = response.read(MAX_BODY_BYTES + 1)
     except PublicTestnetError:
         raise
-    except (TimeoutError, socket.timeout) as exc:
+    except (TimeoutError, socket.timeout, http.client.HTTPException) as exc:
         raise PublicTestnetError("request_timeout") from exc
     except OSError as exc:
         raise PublicTestnetError("request_timeout") from exc
@@ -766,46 +813,107 @@ def http_exchange(base_url: str, method: str, path: str, body: bytes | None, tim
     return payload
 
 
-def run_public_requester(endpoint: str, input_text: str, timeout: float = REQUEST_TIMEOUT_SECONDS) -> dict[str, Any]:
+def run_public_requester(endpoint: str, input_text: str, timeout: float = REQUEST_TIMEOUT_SECONDS, *, service_id: str = SERVICE_ID) -> dict[str, Any]:
     require_public_https_endpoint(endpoint)
     binding = public_testnet_binding()
 
     def exchange(method: str, path: str, body: bytes | None) -> bytes:
         return http_exchange(endpoint, method, path, body, timeout)
 
-    requester = run_requester(exchange, input_text, binding)
+    requester = run_requester(exchange, input_text, binding, service_id=service_id)
     return requester
 
 
-def execute_local_release_example(input_text: str) -> dict[str, Any]:
-    """Exercise the real HTTP provider/requester locally without public exposure."""
-    server, thread, provider = start_one_shot_server()
-    host, port = server.server_address
-    base_url = f"http://{host}:{port}"
-
-    def exchange(method: str, path: str, body: bytes | None) -> bytes:
-        return http_exchange(
-            base_url,
-            method,
-            path,
-            body,
-            REQUEST_TIMEOUT_SECONDS,
-            allow_local_harness=True,
-        )
-
-    evidence: dict[str, Any] | None = None
+def execute_local_release_example(input_text: str, *, service_id: str = SERVICE_ID) -> dict[str, Any]:
+    """Requester here, provider in a fresh process; real IPv4-loopback HTTP only."""
+    if service_id not in SERVICE_IDS:
+        raise PublicTestnetError("service_invalid")
+    # Leave five seconds within the 120-second invocation for failure cleanup.
+    deadline = time.monotonic() + SESSION_DEADLINE_SECONDS - 5
     try:
-        requester = run_requester(exchange, input_text, provider.binding)
-        evidence = provider.evidence
+        process = subprocess.Popen(
+            [sys.executable, "-m", "coin.public_testnet_service_demo", "--role", "provider", "--service-id", service_id],
+            cwd=str(Path(__file__).resolve().parents[1]), stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+        )
+    except OSError as exc:
+        raise PublicTestnetError("provider_start_failed") from exc
+    expired = threading.Event()
+
+    def expire() -> None:
+        expired.set()
+        if process.poll() is None:
+            try:
+                process.terminate()
+            except ProcessLookupError:
+                pass
+
+    watchdog = threading.Timer(max(0, deadline - time.monotonic()), expire)
+    watchdog.daemon = True
+    watchdog.start()
+    host, port = LOOPBACK_HOST, 0
+    try:
+        with selectors.DefaultSelector() as selector:
+            selector.register(process.stdout, selectors.EVENT_READ)
+            if not selector.select(max(0, deadline - time.monotonic())):
+                raise PublicTestnetError("provider_start_timeout")
+            # Unbuffered bounded reads: a partial/missing newline cannot bypass
+            # the startup deadline by blocking TextIO.readline().
+            ready_bytes = bytearray()
+            while b"\n" not in ready_bytes:
+                chunk = os.read(process.stdout.fileno(), 1)
+                if not chunk or len(ready_bytes) >= MAX_BODY_BYTES:
+                    raise PublicTestnetError("provider_coordination_invalid")
+                ready_bytes.extend(chunk)
+                if b"\n" not in ready_bytes and not selector.select(max(0, deadline - time.monotonic())):
+                    raise PublicTestnetError("provider_start_timeout")
+            ready = json.loads(ready_bytes)
+        if not isinstance(ready, dict):
+            raise PublicTestnetError("provider_coordination_invalid")
+        port = ready.get("port")
+        if ready.get("coordination") != "provider_ready" or ready.get("host") != host or type(port) is not int or not 0 < port < 65536:
+            raise PublicTestnetError("provider_coordination_invalid")
+
+        def exchange(method: str, path: str, body: bytes | None) -> bytes:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise PublicTestnetError("request_timeout")
+            return http_exchange(f"http://{host}:{port}", method, path, body,
+                                 min(REQUEST_TIMEOUT_SECONDS, remaining), allow_local_harness=True)
+
+        requester = run_requester(exchange, input_text, public_testnet_binding(), service_id=service_id)
+        output, diagnostics = process.communicate(timeout=max(0.01, deadline - time.monotonic()))
+        if process.returncode != 0:
+            raise PublicTestnetError("provider_failed")
+        provider_record = json.loads(output)
+        if provider_record.get("coordination") != "provider_evidence":
+            raise PublicTestnetError("provider_evidence_incomplete")
+        sys.stderr.write(diagnostics)
+    except (PublicTestnetError, ServiceDemoError, LimitedTestnetError) as exc:
+        if expired.is_set():
+            raise PublicTestnetError("invocation_timeout") from exc
+        raise
+    except (OSError, ValueError, subprocess.TimeoutExpired) as exc:
+        raise PublicTestnetError("invocation_timeout" if expired.is_set() else "local_product_failed") from exc
     finally:
-        stop_one_shot_server(server, thread)
-    if evidence is None:
-        raise PublicTestnetError("provider_evidence_incomplete")
-    provider_record = provider_evidence_record(
-        evidence,
-        network_id=provider.binding["network_id"],
-        shutdown_complete=True,
-    )
+        watchdog.cancel()
+        watchdog.join(timeout=1)
+        if process.poll() is None:
+            process.terminate()
+            try:
+                process.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait(timeout=2)
+        for pipe in (process.stdout, process.stderr):
+            if pipe is not None:
+                pipe.close()
+    if expired.is_set():
+        raise PublicTestnetError("invocation_timeout")
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+        probe.settimeout(0.2)
+        if probe.connect_ex((host, port)) == 0:
+            raise PublicTestnetError("listener_cleanup_failed")
     if requester["payment_tx_id"] != provider_record["payment_tx_id"]:
         raise PublicTestnetError("payment_binding_invalid")
     return {
@@ -818,6 +926,16 @@ def execute_local_release_example(input_text: str) -> dict[str, Any]:
         "quoted_amount": requester["quoted_amount"],
         "canonical_validation": provider_record["canonical_validation"],
         "payment_tx_id": requester["payment_tx_id"],
+        "service_output": requester["service_output"],
+        "public_artifacts": requester["public_artifacts"],
+        "requester_pid": os.getpid(),
+        "provider_pid": process.pid,
+        "provider_exit": process.returncode,
+        "listener_closed": True,
+        "requester_balance_before": provider_record["requester_balance_before"],
+        "requester_balance_after": provider_record["requester_balance_after"],
+        "provider_balance_before": provider_record["provider_balance_before"],
+        "provider_balance_after": provider_record["provider_balance_after"],
         "payment_verified": provider_record["payment_verified"],
         "replay_rejected": provider_record["replay_rejected"],
         "service_executed": requester["service_executed"],
@@ -841,19 +959,22 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--public-endpoint")
     parser.add_argument("--port", type=int, default=0)
+    parser.add_argument("--service-id", choices=SERVICE_IDS, default=SERVICE_ID)
     parser.add_argument("--input", default="L28 enables machine payments between autonomous systems.")
     args = parser.parse_args(sys.argv[1:] if argv is None else argv)
     try:
         assert_identity_flags_unchanged()
         if args.role == "provider":
-            server, thread, provider = start_one_shot_server(args.port)
+            server, thread, provider = start_one_shot_server(args.port, service_id=args.service_id)
             host, port = server.server_address
             sys.stdout.write(json.dumps({"coordination": "provider_ready", "host": host, "port": port}, sort_keys=True) + "\n")
             sys.stdout.flush()
-            finished = provider.finished.wait(SESSION_DEADLINE_SECONDS)
-            evidence = provider.evidence
-            network_id = provider.binding["network_id"]
-            stop_one_shot_server(server, thread)
+            try:
+                finished = provider.finished.wait(SESSION_DEADLINE_SECONDS)
+                evidence = provider.evidence
+                network_id = provider.binding["network_id"]
+            finally:
+                stop_one_shot_server(server, thread)
             if not finished or evidence is None:
                 raise PublicTestnetError("request_timeout")
             record = provider_evidence_record(evidence, network_id=network_id, shutdown_complete=True)
@@ -861,23 +982,24 @@ def main(argv: list[str] | None = None) -> int:
             sys.stdout.flush()
             return 0
         if args.role == "local-example":
-            result = execute_local_release_example(args.input)
+            result = execute_local_release_example(args.input, service_id=args.service_id)
             sys.stdout.write(
-                json.dumps(result, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+                json.dumps(result, sort_keys=False, separators=(",", ":"), ensure_ascii=False)
                 + "\n"
             )
             return 0
         if not args.public_endpoint:
             raise PublicTestnetError(ENDPOINT_BLOCKER)
         require_public_https_endpoint(args.public_endpoint)
-        result = run_public_requester(args.public_endpoint, args.input)
-    except PublicTestnetError as exc:
+        result = run_public_requester(args.public_endpoint, args.input, service_id=args.service_id)
+    except (PublicTestnetError, ServiceDemoError, LimitedTestnetError) as exc:
         if exc.code == ENDPOINT_BLOCKER:
             sys.stderr.write("BLOCKER=PUBLIC_TESTNET_ENDPOINT_UNAVAILABLE\n")
             return 2
         sys.stderr.write(exc.code + "\n")
         return 1
-    sys.stdout.write(json.dumps(result, sort_keys=True, separators=(",", ":"), ensure_ascii=False) + "\n")
+    # Nested artifacts use order-preserving CanonUaii; never sort signed bodies.
+    sys.stdout.write(json.dumps(result, sort_keys=False, separators=(",", ":"), ensure_ascii=False) + "\n")
     return 0
 
 

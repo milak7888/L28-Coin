@@ -2,6 +2,7 @@
 import ast
 import hashlib
 import json
+import socket
 import subprocess
 import sys
 from copy import deepcopy
@@ -11,6 +12,7 @@ import pytest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from coin import public_testnet_service_demo as demo
+from coin import two_agent_service_transaction_demo as service_core
 from coin.disposable_offline_transfer_demo import DEMO_TIMESTAMP, build_signed_transfer, public_identity
 from coin.disposable_testnet_identity import (
     BROADCAST_AUTHORIZED,
@@ -438,3 +440,226 @@ def test_existing_http_service_still_purchases_and_source_has_no_secrets():
     assert "def add_transaction" not in source
     assert "requests" not in imports
     assert public_identity(_public_key_hex(Ed25519PrivateKey.generate())).startswith("l28disp_")
+
+
+SUMMARY_ID = service_core.SUMMARY_SERVICE_ID
+SUMMARY_INPUT = 'Rare opener. L28 payments help agents. L28 payments buy summaries. L28 payments bind receipts.'
+
+
+def _summary_purchase():
+    provider = demo.PublicProvider(service_id=SUMMARY_ID)
+
+    def exchange(method, path, body):
+        if (method, path) == ('GET', demo.DISCOVERY_PATH):
+            response = demo.build_service_discovery(provider.binding, service_id=SUMMARY_ID)
+        elif (method, path) == ('GET', demo.HELLO_PATH):
+            response = provider.hello_frame()
+        else:
+            response = provider.handle_frame(body)
+        return json.dumps(response, ensure_ascii=False).encode('utf-8')
+
+    requester = demo.run_requester(exchange, SUMMARY_INPUT, provider.binding, service_id=SUMMARY_ID)
+    return provider, requester
+
+
+def test_summary_discovery_requires_exact_expected_service_before_payment(monkeypatch):
+    binding = demo.public_testnet_binding()
+    catalog = demo.build_service_discovery(binding, service_id=SUMMARY_ID)
+    assert catalog['services'] == [{'service_id': SUMMARY_ID, 'asset_id': 'L28', 'price': 28,
+                                    'max_input_chars': 4096, 'one_shot': True}]
+    assert demo.validate_service_discovery(json.dumps(catalog).encode(), binding, service_id=SUMMARY_ID) == catalog
+    with pytest.raises(demo.PublicTestnetError, match='discovery_invalid'):
+        demo.validate_service_discovery(json.dumps(catalog).encode(), binding)
+    monkeypatch.setattr(demo, 'Ed25519PrivateKey', type('NoPayer', (), {'generate': staticmethod(lambda: pytest.fail('payer before valid discovery'))}))
+    calls = []
+
+    def exchange(method, path, body):
+        calls.append((method, path))
+        return json.dumps(demo.build_service_discovery(binding)).encode()
+
+    with pytest.raises(demo.PublicTestnetError, match='discovery_invalid'):
+        demo.run_requester(exchange, SUMMARY_INPUT, binding, service_id=SUMMARY_ID)
+    assert calls == [('GET', demo.DISCOVERY_PATH)]
+
+
+def test_summary_artifacts_independently_verify_and_replay_creates_no_work(monkeypatch):
+    provider, requester = _summary_purchase()
+    artifacts = requester['public_artifacts']
+    assert requester['service_output'] == service_core.text_summary(SUMMARY_INPUT)
+    assert demo.verify_purchase_artifacts(artifacts, input_text=SUMMARY_INPUT, service_id=SUMMARY_ID) == requester['service_output']
+    assert provider.evidence['payment_verified'] is True
+    assert (provider.evidence['requester_balance_after'], provider.evidence['provider_balance_after']) == (72, 28)
+    assert provider._key is None
+    monkeypatch.setattr(demo, '_perform_paid_service', lambda *_a, **_kw: pytest.fail('replay work'))
+    before = deepcopy(provider.evidence)
+    package = {'payment_tx': artifacts['payment_tx'], 'payment_authorization': artifacts['payment_authorization']}
+    with pytest.raises(demo.PublicTestnetError, match='session_closed'):
+        provider.handle_frame(demo.frame_bytes('payment_package', 4, package, provider.binding))
+    assert provider.evidence == before
+    for field in ('request', 'quote', 'payment_authorization', 'service_result'):
+        assert artifacts[field]['service_id'] == SUMMARY_ID
+
+
+@pytest.mark.parametrize('kind', ['signature', 'amount', 'recipient', 'quote', 'network', 'nonce'])
+def test_summary_invalid_payment_creates_no_ledger_or_work(kind, monkeypatch):
+    import coin.disposable_offline_transfer_demo as transfer
+
+    provider = demo.PublicProvider(service_id=SUMMARY_ID)
+    payer = Ed25519PrivateKey.generate()
+    provider.hello_frame()
+    request = build_service_request(payer, provider_identity=provider.identity, input_text=SUMMARY_INPUT, service_id=SUMMARY_ID)
+    quote = provider.handle_frame(demo.frame_bytes('service_request', 2, request, provider.binding))['payload']
+    payment = build_signed_transfer(payer, receiver=('l28disp_' + '0' * 64) if kind == 'recipient' else provider.identity,
+                                    amount=27 if kind == 'amount' else 28, timestamp=DEMO_TIMESTAMP, nonce=100)
+    if kind == 'signature':
+        payment['signature'] = '00' * 64
+    elif kind == 'network':
+        payment['network'] = 'DISPOSABLE_OTHER'
+    elif kind == 'nonce':
+        payment['nonce'] = True
+    payment['id'] = compute_tx_id(payment)
+    authorization = build_payment_authorization(payer, request=request, quote=quote, payment_tx=payment)
+    if kind == 'quote':
+        authorization['quote_id'] = '00' * 32
+        body = service_core._artifact_body(authorization, service_core.PAYMENT_AUTH_BODY_FIELDS)
+        authorization['authorization_id'] = service_core._digest(body)
+        authorization['signature'] = service_core._sign_domain(payer, service_core.PAYMENT_AUTH_SIGN_DOMAIN, body)
+    monkeypatch.setattr(transfer, '_open_ledger', lambda *_a: pytest.fail('rejected payment opened ledger'))
+    monkeypatch.setattr(demo, '_perform_paid_service', lambda *_a, **_kw: pytest.fail('unpaid work'))
+    monkeypatch.setattr(service_core, 'text_summary', lambda *_a: pytest.fail('unpaid summary'))
+    before = (provider.expected, deepcopy(provider._request), deepcopy(provider._quote))
+    try:
+        with pytest.raises((demo.PublicTestnetError, service_core.DemoError)):
+            provider.handle_frame(demo.frame_bytes('payment_package', 4,
+                                  {'payment_tx': payment, 'payment_authorization': authorization}, provider.binding))
+        assert provider.evidence is None and not provider.finished.is_set()
+        assert (provider.expected, provider._request, provider._quote) == before
+    finally:
+        provider.close()
+
+
+@pytest.mark.parametrize('field', ['request', 'quote', 'payment_tx', 'payment_authorization', 'service_result', 'receipt'])
+def test_summary_public_artifact_tampering_rejects(field):
+    _provider, requester = _summary_purchase()
+    artifacts = deepcopy(requester['public_artifacts'])
+    if field == 'request':
+        artifacts[field]['input']['text'] = 'Different source.'
+    elif field == 'quote':
+        artifacts[field]['amount'] = 27
+    elif field == 'payment_authorization':
+        artifacts[field]['quote_id'] = '00' * 32
+    elif field == 'service_result':
+        artifacts[field]['output']['summary'] = 'Fabricated summary.'
+    else:
+        artifacts[field]['signature'] = '00' * 64
+    with pytest.raises((demo.PublicTestnetError, service_core.DemoError)):
+        demo.verify_purchase_artifacts(artifacts, input_text=SUMMARY_INPUT, service_id=SUMMARY_ID)
+
+
+def test_summary_artifact_input_and_service_substitution_reject():
+    _provider, requester = _summary_purchase()
+    artifacts = requester['public_artifacts']
+    with pytest.raises(demo.PublicTestnetError, match='input_binding_invalid'):
+        demo.verify_purchase_artifacts(artifacts, input_text='Different source.', service_id=SUMMARY_ID)
+    with pytest.raises(service_core.DemoError, match='service_invalid'):
+        demo.verify_purchase_artifacts(artifacts, input_text=SUMMARY_INPUT)
+    with pytest.raises(demo.PublicTestnetError, match='purchase_artifacts_invalid'):
+        demo.verify_purchase_artifacts({}, input_text=SUMMARY_INPUT, service_id=SUMMARY_ID)
+
+
+@pytest.mark.parametrize('endpoint', ['http://192.168.68.54:42828', 'https://127.0.0.1:12345', 'http://localhost:12345', 'http://user@127.0.0.1:12345'])
+def test_local_example_cannot_contact_other_hosts_or_downgrade_public_requester(endpoint):
+    with pytest.raises(demo.PublicTestnetError, match='local_endpoint_invalid'):
+        demo.http_exchange(endpoint, 'GET', demo.DISCOVERY_PATH, None, 0.1, allow_local_harness=True)
+
+
+def test_summary_cli_two_process_product_returns_actual_summary_and_receipt():
+    completed = subprocess.run([sys.executable, '-m', 'coin.public_testnet_service_demo', '--role', 'local-example',
+                                '--service-id', SUMMARY_ID, '--input', SUMMARY_INPUT],
+                               check=False, capture_output=True, text=True, timeout=120)
+    assert completed.returncode == 0, completed.stderr
+    result = json.loads(completed.stdout)
+    assert result['requester_pid'] != result['provider_pid']
+    assert result['provider_exit'] == 0 and result['listener_closed'] is True
+    assert result['service_output'] == service_core.text_summary(SUMMARY_INPUT)
+    assert demo.verify_purchase_artifacts(result['public_artifacts'], input_text=SUMMARY_INPUT, service_id=SUMMARY_ID) == result['service_output']
+    assert result['public_artifacts']['receipt']['payment_tx_id'] == result['payment_tx_id']
+    assert (result['requester_balance_before'], result['provider_balance_before'],
+            result['requester_balance_after'], result['provider_balance_after']) == (100, 0, 72, 28)
+    for key in ('service_discovery_verified', 'payment_verified', 'replay_rejected', 'service_result_verified', 'receipt_verified'):
+        assert result[key] is True
+    for key in ('canonical_history_touched', 'public_network_used', 'external_https_exposure', 'production_settlement'):
+        assert result[key] is False
+    for forbidden in ('private_key', 'secret_key', 'seed_phrase', 'BEGIN PRIVATE'):
+        assert forbidden not in completed.stdout + completed.stderr
+
+
+def test_failed_summary_input_stops_provider_and_closes_listener(monkeypatch):
+    processes, endpoints = [], []
+    original_spawn, original_exchange = demo.subprocess.Popen, demo.http_exchange
+
+    def spawn(*args, **kwargs):
+        process = original_spawn(*args, **kwargs)
+        processes.append(process)
+        return process
+
+    def exchange(endpoint, *args, **kwargs):
+        endpoints.append(demo.urllib.parse.urlsplit(endpoint))
+        return original_exchange(endpoint, *args, **kwargs)
+
+    monkeypatch.setattr(demo.subprocess, 'Popen', spawn)
+    monkeypatch.setattr(demo, 'http_exchange', exchange)
+    with pytest.raises(service_core.DemoError, match='input_invalid'):
+        demo.execute_local_release_example('  ', service_id=SUMMARY_ID)
+    assert len(processes) == 1 and processes[0].poll() is not None
+    assert processes[0].stdout.closed and processes[0].stderr.closed
+    assert endpoints
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+        assert probe.connect_ex((endpoints[0].hostname, endpoints[0].port)) != 0
+
+
+def test_partial_provider_startup_cannot_bypass_deadline_and_is_cleaned(monkeypatch):
+    processes = []
+    original_spawn = demo.subprocess.Popen
+
+    def spawn(_command, **kwargs):
+        process = original_spawn([sys.executable, '-c', "import sys,time;sys.stdout.write('{');sys.stdout.flush();time.sleep(10)"], **kwargs)
+        processes.append(process)
+        return process
+
+    monkeypatch.setattr(demo.subprocess, 'Popen', spawn)
+    monkeypatch.setattr(demo, 'SESSION_DEADLINE_SECONDS', 5.3)
+    with pytest.raises(demo.PublicTestnetError, match='provider_start_timeout'):
+        demo.execute_local_release_example(SUMMARY_INPUT, service_id=SUMMARY_ID)
+    assert processes[0].poll() is not None
+    assert processes[0].stdout.closed and processes[0].stderr.closed
+
+
+def test_slow_http_response_cannot_extend_absolute_deadline(monkeypatch):
+    import time
+
+    processes = []
+    original_spawn = demo.subprocess.Popen
+    child = '''import json,socket,time
+with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as server:
+ server.bind(('127.0.0.1',0));server.listen(1)
+ print(json.dumps({'coordination':'provider_ready','host':'127.0.0.1','port':server.getsockname()[1]}),flush=True)
+ conn,_=server.accept()
+ with conn:
+  conn.recv(4096);conn.sendall(b'HTTP/1.1 200 OK\\r\\nContent-Length: 100\\r\\n\\r\\n')
+  for _ in range(100):conn.sendall(b' ');time.sleep(.1)
+'''
+
+    def spawn(_command, **kwargs):
+        process = original_spawn([sys.executable, '-c', child], **kwargs)
+        processes.append(process)
+        return process
+
+    monkeypatch.setattr(demo.subprocess, 'Popen', spawn)
+    monkeypatch.setattr(demo, 'SESSION_DEADLINE_SECONDS', 5.5)
+    start = time.monotonic()
+    with pytest.raises(demo.PublicTestnetError, match='invocation_timeout'):
+        demo.execute_local_release_example(SUMMARY_INPUT, service_id=SUMMARY_ID)
+    assert time.monotonic() - start < 2
+    assert processes[0].poll() is not None
+    assert processes[0].stdout.closed and processes[0].stderr.closed

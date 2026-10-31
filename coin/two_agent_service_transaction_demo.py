@@ -24,6 +24,7 @@ import tempfile
 from collections import Counter
 from collections.abc import Mapping
 from copy import deepcopy
+from fractions import Fraction
 from typing import Any
 
 from cryptography.exceptions import InvalidSignature
@@ -50,6 +51,8 @@ from coin.uaii_json import UaiiJsonError, canon_uaii
 
 DEMO_PROFILE = "l28-two-agent-service-transaction/v0.1"
 SERVICE_ID = "l28.service.structured_text_analysis/v0.1"
+SUMMARY_SERVICE_ID = "l28.service.text_summary/v0.1"
+SERVICE_IDS = (SERVICE_ID, SUMMARY_SERVICE_ID)
 ASSET_ID = "L28"
 PRICE_L28 = 28
 CREATED_AT = DEMO_TIMESTAMP
@@ -201,6 +204,31 @@ def _validate_input_text(text: Any) -> str:
     return text
 
 
+def _require_service_id(service_id: Any) -> str:
+    if not isinstance(service_id, str) or service_id not in SERVICE_IDS:
+        raise DemoError("service_invalid")
+    return service_id
+
+
+def _request_service_id(request: Mapping[str, Any]) -> str:
+    if not isinstance(request, Mapping):
+        raise DemoError("schema_invalid")
+    return _require_service_id(request.get("service_id"))
+
+
+def _validate_service_input(text: Any, service_id: str) -> str:
+    _require_service_id(service_id)
+    text = _validate_input_text(text)
+    if service_id == SUMMARY_SERVICE_ID:
+        if not text.strip():
+            raise DemoError("input_invalid")
+        try:
+            text.encode("utf-8")
+        except UnicodeEncodeError as exc:
+            raise DemoError("input_invalid") from exc
+    return text
+
+
 def _public_identity_for_key(private_key: Ed25519PrivateKey) -> tuple[str, str]:
     public_hex = _public_key_hex(private_key)
     return public_identity(public_hex), public_hex
@@ -211,13 +239,14 @@ def build_service_request(
     *,
     provider_identity: str,
     input_text: str,
+    service_id: str = SERVICE_ID,
 ) -> dict[str, Any]:
-    text = _validate_input_text(input_text)
+    text = _validate_service_input(input_text, service_id)
     payer_identity, payer_public_key = _public_identity_for_key(payer_key)
     body = {
         "profile": DEMO_PROFILE,
         "message_type": "service_request",
-        "service_id": SERVICE_ID,
+        "service_id": service_id,
         "payer_identity": payer_identity,
         "payer_public_key": payer_public_key,
         "provider_identity": provider_identity,
@@ -231,13 +260,15 @@ def build_service_request(
     return {**body, "request_id": request_id, "signature": signature}
 
 
-def verify_service_request(request: Mapping[str, Any]) -> dict[str, Any]:
+def verify_service_request(request: Mapping[str, Any], *, service_id: str = SERVICE_ID) -> dict[str, Any]:
     body = _artifact_body(request, REQUEST_BODY_FIELDS)
     if body["profile"] != DEMO_PROFILE or body["message_type"] != "service_request":
         raise DemoError("schema_invalid")
-    if body["service_id"] != SERVICE_ID:
+    if body["service_id"] != _require_service_id(service_id):
         raise DemoError("service_invalid")
-    _validate_input_text(body.get("input", {}).get("text") if isinstance(body.get("input"), dict) else None)
+    _validate_service_input(body.get("input", {}).get("text") if isinstance(body.get("input"), dict) else None, service_id)
+    if service_id == SUMMARY_SERVICE_ID and set(body["input"]) != {"text"}:
+        raise DemoError("input_invalid")
     if body["payer_identity"] != public_identity(body["payer_public_key"]):
         raise DemoError("identity_mismatch")
     request_id = request.get("request_id")
@@ -260,7 +291,7 @@ def build_service_quote(
     *,
     request: Mapping[str, Any],
 ) -> dict[str, Any]:
-    verified_request = verify_service_request(request)
+    verified_request = verify_service_request(request, service_id=_request_service_id(request))
     provider_identity, provider_public_key = _public_identity_for_key(provider_key)
     if verified_request["provider_identity"] != provider_identity:
         raise DemoError("identity_mismatch")
@@ -268,7 +299,7 @@ def build_service_quote(
         "profile": DEMO_PROFILE,
         "message_type": "service_quote",
         "request_id": request["request_id"],
-        "service_id": SERVICE_ID,
+        "service_id": verified_request["service_id"],
         "payer_identity": verified_request["payer_identity"],
         "provider_identity": provider_identity,
         "provider_public_key": provider_public_key,
@@ -289,13 +320,13 @@ def verify_service_quote(
     *,
     request: Mapping[str, Any],
 ) -> dict[str, Any]:
-    verified_request = verify_service_request(request)
+    verified_request = verify_service_request(request, service_id=_request_service_id(request))
     body = _artifact_body(quote, QUOTE_BODY_FIELDS)
     if body["profile"] != DEMO_PROFILE or body["message_type"] != "service_quote":
         raise DemoError("schema_invalid")
-    if body["service_id"] != SERVICE_ID or body["asset_id"] != ASSET_ID:
+    if body["service_id"] != verified_request["service_id"] or body["asset_id"] != ASSET_ID:
         raise DemoError("service_invalid")
-    if body["amount"] != PRICE_L28:
+    if type(body["amount"]) is not int or body["amount"] != PRICE_L28:
         raise DemoError("amount_mismatch")
     if body["request_id"] != request["request_id"]:
         raise DemoError("quote_request_mismatch")
@@ -327,7 +358,7 @@ def build_payment_authorization(
     quote: Mapping[str, Any],
     payment_tx: Mapping[str, Any],
 ) -> dict[str, Any]:
-    verified_request = verify_service_request(request)
+    verified_request = verify_service_request(request, service_id=_request_service_id(request))
     verified_quote = verify_service_quote(quote, request=request)
     payer_identity, payer_public_key = _public_identity_for_key(payer_key)
     if payer_identity != verified_request["payer_identity"]:
@@ -337,7 +368,7 @@ def build_payment_authorization(
         "message_type": "payment_authorization",
         "request_id": request["request_id"],
         "quote_id": quote["quote_id"],
-        "service_id": SERVICE_ID,
+        "service_id": verified_request["service_id"],
         "payer_identity": payer_identity,
         "payer_public_key": payer_public_key,
         "provider_identity": verified_quote["provider_identity"],
@@ -360,7 +391,7 @@ def verify_payment_intent_binding(
     payment_tx: Mapping[str, Any],
     payment_authorization: Mapping[str, Any],
 ) -> bool:
-    verified_request = verify_service_request(request)
+    verified_request = verify_service_request(request, service_id=_request_service_id(request))
     verified_quote = verify_service_quote(quote, request=request)
     body = _artifact_body(payment_authorization, PAYMENT_AUTH_BODY_FIELDS)
     if body["profile"] != DEMO_PROFILE or body["message_type"] != "payment_authorization":
@@ -382,7 +413,7 @@ def verify_payment_intent_binding(
     expected = {
         "request_id": request["request_id"],
         "quote_id": quote["quote_id"],
-        "service_id": SERVICE_ID,
+        "service_id": verified_request["service_id"],
         "payer_identity": verified_request["payer_identity"],
         "provider_identity": verified_quote["provider_identity"],
         "amount": verified_quote["amount"],
@@ -450,10 +481,33 @@ def structured_text_analysis(input_text: str) -> dict[str, Any]:
     }
 
 
-def _perform_paid_service(input_text: str, *, payment_verified: bool) -> dict[str, Any]:
+def text_summary(input_text: str) -> dict[str, Any]:
+    """Bounded extractive summary; not model inference or a semantic-quality proof."""
+    text = _validate_service_input(input_text, SUMMARY_SERVICE_ID)
+    sentences = [part.strip() for part in re.findall(r"[^.!?\r\n]+(?:[.!?]+|(?=[\r\n]|$))", text) if part.strip()]
+    if not sentences:
+        sentences = [text.strip()]
+    tokens = [[match.group(0).lower() for match in WORD_RE.finditer(sentence)] for sentence in sentences]
+    counts = Counter(token for sentence in tokens for token in sentence)
+    scores = [Fraction(sum(counts[token] for token in words), len(words)) if words else Fraction(0) for words in tokens]
+    selected = sorted(sorted(range(len(sentences)), key=lambda index: (-scores[index], index))[:3])
+    return {
+        "method": "extractive-term-frequency/v0.1",
+        "summary": " ".join(sentences[index] for index in selected),
+        "source_sentence_indices": selected,
+        "input_digest": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+    }
+
+
+def service_output(input_text: str, *, service_id: str = SERVICE_ID) -> dict[str, Any]:
+    _require_service_id(service_id)
+    return text_summary(input_text) if service_id == SUMMARY_SERVICE_ID else structured_text_analysis(input_text)
+
+
+def _perform_paid_service(input_text: str, *, payment_verified: bool, service_id: str = SERVICE_ID) -> dict[str, Any]:
     if payment_verified is not True:
         raise DemoError("payment_not_verified")
-    return structured_text_analysis(input_text)
+    return service_output(input_text, service_id=service_id)
 
 
 def build_service_result(
@@ -464,7 +518,7 @@ def build_service_result(
     payment_tx_id: str,
     output: Mapping[str, Any],
 ) -> dict[str, Any]:
-    verified_request = verify_service_request(request)
+    verified_request = verify_service_request(request, service_id=_request_service_id(request))
     verified_quote = verify_service_quote(quote, request=request)
     provider_identity, provider_public_key = _public_identity_for_key(provider_key)
     if provider_identity != verified_quote["provider_identity"]:
@@ -475,7 +529,7 @@ def build_service_result(
         "request_id": request["request_id"],
         "quote_id": quote["quote_id"],
         "payment_tx_id": payment_tx_id,
-        "service_id": SERVICE_ID,
+        "service_id": verified_request["service_id"],
         "input_digest": output.get("input_digest"),
         "output": dict(output),
         "provider_identity": provider_identity,
@@ -499,21 +553,21 @@ def verify_service_result(
     quote: Mapping[str, Any],
     payment_tx_id: str,
 ) -> dict[str, Any]:
-    verified_request = verify_service_request(request)
+    verified_request = verify_service_request(request, service_id=_request_service_id(request))
     verified_quote = verify_service_quote(quote, request=request)
     body = _artifact_body(result, RESULT_BODY_FIELDS)
     if body["profile"] != DEMO_PROFILE or body["message_type"] != "service_result":
         raise DemoError("schema_invalid")
     if body["request_id"] != request["request_id"] or body["quote_id"] != quote["quote_id"]:
         raise DemoError("digest_mismatch")
-    if body["payment_tx_id"] != payment_tx_id or body["service_id"] != SERVICE_ID:
+    if body["payment_tx_id"] != payment_tx_id or body["service_id"] != verified_request["service_id"]:
         raise DemoError("payment_binding_invalid")
     if body["provider_identity"] != verified_quote["provider_identity"]:
         raise DemoError("identity_mismatch")
     if body["provider_identity"] != public_identity(body["provider_public_key"]):
         raise DemoError("identity_mismatch")
-    expected_output = structured_text_analysis(verified_request["input"]["text"])
-    if body["output"] != expected_output or body["input_digest"] != expected_output["input_digest"]:
+    expected_output = service_output(verified_request["input"]["text"], service_id=verified_request["service_id"])
+    if _canon(body["output"]) != _canon(expected_output) or body["input_digest"] != expected_output["input_digest"]:
         raise DemoError("output_mismatch")
     result_id = result.get("service_result_id")
     signature = result.get("signature")
@@ -538,7 +592,7 @@ def build_service_receipt(
     service_result: Mapping[str, Any],
     payment_tx_id: str,
 ) -> dict[str, Any]:
-    verified_request = verify_service_request(request)
+    verified_request = verify_service_request(request, service_id=_request_service_id(request))
     verified_quote = verify_service_quote(quote, request=request)
     verify_service_result(
         service_result,
@@ -578,7 +632,7 @@ def verify_service_receipt(
     service_result: Mapping[str, Any],
     payment_tx_id: str,
 ) -> dict[str, Any]:
-    verified_request = verify_service_request(request)
+    verified_request = verify_service_request(request, service_id=_request_service_id(request))
     verified_quote = verify_service_quote(quote, request=request)
     verify_service_result(
         service_result,
@@ -602,7 +656,7 @@ def verify_service_receipt(
         "service_executed": True,
     }
     for key, value in exact.items():
-        if body.get(key) != value:
+        if _canon(body.get(key)) != _canon(value):
             raise DemoError("receipt_binding_invalid")
     if body["provider_identity"] != public_identity(body["provider_public_key"]):
         raise DemoError("identity_mismatch")

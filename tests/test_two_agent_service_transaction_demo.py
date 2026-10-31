@@ -196,3 +196,90 @@ def test_input_bounds_fail_closed():
     for bad in ('', None, 3, 'x' * (demo.MAX_INPUT_CHARS + 1)):
         with pytest.raises(demo.DemoError):
             demo.execute_two_agent_service_transaction(bad)
+
+
+SUMMARY_TEXT = 'Rare opener. L28 payments help agents. L28 payments buy summaries. L28 payments bind receipts.'
+
+
+def _summary_artifacts(tmp_path):
+    payer, provider, wrong, ledger, _request, _quote, tx, _auth = _base_artifacts(tmp_path)
+    request = demo.build_service_request(payer, provider_identity=public_identity(_public_key_hex(provider)),
+                                         input_text=SUMMARY_TEXT, service_id=demo.SUMMARY_SERVICE_ID)
+    quote = demo.build_service_quote(provider, request=request)
+    auth = demo.build_payment_authorization(payer, request=request, quote=quote, payment_tx=tx)
+    return payer, provider, wrong, ledger, request, quote, tx, auth
+
+
+def test_summary_is_deterministic_extractive_and_source_bound():
+    output = demo.text_summary(SUMMARY_TEXT)
+    assert output == {
+        'method': 'extractive-term-frequency/v0.1',
+        'summary': 'L28 payments help agents. L28 payments buy summaries. L28 payments bind receipts.',
+        'source_sentence_indices': [1, 2, 3],
+        'input_digest': demo.hashlib.sha256(SUMMARY_TEXT.encode('utf-8')).hexdigest(),
+    }
+    assert demo.text_summary(SUMMARY_TEXT) == output
+    assert demo.text_summary('Alpha. Beta! Gamma? Delta.')['source_sentence_indices'] == [0, 1, 2]
+    assert demo.text_summary('雪が降る。\n猫が眠る。')['summary'] == '雪が降る。 猫が眠る。'
+    assert demo.text_summary('🙂')['summary'] == '🙂'
+    assert demo.text_summary('!!!')['summary'] == '!!!'
+    assert demo.text_summary('x' * 4096)['summary'] == 'x' * 4096
+    assert demo.text_summary(' Alpha. ')['input_digest'] != demo.text_summary('Alpha.')['input_digest']
+
+
+@pytest.mark.parametrize('text', ['', ' \r\n\t', None, 7, True, 'x' * 4097, '\ud800'])
+def test_summary_input_bounds_and_encoding_fail_closed(text):
+    with pytest.raises(demo.DemoError, match='input_invalid'):
+        demo.text_summary(text)
+    payer, provider, _ = _keys()
+    with pytest.raises(demo.DemoError, match='input_invalid'):
+        demo.build_service_request(payer, provider_identity=public_identity(_public_key_hex(provider)),
+                                   input_text=text, service_id=demo.SUMMARY_SERVICE_ID)
+
+
+def test_summary_requires_explicit_opt_in_and_verified_payment(tmp_path, monkeypatch):
+    _payer, _provider, _wrong, _ledger, request, quote, _tx, _auth = _summary_artifacts(tmp_path)
+    assert demo.verify_service_request(request, service_id=demo.SUMMARY_SERVICE_ID)['service_id'] == demo.SUMMARY_SERVICE_ID
+    assert quote['service_id'] == demo.SUMMARY_SERVICE_ID and type(quote['amount']) is int
+    with pytest.raises(demo.DemoError, match='service_invalid'):
+        demo.verify_service_request(request)
+    monkeypatch.setattr(demo, 'text_summary', lambda _text: pytest.fail('unpaid work executed'))
+    with pytest.raises(demo.DemoError, match='payment_not_verified'):
+        demo._perform_paid_service(SUMMARY_TEXT, payment_verified=False, service_id=demo.SUMMARY_SERVICE_ID)
+    with pytest.raises(demo.DemoError, match='service_invalid'):
+        demo._perform_paid_service(SUMMARY_TEXT, payment_verified=True, service_id='unknown')
+
+
+def test_summary_payment_result_receipt_and_resigned_tampering(tmp_path):
+    payer, provider, _wrong, ledger, request, quote, tx, auth = _summary_artifacts(tmp_path)
+    assert demo.verify_payment_intent_binding(request=request, quote=quote, payment_tx=tx, payment_authorization=auth)
+    assert asyncio.run(demo.apply_transfer(ledger, tx))
+    assert demo.verify_accepted_payment(ledger, request=request, quote=quote, payment_tx=tx, payment_authorization=auth)
+    assert (ledger.get_balance(tx['sender']), ledger.get_balance(tx['receiver'])) == (72, 28)
+    output = demo._perform_paid_service(SUMMARY_TEXT, payment_verified=True, service_id=demo.SUMMARY_SERVICE_ID)
+    result = demo.build_service_result(provider, request=request, quote=quote, payment_tx_id=tx['id'], output=output)
+    receipt = demo.build_service_receipt(provider, request=request, quote=quote, service_result=result, payment_tx_id=tx['id'])
+    assert demo.verify_service_receipt(receipt, request=request, quote=quote, service_result=result, payment_tx_id=tx['id'])
+    for field, value in [('summary', 'invented text'), ('source_sentence_indices', [0, 1, 2]),
+                         ('source_sentence_indices', [True, 2, 3]), ('input_digest', '0' * 64)]:
+        changed = copy.deepcopy(result)
+        changed['output'][field] = value
+        body = demo._artifact_body(changed, demo.RESULT_BODY_FIELDS)
+        changed['service_result_id'] = demo._digest(body)
+        changed['signature'] = demo._sign_domain(provider, demo.RESULT_SIGN_DOMAIN, body)
+        with pytest.raises(demo.DemoError):
+            demo.verify_service_result(changed, request=request, quote=quote, payment_tx_id=tx['id'])
+    substituted = copy.deepcopy(quote)
+    substituted['service_id'] = demo.SERVICE_ID
+    body = demo._artifact_body(substituted, demo.QUOTE_BODY_FIELDS)
+    substituted['quote_id'] = demo._digest(body)
+    substituted['signature'] = demo._sign_domain(provider, demo.QUOTE_SIGN_DOMAIN, body)
+    with pytest.raises(demo.DemoError, match='service_invalid'):
+        demo.verify_service_quote(substituted, request=request)
+    substituted = copy.deepcopy(receipt)
+    substituted['payment_verified'] = 1
+    body = demo._artifact_body(substituted, demo.RECEIPT_BODY_FIELDS)
+    substituted['receipt_id'] = demo._digest(body)
+    substituted['signature'] = demo._sign_domain(provider, demo.RECEIPT_SIGN_DOMAIN, body)
+    with pytest.raises(demo.DemoError, match='receipt_binding_invalid'):
+        demo.verify_service_receipt(substituted, request=request, quote=quote, service_result=result, payment_tx_id=tx['id'])

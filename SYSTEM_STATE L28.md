@@ -1,13 +1,84 @@
 # L28 — SYSTEM_STATE.md
 
-Last updated: 2026-10-30
+Last updated: 2026-10-31
 
 ## PROJECT STATE
-PROJECT_STATE: COMPLETE
+PROJECT_STATE: ACTIVE
 
 Only the operator may change PROJECT_STATE.
 
-## CURRENT — OPERATOR-AUTHORIZED SLICE COMPLETION — 2026-10-30
+## CURRENT — FIRST PAID TEXT SUMMARY — 2026-10-31
+
+Final operator authority:
+AUTHORIZE_L28_PAID_TEXT_SUMMARY_V0_1_ACCEPTANCE_AND_LOCAL_COMMIT.
+Final acceptance: PASS. Slice status: COMPLETE_PENDING_OPERATOR.
+The operator accepted the recorded results conditional on final verification;
+all frozen criteria reconciled against the unchanged source/test hashes, existing
+HTTP/payment/receipt/REUSE/adversarial/cleanup evidence and release inventory.
+The COMPLETE checkpoint a6a93c922ece5f40579dbefedccd61b996c7b287 is preserved.
+No additional tests, runtime execution or source changes were required.
+Exactly one local ten-path implementation commit is authorized after staged
+review; earlier UNCOMMITTED/no-commit statements below are historical to the
+build phase. The resulting Git commit records its own identity; no self-referential
+hash is inserted here. PROJECT_STATE remains ACTIVE. STOP after commit verification;
+no merge, push, deployment, runtime or new milestone. Production gates remain BLOCKED.
+
+### Accepted build evidence — preserved
+
+Operator authorization: AUTHORIZE_FROZEN_SLICE_L28_FIRST_PAID_TEXT_SUMMARY_V0_1
+reopens ACTIVE for the ten-path bounded HTTP/JSON summary purchase. The three
+COMPLETE records were preserved verbatim in local checkpoint
+a6a93c922ece5f40579dbefedccd61b996c7b287 (parent a85c653fcb5241b635d16628ba207337355fae93).
+Branch: codex/paid-text-summary-v0-1. ACCEPTANCE: PASS for the bounded summary
+slice, with implementation UNCOMMITTED. PROJECT_STATE remains ACTIVE; only the
+operator may transition it. No implementation commit, merge/push, installation,
+public/physical session or deployment is authorized. STOP; no next milestone.
+
+The actual HTTP requester can discover and buy l28.service.text_summary/v0.1
+for 28 disposable L28, receive a deterministic extractive summary and the full
+signed public artifact bundle, and independently verify source/service/payment/
+result/receipt bindings. The existing structured-analysis default is preserved.
+No model/API dependency, second ledger/payment engine, new route or framework.
+Input is nonblank UTF-8, <=4096 characters; up to three source sentences, rational
+term-frequency scoring, stable ties, source-order restoration, indices/input hash.
+
+Verification: 54 distinct focused cases covered by passing results; initial run
+52 passed/1 failed, diagnosed order-preserving CLI serialization and reran only
+the failed case (1 PASS). One confirmed slow-response deadline issue was then
+corrected; the new case and three affected CLI/startup cases passed (4 PASS).
+Directly affected regressions: 112 PASS once. No repeated full passing suite.
+Actual final-code CLI: two fresh requester/provider processes per invocation,
+PIDs 9797/9807 and 9816/9826, both exit 0. Each independently verified payment,
+summary and receipt; balances 100/0 -> 72/28, issued supply/mint height zero,
+replay rejected, provider stopped, listener closed. REUSE used different input,
+fresh payer/provider identities and transaction IDs. No historical supply used.
+Payment IDs:
+f1135cf2bbbf73798d89e6f6484a7a3c06f82161b60aefc3e82f686b124be714
+255377ab2445fe6b1301666af8062d5527e28ada6ed2a879b2082da39402c920
+Receipt IDs:
+5aba849c83a6c65553431492166085354e0d5dfb5c3c91131eadea5abf3b9083
+3125445d5e302cf8a6afdc61ec4ec8f27b6444cdd0efe53fbcb7dc7b810c9d45
+HTTP/CLI SHA-256: 02708016547d308fee6e67568386f6d0a29119396848372aa44627286f9a6323
+Core SHA-256: 9f49301f0cf43e483ba5adffa20b0508dc800797b434b92240060ca8dc033de8
+
+Five actual loopback HTTP adversarial cases reject with status 400: forged
+signature/wrong network -> canonical_validation_failed; wrong amount/recipient/
+quote -> payment_binding_invalid. All providers/listeners cleaned up. Public
+reverification of the final CLI bundle PASS; result, receipt, service, input and
+payment tampering reject. Tests prove rejected payments create no ledger/work;
+partial startup, slow HTTP and invalid input fail closed with process cleanup.
+One consolidated local review: no unresolved Critical/High implementation issue;
+NOT_INDEPENDENTLY_AUDITED=true. Public evidence, commands, exact algorithm and
+residual limits are in docs/paid_text_summary_v0.1.md. Existing RC byte inventory
+is refreshed, with explicit local revision metadata and no exposure claim.
+
+Protocol v1.0.0, protected economics/history, validator/ledger, custody/F171 and
+all production gates remain unchanged/BLOCKED. No real custody, production
+signing, mining, issuance, canonical broadcast/settlement or deployment. Receipts
+prove signed disposable artifacts, not canonical finality. Prior acceptance and
+immutable evidence below remain historical and preserved in the checkpoint.
+
+## HISTORICAL — OPERATOR-AUTHORIZED SLICE COMPLETION — 2026-10-30
 
 Operator authorization: L28 — FINAL PROJECT COMPLETION RECORD. The operator
 explicitly authorized PROJECT_STATE: COMPLETE for the accepted physical two-host

@@ -35,13 +35,23 @@
   "artifacts": [
     {
       "path": "README.md",
-      "sha256": "6fb84637baa12550524b4ffc120e4407a13e1e61a38b16e8e89c698e5cf0f78a",
-      "size_bytes": 4050
+      "sha256": "9438d73c6b5caacb4117485cbc915c97a016725764350ac2287f55a3e3a0f88e",
+      "size_bytes": 29376
     },
     {
       "path": "coin/public_testnet_service_demo.py",
-      "sha256": "f9106ed5574ae4adf78c5c3ececc27c3221d7df2d2600c77f34cd3250aba7237",
-      "size_bytes": 35132
+      "sha256": "02708016547d308fee6e67568386f6d0a29119396848372aa44627286f9a6323",
+      "size_bytes": 43036
+    },
+    {
+      "path": "coin/two_agent_service_transaction_demo.py",
+      "sha256": "9f49301f0cf43e483ba5adffa20b0508dc800797b434b92240060ca8dc033de8",
+      "size_bytes": 36340
+    },
+    {
+      "path": "docs/paid_text_summary_v0.1.md",
+      "sha256": "31120b8e4bda05166f96e2123c96f11121ab1b3344f0dbd126e97bd8d0e3f618",
+      "size_bytes": 18507
     },
     {
       "path": "docs/public_testnet_release_v0.1.md",
@@ -50,8 +60,19 @@
     },
     {
       "path": "tests/test_public_testnet_service_demo.py",
-      "sha256": "3722ec3591ed9d61637f42c334b67d4ad2e1ee147b06bfa8b747311571d46d52",
-      "size_bytes": 20027
+      "sha256": "c479729c0f0b473024f5f9ab091e5cff9b54caba7b501bf6b8e7ef9f8c8b2d34",
+      "size_bytes": 32389
+    },
+    {
+      "path": "tests/test_two_agent_service_transaction_demo.py",
+      "sha256": "8db58c6f1c637d70bddf0a7e0010784ee915cbe6368aa325757deb6e87ae683a",
+      "size_bytes": 15157
     }
-  ]
+  ],
+  "local_revision": {
+    "base": "a6a93c922ece5f40579dbefedccd61b996c7b287",
+    "slice": "First Paid Text Summary v0.1",
+    "opt_in_service": "l28.service.text_summary/v0.1",
+    "public_exposure_authorized": false
+  }
 }
