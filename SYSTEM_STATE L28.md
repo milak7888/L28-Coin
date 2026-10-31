@@ -3,11 +3,26 @@
 Last updated: 2026-10-30
 
 ## PROJECT STATE
-PROJECT_STATE: ACTIVE
+PROJECT_STATE: COMPLETE
 
 Only the operator may change PROJECT_STATE.
 
-## CURRENT — PHYSICAL SLICE ACCEPTED / LOCAL FINALIZATION — 2026-10-30
+## CURRENT — OPERATOR-AUTHORIZED SLICE COMPLETION — 2026-10-30
+
+Operator authorization: L28 — FINAL PROJECT COMPLETION RECORD. The operator
+explicitly authorized PROJECT_STATE: COMPLETE for the accepted physical two-host
+frozen slice at commit a85c653fcb5241b635d16628ba207337355fae93.
+Frozen acceptance remains PASS; the accepted evidence, runtime digest and
+qualification of physical/Surface attestations below are unchanged. This records
+completion of that bounded slice, not production/mainnet or custody readiness.
+Production custody/F171 remain BLOCKED; Protocol v1.0.0, economics/history, source
+and all security restrictions are unchanged. Earlier ACTIVE/finalization statements
+are historical. No new frozen slice is opened. No further work until the operator
+explicitly reopens ACTIVE and authorizes scope. This authorization permits only
+these completion-record edits, not staging, commit, merge, push, tests, sessions,
+activation or deployment. STOP after record verification.
+
+## HISTORICAL — PHYSICAL SLICE ACCEPTED / LOCAL FINALIZATION — 2026-10-30
 
 Authorization: AUTHORIZE_L28_PHYSICAL_SLICE_FINALIZATION. The operator accepted
 the final review as COMPLETE_PENDING_OPERATOR and authorized necessary completion

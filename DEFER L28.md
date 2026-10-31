@@ -2,6 +2,16 @@
 
 Last updated: 2026-10-30
 
+PROJECT_STATE: COMPLETE
+
+Operator authorization: L28 — FINAL PROJECT COMPLETION RECORD explicitly closes
+the accepted physical two-host slice at a85c653fcb5241b635d16628ba207337355fae93.
+Frozen acceptance remains PASS; evidence and all production restrictions remain
+unchanged. Custody/F171 remain BLOCKED. No new slice is opened, and deferred items
+are not execution authority. Further work requires the operator to reopen ACTIVE
+and authorize scope. This completion-record update authorizes no tests, runtime,
+staging, commit, merge, push or deployment. STOP after verification.
+
 Purpose:
 Store useful ideas and future work that are NOT required to complete the current frozen slice.
 
@@ -14,7 +24,7 @@ The latest frozen slice is accepted:
 **Two-Host Disposable Synchronization v0.1**
 
 Final physical acceptance PASS; operator authorized completion records and one
-local milestone commit on 2026-10-30. PROJECT_STATE remains ACTIVE. Accepted
+local milestone commit on 2026-10-30, when PROJECT_STATE was ACTIVE. Accepted
 session a649173ab9cdf2a4e432cdb284027e90: independent disposable 28 L28 validation,
 matching IDs/state, durable genuine-process restart, replay rejection and terminal
 divergence halt; both-host cleanup verified. Mac reports inspected, Surface and
@@ -24,7 +34,7 @@ Accepted 34 focused / 141 affected passing cases reused, no test/session repeats
 Runtime digest remains:
 6578a9d9b6ba975ef3d94b7cfa50e9f8e875d29e2c05648e8a34df1dd828dbf1.
 No new runtime, implementation, merge, push or production authority. Stop after
-the local commit; select future work only under separate operator authorization.
+the local commit; future work requires explicit reopening and scope authorization.
 Original reports, older candidates and protected economics/history are preserved.
 
 ### Historical pre-acceptance status — superseded, not current instructions

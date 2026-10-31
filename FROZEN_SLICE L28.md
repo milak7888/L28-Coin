@@ -1,7 +1,7 @@
 # L28 — FROZEN_SLICE.md
 
 Date: 2026-10-23
-PROJECT_STATE: ACTIVE
+PROJECT_STATE: COMPLETE
 Slice: Two-Host Disposable Synchronization v0.1
 
 ## AUTHORIZATION AND BASE
@@ -12,7 +12,19 @@ Repository: /Users/pjaydondup/Projects/L28-Coin
 Base: 530a307f56e7eb79007fb0309fc93a6e0b9f2c0b
 Branch: codex/two-host-disposable-sync-v0-1
 
-### Accepted physical slice / finalization — authorized 2026-10-30
+### Operator-authorized completion — 2026-10-30
+
+Operator authorization: L28 — FINAL PROJECT COMPLETION RECORD explicitly sets
+the project state to COMPLETE for this accepted physical two-host frozen slice.
+Accepted commit: a85c653fcb5241b635d16628ba207337355fae93.
+Acceptance remains PASS with all evidence and restrictions below preserved.
+No new slice, implementation or production authority is opened; custody/F171 stay
+BLOCKED. Prior ACTIVE/finalization statements below are historical. Further work
+requires explicit operator reopening to ACTIVE and scope authorization. Only
+completion records may change now; no tests/runtime, staging, commit, merge,
+push or deployment. STOP after verification.
+
+### Historical accepted physical slice / finalization — authorized 2026-10-30
 
 AUTHORIZE_L28_PHYSICAL_SLICE_FINALIZATION
 Final acceptance review: PASS; operator acknowledged COMPLETE_PENDING_OPERATOR
