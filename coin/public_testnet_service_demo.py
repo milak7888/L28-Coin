@@ -12,6 +12,7 @@ the owning process and are not serialized.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import http.client
 import ipaddress
 import json
@@ -24,7 +25,7 @@ import threading
 import time
 import urllib.parse
 from collections.abc import Mapping
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler, HTTPServer, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
@@ -67,6 +68,8 @@ from coin.two_agent_service_transaction_demo import (
     SUMMARY_SERVICE_ID,
     DemoError as ServiceDemoError,
     _perform_paid_service,
+    _sign_domain,
+    _verify_domain,
     build_payment_authorization,
     build_service_quote,
     build_service_receipt,
@@ -190,7 +193,8 @@ def public_testnet_binding() -> dict[str, Any]:
     return binding
 
 
-def build_service_discovery(binding: Mapping[str, Any], *, service_id: str = SERVICE_ID) -> dict[str, Any]:
+def build_service_discovery(binding: Mapping[str, Any], *, service_id: str = SERVICE_ID,
+                            private_pilot: bool = False) -> dict[str, Any]:
     """Return the exact public catalog without advancing the one-shot session."""
     assert_identity_flags_unchanged()
     if service_id not in SERVICE_IDS:
@@ -215,7 +219,7 @@ def build_service_discovery(binding: Mapping[str, Any], *, service_id: str = SER
             "discovery_path": DISCOVERY_PATH,
             "provider_hello_path": HELLO_PATH,
             "session_path": SESSION_PATH,
-            "external_https_required": True,
+            "external_https_required": not private_pilot,
             "max_body_bytes": MAX_BODY_BYTES,
             "request_timeout_seconds": int(REQUEST_TIMEOUT_SECONDS),
             "session_deadline_seconds": int(SESSION_DEADLINE_SECONDS),
@@ -233,7 +237,8 @@ def build_service_discovery(binding: Mapping[str, Any], *, service_id: str = SER
     }
 
 
-def validate_service_discovery(body: bytes, binding: Mapping[str, Any], *, service_id: str = SERVICE_ID) -> dict[str, Any]:
+def validate_service_discovery(body: bytes, binding: Mapping[str, Any], *, service_id: str = SERVICE_ID,
+                               private_pilot: bool = False) -> dict[str, Any]:
     """Fail closed unless discovery is the exact catalog for this binding."""
     enforce_body_bound(len(body))
     try:
@@ -249,7 +254,7 @@ def validate_service_discovery(body: bytes, binding: Mapping[str, Any], *, servi
         raise
     except (TypeError, UnicodeError, ValueError, json.JSONDecodeError) as exc:
         raise PublicTestnetError("discovery_invalid") from exc
-    expected = build_service_discovery(binding, service_id=service_id)
+    expected = build_service_discovery(binding, service_id=service_id, private_pilot=private_pilot)
     canonical_expected = json.dumps(
         expected,
         sort_keys=True,
@@ -498,11 +503,12 @@ def verify_purchase_artifacts(
     return dict(result["output"])
 
 
-def run_requester(exchange: Any, input_text: str, binding: Mapping[str, Any], *, service_id: str = SERVICE_ID) -> dict[str, Any]:
+def run_requester(exchange: Any, input_text: str, binding: Mapping[str, Any], *, service_id: str = SERVICE_ID,
+                  payer_key: Ed25519PrivateKey | None = None, private_pilot: bool = False) -> dict[str, Any]:
     discovery_body = exchange("GET", DISCOVERY_PATH, None)
-    discovery = validate_service_discovery(discovery_body, binding, service_id=service_id)
+    discovery = validate_service_discovery(discovery_body, binding, service_id=service_id, private_pilot=private_pilot)
     service = discovery["services"][0]
-    payer = Ed25519PrivateKey.generate()
+    payer = payer_key if payer_key is not None else Ed25519PrivateKey.generate()
     hello_body = exchange("GET", HELLO_PATH, None)
     hello_frame = parse_frame(hello_body, expected_sequence=1, binding=binding)
     hello = verify_provider_hello(hello_frame["payload"])
@@ -665,6 +671,248 @@ def build_public_evidence(endpoint: str, provider_evidence: Mapping[str, Any], r
     }
 
 
+PILOT_PROFILE = "l28-remote-paid-service-pilot/v0.1"
+PILOT_DOMAIN = b"L28-REMOTE-PAID-SERVICE-PILOT-V0.1\x00"
+PILOT_PAYMENT_NETWORK = "DISPOSABLE_OFFLINE"
+PILOT_SOURCE_FILES = (
+    "coin/public_testnet_service_demo.py", "coin/durable_restart_safe_service_demo.py",
+    "coin/two_agent_service_transaction_demo.py", "coin/disposable_offline_transfer_demo.py",
+    "coin/limited_testnet_service_demo.py", "coin/disposable_testnet_identity.py",
+    "coin/tx_validation.py", "coin/ledger.py",
+    "coin/uaii_json.py", "coin/__init__.py",
+)
+
+
+def pilot_source_digest() -> str:
+    root = Path(__file__).resolve().parents[1]
+    inventory = [(name, hashlib.sha256((root / name).read_bytes()).hexdigest()) for name in PILOT_SOURCE_FILES]
+    return hashlib.sha256(_pilot_bytes(inventory)).hexdigest()
+
+
+def _pilot_bytes(value: Any) -> bytes:
+    return json.dumps(value, ensure_ascii=False, allow_nan=False, separators=(",", ":")).encode("utf-8")
+
+
+def _pilot_json(body: bytes) -> dict[str, Any]:
+    enforce_body_bound(len(body))
+    try:
+        value = json.loads(body.decode("utf-8"), object_pairs_hook=_reject_duplicate_keys,
+                           parse_constant=lambda _value: (_ for _ in ()).throw(ValueError()))
+        from coin.durable_restart_safe_service_demo import _walk_bounded
+        _walk_bounded(value, 0, [0])
+    except (UnicodeError, ValueError, RecursionError) as exc:
+        raise PublicTestnetError("malformed_json") from exc
+    if not isinstance(value, dict):
+        raise PublicTestnetError("malformed_json")
+    return value
+
+
+def pilot_config(*, session_id: str, provider_host: str, requester_host: str, port: int,
+                 created_at: int, route_keys: Mapping[str, str] | None = None) -> dict[str, Any]:
+    """Public configuration only. A route declaration is NOT route verification."""
+    return validate_pilot_config({
+        "profile": PILOT_PROFILE, "session_id": session_id,
+        "provider_host": provider_host, "requester_host": requester_host, "port": port,
+        "created_at": created_at, "expires_at": created_at + 120,
+        "service_id": SUMMARY_SERVICE_ID, "price": PRICE_L28,
+        "network_id": NETWORK_ID, "payment_network_id": PILOT_PAYMENT_NETWORK,
+        "source_digest": pilot_source_digest(), "route_keys": dict(route_keys or {}),
+    })
+
+
+def validate_pilot_config(value: Any) -> dict[str, Any]:
+    fields = ("profile", "session_id", "provider_host", "requester_host", "port", "created_at",
+              "expires_at", "service_id", "price", "network_id", "payment_network_id", "source_digest", "route_keys")
+    if not isinstance(value, dict) or set(value) != set(fields):
+        raise PublicTestnetError("pilot_config_invalid")
+    result = {name: value[name] for name in fields}
+    session = result["session_id"]
+    if not isinstance(session, str) or len(session) != 32 or any(c not in "0123456789abcdef" for c in session):
+        raise PublicTestnetError("pilot_session_invalid")
+    for name in ("provider_host", "requester_host"):
+        try:
+            address = ipaddress.IPv4Address(result[name])
+        except (ValueError, TypeError, ipaddress.AddressValueError) as exc:
+            raise PublicTestnetError("pilot_endpoint_invalid") from exc
+        if str(address) != result[name] or not (str(address) == LOOPBACK_HOST or address in ipaddress.IPv4Network("100.64.0.0/10")):
+            raise PublicTestnetError("pilot_endpoint_invalid")
+    loopback = result["provider_host"] == result["requester_host"] == LOOPBACK_HOST
+    keys = result["route_keys"]
+    if not loopback:
+        if result["provider_host"] == result["requester_host"] or LOOPBACK_HOST in (result["provider_host"], result["requester_host"]):
+            raise PublicTestnetError("pilot_endpoint_invalid")
+        if not isinstance(keys, dict) or set(keys) != {"provider", "requester"}:
+            raise PublicTestnetError("private_route_identity_required")
+        if any(not isinstance(k, str) or not k.startswith("nodekey:") or len(k) != 72 or
+               any(c not in "0123456789abcdef" for c in k[8:]) for k in keys.values()) or len(set(keys.values())) != 2:
+            raise PublicTestnetError("private_route_identity_required")
+    elif keys != {}:
+        raise PublicTestnetError("pilot_config_invalid")
+    if not loopback:
+        result["route_keys"] = {role: keys[role] for role in ("provider", "requester")}
+    if (type(result["port"]) is not int or not 1024 <= result["port"] <= 65535 or
+        type(result["created_at"]) is not int or type(result["expires_at"]) is not int or
+        not 0 < result["expires_at"] - result["created_at"] <= 120 or
+        result["created_at"] > time.time() + 5 or result["expires_at"] <= time.time()):
+        raise PublicTestnetError("pilot_session_expired")
+    for name, expected in (("profile", PILOT_PROFILE), ("service_id", SUMMARY_SERVICE_ID),
+                           ("network_id", NETWORK_ID), ("payment_network_id", PILOT_PAYMENT_NETWORK),
+                           ("source_digest", pilot_source_digest())):
+        if result[name] != expected:
+            raise PublicTestnetError("pilot_binding_invalid")
+    if type(result["price"]) is not int or result["price"] != PRICE_L28:
+        raise PublicTestnetError("wrong_amount")
+    return result
+
+
+def verify_pilot_route(config: Mapping[str, Any], role: str) -> None:
+    """Verify installed Tailscale's live local and peer device identities, not an ack.
+
+    This read is performed only on an explicitly authorized future private run.
+    Operator verification of account/device ownership and topology is still required.
+    """
+    if config["provider_host"] == config["requester_host"] == LOOPBACK_HOST:
+        return
+    other = "requester" if role == "provider" else "provider"
+    try:
+        completed = subprocess.run(["tailscale", "status", "--json"], capture_output=True, timeout=5, check=True)
+        if len(completed.stdout) > 1048576:
+            raise ValueError()
+        status = json.loads(completed.stdout)
+        local = status["Self"]
+        peers = list(status["Peer"].values())
+        matches = [p for p in peers if p.get("PublicKey") == config["route_keys"][other]]
+        if (status["BackendState"] != "Running" or local.get("PublicKey") != config["route_keys"][role] or
+            config[role + "_host"] not in local.get("TailscaleIPs", []) or len(matches) != 1 or
+            matches[0].get("Online") is not True or config[other + "_host"] not in matches[0].get("TailscaleIPs", [])):
+            raise ValueError()
+    except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as exc:
+        raise PublicTestnetError("private_route_not_verified") from exc
+
+
+def _pilot_context(config: Mapping[str, Any]) -> str:
+    return hashlib.sha256(PILOT_DOMAIN + _pilot_bytes(config)).hexdigest()
+
+
+def pilot_envelope(key: Ed25519PrivateKey, config: Mapping[str, Any], role: str, peer: str,
+                   method: str, path: str, payload: Mapping[str, Any]) -> dict[str, Any]:
+    body = {"context": _pilot_context(config), "role": role, "public_key": _public_key_hex(key),
+            "peer": peer, "method": method, "path": path, "payload": dict(payload)}
+    return {**body, "signature": _sign_domain(key, PILOT_DOMAIN, body)}
+
+
+def verify_pilot_envelope(value: Any, config: Mapping[str, Any], role: str, peer: str,
+                          method: str, path: str, *, public_key: str | None = None) -> dict[str, Any]:
+    validate_pilot_config(dict(config))
+    fields = ("context", "role", "public_key", "peer", "method", "path", "payload", "signature")
+    if not isinstance(value, dict) or tuple(value) != fields or not isinstance(value["payload"], dict):
+        raise PublicTestnetError("pilot_envelope_invalid")
+    if (value["context"] != _pilot_context(config) or value["role"] != role or value["peer"] != peer or
+        value["method"] != method or value["path"] != path or
+        (public_key is not None and value["public_key"] != public_key)):
+        raise PublicTestnetError("pilot_peer_or_context_invalid")
+    _verify_domain(domain=PILOT_DOMAIN, body={k: value[k] for k in fields[:-1]},
+                   public_key_hex=value["public_key"], signature_hex=value["signature"])
+    return value["payload"]
+
+
+class PrivatePilotProvider(PublicProvider):
+    """One purchase per context; the existing durable store remains sole payment authority."""
+    def __init__(self, config: Mapping[str, Any], state_dir: str | Path) -> None:
+        from coin.durable_restart_safe_service_demo import DurableProvider
+        self.config = validate_pilot_config(dict(config))
+        self.backend = DurableProvider(state_dir, service_id=SUMMARY_SERVICE_ID, context_digest=_pilot_context(self.config))
+        self.binding = public_testnet_binding()
+        self.service_id = SUMMARY_SERVICE_ID
+        self._key = self.backend._key
+        self.public_key, self.identity = self.backend.public_key, self.backend.identity
+        self.finished = threading.Event()
+        self._lock = threading.Lock()
+        self.expected = 1
+        self.client_key: str | None = None
+        self._request = self._quote = None
+        self.evidence = None
+        self.purchase_evidence = None
+        self.deadline = time.monotonic() + min(115, self.config["expires_at"] - time.time())
+
+    def close(self) -> None:
+        self.backend.close()
+        self._key = None
+
+    def dispatch(self, method: str, path: str, body: bytes | None) -> dict[str, Any]:
+        with self._lock:
+            validate_pilot_config(self.config)
+            if self.finished.is_set() or time.monotonic() >= self.deadline:
+                raise PublicTestnetError("pilot_session_expired")
+            if method == "GET" and path == DISCOVERY_PATH and self.expected == 1:
+                payload = build_service_discovery(self.binding, service_id=self.service_id, private_pilot=True)
+                peer = ""
+            elif method == "GET" and path == HELLO_PATH and self.expected == 1:
+                payload = json.loads(frame_bytes("provider_hello", 1, self.backend.hello(), self.binding))
+                self.expected = 2
+                peer = ""
+            elif method == "POST" and path == SESSION_PATH:
+                envelope = _pilot_json(body or b"")
+                payload = verify_pilot_envelope(envelope, self.config, "requester", self.public_key, method, path,
+                                                public_key=self.client_key)
+                candidate_key = envelope["public_key"]
+                if set(payload) == {"action", "artifacts"} and payload["action"] == "replay":
+                    artifacts = payload["artifacts"]
+                    if not isinstance(artifacts, dict) or set(artifacts) != {
+                        "request", "quote", "payment_tx", "payment_authorization", "service_result", "receipt"
+                    } or not isinstance(artifacts["payment_tx"], dict) or not isinstance(artifacts["payment_tx"].get("id"), str):
+                        raise PublicTestnetError("purchase_artifacts_invalid")
+                    if artifacts["payment_tx"]["id"] not in self.backend.store.snapshot()["accepted"]:
+                        raise PublicTestnetError("unknown_payment")
+                    # A payment replay probe must never recompute useful work,
+                    # even as a side effect of result verification. The requester
+                    # independently verifies result/receipt; this endpoint checks
+                    # only the original accepted public payment proof.
+                    package = {name: artifacts[name] for name in ("request", "quote", "payment_tx", "payment_authorization")}
+                    verify_service_request(package["request"], service_id=self.service_id)
+                    verify_payment_intent_binding(request=package["request"], quote=package["quote"],
+                        payment_tx=package["payment_tx"], payment_authorization=package["payment_authorization"])
+                    if not verify_transfer_signature(package["payment_tx"]):
+                        raise PublicTestnetError("payment_signature_invalid")
+                    payload = self.backend.handle_payment(package)
+                elif payload == {"action": "finish"} and self.evidence is not None:
+                    payload = {"finished": True}
+                    self.finished.set()
+                else:
+                    frame = parse_frame(_pilot_bytes(payload), expected_sequence=self.expected, binding=self.binding)
+                    if frame["message_type"] == "service_request":
+                        request = frame["payload"]
+                        if request.get("payer_public_key") != candidate_key:
+                            raise PublicTestnetError("pilot_payer_mismatch")
+                        if self.backend.store.snapshot()["state_version"] != 0:
+                            raise PublicTestnetError("pilot_purchase_already_accepted")
+                        quote = self.backend.quote_for(request)
+                        self._request, self._quote = request, quote
+                        self.client_key = candidate_key
+                        self.expected = 4
+                        payload = json.loads(frame_bytes("service_quote", 3, quote, self.binding))
+                    elif frame["message_type"] == "payment_package" and self._request is not None:
+                        if set(frame["payload"]) != {"payment_tx", "payment_authorization"}:
+                            raise PublicTestnetError("unexpected_field")
+                        result = self.backend.handle_payment({"request": self._request, "quote": self._quote, **frame["payload"]})
+                        if not result["ok"]:
+                            raise PublicTestnetError(result["error"])
+                        self.evidence = result["evidence"]
+                        self.purchase_evidence = result["evidence"]
+                        self.expected = 0
+                        payload = json.loads(frame_bytes("service_result_package", 5,
+                            {"service_result": result["service_result"], "receipt": result["receipt"]}, self.binding))
+                    else:
+                        raise PublicTestnetError("wrong_sequence")
+                peer = candidate_key
+                if payload.get("error") == "replay":
+                    self.evidence = payload["evidence"]
+                    self.client_key = candidate_key
+            else:
+                raise PublicTestnetError("wrong_sequence")
+            return pilot_envelope(self._key, self.config, "provider", peer, method, path, payload)
+
+
 class _Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
     server: "_Server"
@@ -673,7 +921,10 @@ class _Handler(BaseHTTPRequestHandler):
         return
 
     def handle(self) -> None:
-        self.request.settimeout(REQUEST_TIMEOUT_SECONDS)
+        remaining = REQUEST_TIMEOUT_SECONDS
+        if isinstance(self.server.provider, PrivatePilotProvider):
+            remaining = min(remaining, max(0.001, self.server.provider.deadline - time.monotonic()))
+        self.request.settimeout(remaining)
         try:
             super().handle()
         except (TimeoutError, socket.timeout):
@@ -701,6 +952,10 @@ class _Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def _read_body(self) -> bytes:
+        if isinstance(self.server.provider, PrivatePilotProvider) and (
+            self.headers.get("Transfer-Encoding") is not None or len(self.headers.get_all("Content-Length", [])) != 1
+        ):
+            raise PublicTestnetError("malformed_http")
         raw_length = self.headers.get("Content-Length")
         try:
             length = int(raw_length) if raw_length is not None else -1
@@ -713,6 +968,9 @@ class _Handler(BaseHTTPRequestHandler):
         return body
 
     def do_GET(self) -> None:
+        if isinstance(self.server.provider, PrivatePilotProvider):
+            self._pilot_dispatch("GET")
+            return
         if self.path == DISCOVERY_PATH:
             try:
                 self._ok(build_service_discovery(self.server.provider.binding, service_id=self.server.provider.service_id))
@@ -728,6 +986,9 @@ class _Handler(BaseHTTPRequestHandler):
             self._error(getattr(exc, "code", "request_rejected"))
 
     def do_POST(self) -> None:
+        if isinstance(self.server.provider, PrivatePilotProvider):
+            self._pilot_dispatch("POST")
+            return
         if self.path != SESSION_PATH:
             self._error("path_not_found")
             return
@@ -741,6 +1002,19 @@ class _Handler(BaseHTTPRequestHandler):
             self._error(getattr(exc, "code", "request_rejected"))
         except (TypeError, ValueError, KeyError):
             self._error("malformed_json")
+
+    def _pilot_dispatch(self, method: str) -> None:
+        from coin.durable_restart_safe_service_demo import DurableRuntimeError
+        try:
+            if method == "GET" and (self.headers.get("Transfer-Encoding") is not None or self.headers.get("Content-Length", "0") != "0"):
+                raise PublicTestnetError("malformed_http")
+            body = self._read_body() if method == "POST" else None
+            self._ok(self.server.provider.dispatch(method, self.path, body))
+        except (PublicTestnetError, ServiceDemoError, DurableRuntimeError) as exc:
+            self._error(exc.code)
+        except (TypeError, ValueError, KeyError, RecursionError):
+            self._error("malformed_json")
+        self.close_connection = True
 
 
 class _Server(ThreadingHTTPServer):
@@ -756,6 +1030,164 @@ class _Server(ThreadingHTTPServer):
         if bound_host != LOOPBACK_HOST:
             self.server_close()
             raise PublicTestnetError("localhost_request_path")
+
+
+class _PilotServer(_Server):
+    """Same HTTP handler, serial bounded requests, exact configured bind/source."""
+    # Permit genuine restart on the same exact endpoint after TCP TIME_WAIT.
+    # SO_REUSEPORT is not enabled; an existing listener still prevents a bind.
+    allow_reuse_address = True
+    def __init__(self, provider: PrivatePilotProvider) -> None:
+        self.provider = provider
+        self.request_count = 0
+        self.active_request: socket.socket | None = None
+        HTTPServer.__init__(self, (provider.config["provider_host"], provider.config["port"]), _Handler)
+
+    def process_request(self, request: Any, client_address: Any) -> None:
+        self.active_request = request
+        try:
+            HTTPServer.process_request(self, request, client_address)
+        finally:
+            self.active_request = None
+
+    def verify_request(self, request: Any, client_address: Any) -> bool:
+        self.request_count += 1
+        return (self.request_count <= 24 and client_address[0] == self.provider.config["requester_host"] and
+                time.monotonic() < self.provider.deadline)
+
+
+def pilot_http_exchange(config: Mapping[str, Any], method: str, path: str, body: bytes | None) -> bytes:
+    validate_pilot_config(dict(config))
+    remaining = config["expires_at"] - time.time()
+    connection = http.client.HTTPConnection(config["provider_host"], config["port"],
+        timeout=min(REQUEST_TIMEOUT_SECONDS, remaining), source_address=(config["requester_host"], 0))
+    expired = threading.Event()
+    transport: list[socket.socket | None] = [None]
+
+    def expire() -> None:
+        expired.set()
+        if transport[0] is not None:
+            try:
+                transport[0].shutdown(socket.SHUT_RDWR)
+            except OSError:
+                pass
+
+    # Socket timeout alone is an inactivity timeout: slow chunks must not reset
+    # the request budget. Interrupt the owned socket at this absolute deadline.
+    watchdog = threading.Timer(min(REQUEST_TIMEOUT_SECONDS, remaining), expire)
+    watchdog.daemon = True
+    watchdog.start()
+    try:
+        connection.connect()
+        transport[0] = connection.sock
+        if expired.is_set():
+            raise PublicTestnetError("pilot_request_timeout")
+        if connection.sock.getpeername()[0] != config["provider_host"] or connection.sock.getsockname()[0] != config["requester_host"]:
+            raise PublicTestnetError("pilot_endpoint_invalid")
+        connection.request(method, path, body=body, headers={"Content-Type": "application/json", "Content-Length": str(len(body or b""))})
+        response = connection.getresponse()
+        result = response.read(MAX_BODY_BYTES + 1)
+        if expired.is_set():
+            raise PublicTestnetError("pilot_request_timeout")
+        enforce_body_bound(len(result))
+        if response.status != 200:
+            error = _pilot_json(result).get("error", "request_rejected")
+            raise PublicTestnetError(error if isinstance(error, str) else "request_rejected")
+        return result
+    except (OSError, http.client.HTTPException) as exc:
+        raise PublicTestnetError("pilot_request_timeout" if expired.is_set() else "pilot_connection_failed") from exc
+    finally:
+        watchdog.cancel()
+        watchdog.join(timeout=1)
+        connection.close()
+
+
+def run_pilot_requester(config: Mapping[str, Any], input_text: str, *, replay_artifacts: dict[str, Any] | None = None) -> dict[str, Any]:
+    config = validate_pilot_config(dict(config))
+    verify_pilot_route(config, "requester")
+    payer = Ed25519PrivateKey.generate()
+    payer_public = _public_key_hex(payer)
+    provider_public: str | None = None
+    transcript: list[dict[str, Any]] = []
+
+    def exchange(method: str, path: str, body: bytes | None) -> bytes:
+        nonlocal provider_public
+        request_envelope = None if body is None else pilot_envelope(payer, config, "requester", provider_public or "", method, path, _pilot_json(body))
+        message = None if request_envelope is None else _pilot_bytes(request_envelope)
+        envelope = _pilot_json(pilot_http_exchange(config, method, path, message))
+        payload = verify_pilot_envelope(envelope, config, "provider", "" if method == "GET" else payer_public,
+                                        method, path, public_key=provider_public)
+        if provider_public is None:
+            provider_public = envelope["public_key"]
+        if path == HELLO_PATH and payload.get("payload") != {"provider_identity": public_identity(provider_public), "provider_public_key": provider_public}:
+            raise PublicTestnetError("pilot_peer_or_context_invalid")
+        transcript.append({"request": request_envelope, "response": envelope})
+        return _pilot_bytes(payload)
+
+    try:
+        if replay_artifacts is None:
+            result = run_requester(exchange, input_text, public_testnet_binding(), service_id=SUMMARY_SERVICE_ID,
+                                   payer_key=payer, private_pilot=True)
+            artifacts = result["public_artifacts"]
+        else:
+            # Restart keys are fresh; old public signed artifacts are verification
+            # data, never authority to re-execute work or re-debit the payer.
+            validate_service_discovery(exchange("GET", DISCOVERY_PATH, None), public_testnet_binding(),
+                                       service_id=SUMMARY_SERVICE_ID, private_pilot=True)
+            artifacts = replay_artifacts
+            verify_purchase_artifacts(artifacts, input_text=input_text, service_id=SUMMARY_SERVICE_ID)
+            result = {"public_artifacts": artifacts, "restart_replay_only": True}
+        replay = _pilot_json(exchange("POST", SESSION_PATH, _pilot_bytes({"action": "replay", "artifacts": artifacts})))
+        if replay.get("ok") is not False or replay.get("error") != "replay" or replay["evidence"]["payment_applied"] is not False or replay["evidence"]["service_executed"] is not False:
+            raise PublicTestnetError("replay_not_rejected")
+        if (replay["evidence"]["requester_balance_after"], replay["evidence"]["provider_balance_after"]) != (72, 28):
+            raise PublicTestnetError("payment_binding_invalid")
+        finish = _pilot_json(exchange("POST", SESSION_PATH, _pilot_bytes({"action": "finish"})))
+        if finish != {"finished": True}:
+            raise PublicTestnetError("pilot_finish_failed")
+        return {**result, "pilot_profile": PILOT_PROFILE, "session_id": config["session_id"],
+                "context_digest": _pilot_context(config), "source_digest": config["source_digest"],
+                "public_config": config, "signed_http_transcript": transcript,
+                "replay": replay["evidence"], "issued_supply": 0, "mint_height": 0,
+                "transport_scope": "LOOPBACK" if config["provider_host"] == LOOPBACK_HOST else "VERIFIED_PRIVATE_ROUTE",
+                "physical_remote_verified": False, "production_settlement": False}
+    finally:
+        payer = None
+
+
+def run_pilot_provider(config: Mapping[str, Any], state_dir: str | Path) -> dict[str, Any]:
+    config = validate_pilot_config(dict(config))
+    verify_pilot_route(config, "provider")
+    provider = PrivatePilotProvider(config, state_dir)
+    server = None
+    thread = None
+    try:
+        server = _PilotServer(provider)
+        thread = threading.Thread(target=server.serve_forever, kwargs={"poll_interval": 0.05}, daemon=True)
+        thread.start()
+        print(json.dumps({"coordination": "pilot_provider_ready", "pid": os.getpid(),
+                          "context_digest": _pilot_context(config), "source_digest": pilot_source_digest()}), flush=True)
+        if not provider.finished.wait(max(0, provider.deadline - time.monotonic())) or provider.evidence is None:
+            raise PublicTestnetError("pilot_session_expired")
+        snapshot = provider.backend.store.snapshot()
+        public_state = {k: v for k, v in snapshot.items() if k != "restart_generation"}
+        return {"coordination": "pilot_provider_evidence", "pid": os.getpid(), "evidence": provider.evidence,
+                "purchase_evidence": provider.purchase_evidence,
+                "state": public_state, "state_commitment": hashlib.sha256(json.dumps(public_state, sort_keys=True, separators=(",", ":")).encode()).hexdigest(),
+                "context_digest": _pilot_context(config), "source_digest": pilot_source_digest(),
+                "listener_closed": True, "physical_remote_verified": False}
+    finally:
+        if server is not None:
+            if server.active_request is not None:
+                try:
+                    server.active_request.shutdown(socket.SHUT_RDWR)
+                except OSError:
+                    pass
+            server.shutdown()
+            server.server_close()
+        if thread is not None:
+            thread.join(timeout=REQUEST_TIMEOUT_SECONDS + 1)
+        provider.close()
 
 
 def start_one_shot_server(port: int = 0, *, service_id: str = SERVICE_ID) -> tuple[_Server, threading.Thread, PublicProvider]:
@@ -954,16 +1386,54 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m coin.public_testnet_service_demo")
     parser.add_argument(
         "--role",
-        choices=("parent", "provider", "requester", "local-example"),
+        choices=("parent", "provider", "requester", "local-example", "pilot-config", "pilot-runtime-check"),
         default="parent",
     )
     parser.add_argument("--public-endpoint")
     parser.add_argument("--port", type=int, default=0)
     parser.add_argument("--service-id", choices=SERVICE_IDS, default=SERVICE_ID)
     parser.add_argument("--input", default="L28 enables machine payments between autonomous systems.")
+    parser.add_argument("--private-pilot", action="store_true")
+    parser.add_argument("--pilot-config", type=Path)
+    parser.add_argument("--state-dir", type=Path)
+    parser.add_argument("--replay-artifacts", type=Path)
+    parser.add_argument("--pilot-session")
+    parser.add_argument("--provider-host", default=LOOPBACK_HOST)
+    parser.add_argument("--requester-host", default=LOOPBACK_HOST)
+    parser.add_argument("--provider-node-key")
+    parser.add_argument("--requester-node-key")
     args = parser.parse_args(sys.argv[1:] if argv is None else argv)
     try:
+        from coin.durable_restart_safe_service_demo import DurableRuntimeError
         assert_identity_flags_unchanged()
+        if args.role == "pilot-runtime-check":
+            result = {"status": "RUNTIME_CHECK_PASS", "source_digest": pilot_source_digest(), "network_started": False}
+            print(json.dumps(result))
+            return 0
+        if args.role == "pilot-config":
+            keys = {} if args.provider_node_key is None and args.requester_node_key is None else {
+                "provider": args.provider_node_key, "requester": args.requester_node_key}
+            result = pilot_config(session_id=args.pilot_session, provider_host=args.provider_host,
+                                  requester_host=args.requester_host, port=args.port, created_at=int(time.time()), route_keys=keys)
+            print(_pilot_bytes(result).decode())
+            return 0
+        if args.private_pilot:
+            if args.pilot_config is None or args.role not in {"provider", "requester"} or args.public_endpoint is not None:
+                raise PublicTestnetError("pilot_cli_invalid")
+            config = validate_pilot_config(_pilot_json(args.pilot_config.read_bytes()))
+            if args.role == "provider":
+                if args.state_dir is None or args.replay_artifacts is not None:
+                    raise PublicTestnetError("pilot_cli_invalid")
+                result = run_pilot_provider(config, args.state_dir)
+            else:
+                if args.state_dir is not None:
+                    raise PublicTestnetError("pilot_cli_invalid")
+                replay = _pilot_json(args.replay_artifacts.read_bytes()) if args.replay_artifacts else None
+                result = run_pilot_requester(config, args.input, replay_artifacts=replay)
+            print(_pilot_bytes(result).decode(), flush=True)
+            return 0
+        if any((args.pilot_config, args.state_dir, args.replay_artifacts, args.pilot_session, args.provider_node_key, args.requester_node_key)):
+            raise PublicTestnetError("pilot_cli_invalid")
         if args.role == "provider":
             server, thread, provider = start_one_shot_server(args.port, service_id=args.service_id)
             host, port = server.server_address
@@ -992,11 +1462,14 @@ def main(argv: list[str] | None = None) -> int:
             raise PublicTestnetError(ENDPOINT_BLOCKER)
         require_public_https_endpoint(args.public_endpoint)
         result = run_public_requester(args.public_endpoint, args.input, service_id=args.service_id)
-    except (PublicTestnetError, ServiceDemoError, LimitedTestnetError) as exc:
+    except (PublicTestnetError, ServiceDemoError, LimitedTestnetError, DurableRuntimeError) as exc:
         if exc.code == ENDPOINT_BLOCKER:
             sys.stderr.write("BLOCKER=PUBLIC_TESTNET_ENDPOINT_UNAVAILABLE\n")
             return 2
         sys.stderr.write(exc.code + "\n")
+        return 1
+    except (OSError, ValueError, KeyboardInterrupt):
+        sys.stderr.write("pilot_io_or_interruption\n")
         return 1
     # Nested artifacts use order-preserving CanonUaii; never sort signed bodies.
     sys.stdout.write(json.dumps(result, sort_keys=False, separators=(",", ":"), ensure_ascii=False) + "\n")

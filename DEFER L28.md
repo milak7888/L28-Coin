@@ -1,8 +1,48 @@
 # L28 — DEFER.md
 
-Last updated: 2026-10-31
+Last updated: 2026-11-01
 
-PROJECT_STATE: ACTIVE
+PROJECT_STATE: COMPLETE
+
+## CURRENT — REMOTE PAID SERVICE PILOT v0.1 — COMPLETE / STOP
+
+Authority: L28 — AUTHORIZE FROZEN-SLICE COMPLETION, 2026-11-01. The operator
+accepts PROJECT_COMPLETE / PHYSICAL PASS for this disposable slice only.
+Purchase 1 a5363cf0f9254a88a4662a2b57a030e6 and fresh-state REUSE
+db861d34e13645c89299a7cbb7dd6481 verified payment-before-work, useful summaries,
+signed receipts, 100/0 -> 72/28, zero issuance, durable restart/replay and cleanup.
+Exact evidence and physical-attestation/security qualifications are in SYSTEM_STATE.
+Original physical_remote_verified=false flags remain unchanged; no independent
+audit or production-readiness claim. All earlier completed milestones preserved.
+
+Nine-path implementation remains uncommitted; unrelated main closure records
+remain untouched. No deferred item grants authority. Production custody/F171,
+canonical continuity/settlement, atomic paid delivery and public exposure remain
+blocked/deferred. No new slice, implementation, tests, runtime, staging, commit,
+merge, push or deployment. Separate operator authorization required. STOP.
+Earlier ACTIVE/PENDING instructions below are preserved offline-build history,
+not authority to reopen the completed slice or retry retired sessions.
+
+## HISTORICAL — REMOTE PAID SERVICE PILOT v0.1 — OFFLINE SCOPE
+
+Only AUTHORIZE_FROZEN_SLICE_L28_REMOTE_PAID_SERVICE_PILOT_V0_1 and its nine-path
+loopback implementation/verification scope are active. Prior Independent Peer
+Spending is operator-closed COMPLETE at published 7dbf0f01, retaining its evidence
+and all historical completed milestones below. Main's three dirty closure records
+are preserved unchanged. Physical two-device execution requires separate verified
+route/device/endpoints/session and temporary firewall authority. Tailscale prefixes
+or acknowledgement flags alone prove no authenticated route. Public exposure,
+canonical continuity/settlement, custody/F171 and bridge remain blocked/deferred.
+No installation, physical networking, deployment, commit, merge or push.
+
+Offline pilot acceptance PASS: 45 unique focused and 168 disjoint affected passes;
+two real loopback CLI purchases with fresh state, genuine restarts, independently
+verified summaries/receipts, replay and cleanup evidence in SYSTEM_STATE. Current
+runtime digest 49c627d75fee56ee3ff3f830021084dff74e6245c3170ef6091905e815a1350b.
+Full remote physical acceptance remains PENDING; no production claim or authority.
+One consolidated primary-agent review completed, not independent audit. Atomic
+payment/delivery, interrupted-result recovery, persistent wallets and production
+anti-rollback/custody remain outside scope. No commit or next slice authorized.
 
 ## CURRENT AUTHORIZED SLICE — INDEPENDENT PEER SPENDING v0.1
 

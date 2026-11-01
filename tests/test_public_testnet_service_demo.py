@@ -44,6 +44,252 @@ RELEASE_DIR = REPO_ROOT / "release/public-testnet-v0.1.0-rc1"
 INPUT_TEXT = "L28 enables machine payments between autonomous systems."
 
 
+def _pilot_config(port=28429):
+    import time
+    return demo.pilot_config(session_id="12" * 16, provider_host="127.0.0.1", requester_host="127.0.0.1",
+                             port=port, created_at=int(time.time()))
+
+
+def _pilot_package(provider, payer):
+    request = build_service_request(payer, provider_identity=provider.identity, input_text=INPUT_TEXT,
+                                    service_id=demo.SUMMARY_SERVICE_ID)
+    quote = provider.backend.quote_for(request)
+    tx = build_signed_transfer(payer, receiver=provider.identity, amount=28, timestamp=DEMO_TIMESTAMP, nonce=100)
+    auth = build_payment_authorization(payer, request=request, quote=quote, payment_tx=tx)
+    return {"request": request, "quote": quote, "payment_tx": tx, "payment_authorization": auth}
+
+
+def test_private_pilot_discovery_and_envelope_bindings():
+    config = _pilot_config()
+    key, peer = Ed25519PrivateKey.generate(), Ed25519PrivateKey.generate()
+    target = _public_key_hex(peer)
+    payload = demo.build_service_discovery(demo.public_testnet_binding(), service_id=demo.SUMMARY_SERVICE_ID, private_pilot=True)
+    signed = demo.pilot_envelope(key, config, "provider", target, "GET", demo.DISCOVERY_PATH, payload)
+    assert demo.verify_pilot_envelope(signed, config, "provider", target, "GET", demo.DISCOVERY_PATH) == payload
+    assert payload["http_json"]["external_https_required"] is False
+    for field, changed in (("context", "0" * 64), ("role", "requester"), ("peer", "0" * 64),
+                           ("public_key", _public_key_hex(peer)), ("signature", "00" * 64),
+                           ("path", demo.HELLO_PATH), ("method", "POST")):
+        bad = deepcopy(signed)
+        bad[field] = changed
+        with pytest.raises((demo.PublicTestnetError, service_core.DemoError)):
+            demo.verify_pilot_envelope(bad, config, "provider", target, "GET", demo.DISCOVERY_PATH)
+    bad = deepcopy(signed)
+    bad["payload"]["services"][0]["price"] = 27
+    with pytest.raises(service_core.DemoError):
+        demo.verify_pilot_envelope(bad, config, "provider", target, "GET", demo.DISCOVERY_PATH)
+
+
+@pytest.mark.parametrize("field,value", [
+    ("provider_host", "0.0.0.0"), ("requester_host", "8.8.8.8"), ("provider_host", "localhost"),
+    ("provider_host", True), ("port", True), ("port", 0), ("session_id", "bad"),
+    ("created_at", True), ("expires_at", 0), ("source_digest", "0" * 64),
+    ("network_id", "OTHER"), ("payment_network_id", "L28-DISPOSABLE-PERSISTENT001"),
+    ("service_id", demo.SERVICE_ID), ("price", 27), ("price", 28.0), ("unexpected", True),
+])
+def test_private_pilot_config_fails_closed(field, value):
+    config = _pilot_config()
+    config[field] = value
+    with pytest.raises(demo.PublicTestnetError):
+        demo.validate_pilot_config(config)
+
+
+@pytest.mark.parametrize("body", [b"{}", b'{"x":1,"x":2}', b'{"x":NaN}', b'[]', b'\xff', b'{' * 1000, b'x' * 65537])
+def test_private_pilot_malformed_envelopes(body):
+    with pytest.raises((demo.PublicTestnetError, service_core.DemoError)):
+        demo.verify_pilot_envelope(demo._pilot_json(body), _pilot_config(), "provider", "", "GET", demo.DISCOVERY_PATH)
+
+
+def test_private_pilot_route_requires_real_device_status(monkeypatch):
+    config = _pilot_config()
+    # Synthetic shared-address-space peers and keys; all device status is mocked.
+    config.update(provider_host="100.64.0.10", requester_host="100.64.0.11",
+                  route_keys={"provider": "nodekey:" + "1" * 64, "requester": "nodekey:" + "2" * 64})
+    config = demo.validate_pilot_config(config)
+    class Status:
+        stdout = b'{"BackendState":"Running","Self":{"PublicKey":"wrong"},"Peer":{}}'
+    calls = []
+    def status(command, **kwargs):
+        calls.append(command)
+        return Status()
+    monkeypatch.setattr(demo.subprocess, "run", status)
+    with pytest.raises(demo.PublicTestnetError, match="private_route_not_verified"):
+        demo.verify_pilot_route(config, "provider")
+    assert calls == [["tailscale", "status", "--json"]]
+    correct = {"BackendState": "Running", "Self": {"PublicKey": config["route_keys"]["provider"], "TailscaleIPs": [config["provider_host"]]},
+               "Peer": {"x": {"PublicKey": config["route_keys"]["requester"], "TailscaleIPs": [config["requester_host"]], "Online": True}}}
+    Status.stdout = json.dumps(correct).encode()
+    demo.verify_pilot_route(config, "provider")
+    correct["Peer"]["x"]["Online"] = False
+    Status.stdout = json.dumps(correct).encode()
+    with pytest.raises(demo.PublicTestnetError):
+        demo.verify_pilot_route(config, "provider")
+
+
+def test_private_pilot_slow_response_has_absolute_deadline_and_cleans_up(monkeypatch):
+    import threading
+    import time
+    aborted = threading.Event()
+    closed = []
+    timers = []
+    real_timer = threading.Timer
+    class Transport:
+        def getpeername(self): return ("127.0.0.1", 28429)
+        def getsockname(self): return ("127.0.0.1", 50000)
+        def shutdown(self, how): aborted.set()
+    class Response:
+        status = 200
+        def read(self, limit):
+            assert aborted.wait(.5), "absolute watchdog did not interrupt the slow read"
+            return b"{}"
+    class Connection:
+        sock = Transport()
+        def __init__(self, *args, **kwargs): pass
+        def connect(self): pass
+        def request(self, *args, **kwargs): pass
+        def getresponse(self): return Response()
+        def close(self): closed.append(True)
+    def timer(*args, **kwargs):
+        instance = real_timer(*args, **kwargs)
+        timers.append(instance)
+        return instance
+    monkeypatch.setattr(demo.http.client, "HTTPConnection", Connection)
+    monkeypatch.setattr(demo.threading, "Timer", timer)
+    monkeypatch.setattr(demo, "REQUEST_TIMEOUT_SECONDS", .02)
+    start = time.monotonic()
+    with pytest.raises(demo.PublicTestnetError, match="pilot_request_timeout"):
+        demo.pilot_http_exchange(_pilot_config(), "GET", demo.DISCOVERY_PATH, None)
+    assert time.monotonic() - start < .5
+    assert aborted.is_set() and closed == [True]
+    assert len(timers) == 1 and not timers[0].is_alive()
+
+
+@pytest.mark.parametrize("kind", ["signature", "amount", "recipient", "session", "peer", "quote", "network"])
+def test_private_pilot_rejected_payment_no_work_or_mutation(tmp_path, monkeypatch, kind):
+    from coin import durable_restart_safe_service_demo as durable
+    provider = demo.PrivatePilotProvider(_pilot_config(), tmp_path / "state")
+    payer = Ed25519PrivateKey.generate()
+    def no_work(*args, **kwargs):
+        raise AssertionError("rejected payment reached work")
+    monkeypatch.setattr(durable, "_perform_paid_service", no_work)
+    try:
+        package = _pilot_package(provider, payer)
+        provider.dispatch("GET", demo.HELLO_PATH, None)
+        request_frame = json.loads(demo.frame_bytes("service_request", 2, package["request"], provider.binding))
+        envelope = demo.pilot_envelope(payer, provider.config, "requester", provider.public_key, "POST", demo.SESSION_PATH, request_frame)
+        quote_reply = provider.dispatch("POST", demo.SESSION_PATH, demo._pilot_bytes(envelope))
+        package["quote"] = quote_reply["payload"]["payload"]
+        package["payment_authorization"] = build_payment_authorization(payer, request=package["request"], quote=package["quote"], payment_tx=package["payment_tx"])
+        if kind in {"signature", "amount", "recipient", "network"}:
+            package["payment_tx"][{"signature": "signature", "amount": "amount", "recipient": "receiver", "network": "network"}[kind]] = {
+                "signature": "00" * 64, "amount": 27, "recipient": "l28disp_" + "0" * 64, "network": "OTHER"}[kind]
+            package["payment_tx"]["id"] = compute_tx_id(package["payment_tx"])
+        if kind == "quote":
+            package["payment_authorization"]["quote_id"] = "0" * 64
+        frame = json.loads(demo.frame_bytes("payment_package", 4, {k: package[k] for k in ("payment_tx", "payment_authorization")}, provider.binding))
+        envelope = demo.pilot_envelope(payer, provider.config, "requester", provider.public_key, "POST", demo.SESSION_PATH, frame)
+        if kind == "session":
+            envelope["context"] = "0" * 64
+        if kind == "peer":
+            envelope["peer"] = "0" * 64
+        before = provider.backend.store.snapshot()
+        disk_before = {p.name: p.read_bytes() for p in (tmp_path / "state").iterdir() if p.is_file()}
+        with pytest.raises((demo.PublicTestnetError, service_core.DemoError, durable.DurableRuntimeError)):
+            provider.dispatch("POST", demo.SESSION_PATH, demo._pilot_bytes(envelope))
+        assert provider.backend.store.snapshot() == before
+        assert {p.name: p.read_bytes() for p in (tmp_path / "state").iterdir() if p.is_file()} == disk_before
+        assert before["state_version"] == 0 and before["balances"] == {} and before["accepted"] == {}
+    finally:
+        provider.close()
+
+
+@pytest.mark.parametrize("accepted", [False, True])
+def test_private_pilot_replay_probe_never_recomputes_useful_work(tmp_path, monkeypatch, accepted):
+    provider = demo.PrivatePilotProvider(_pilot_config(), tmp_path / "state")
+    payer = Ed25519PrivateKey.generate()
+    try:
+        package = _pilot_package(provider, payer)
+        artifacts = {**package, "service_result": {}, "receipt": {}}
+        if accepted:
+            result = provider.backend.handle_payment(package)
+            artifacts.update(service_result=result["service_result"], receipt=result["receipt"])
+        def no_summary(*args, **kwargs):
+            raise AssertionError("replay probe recomputed useful work")
+        monkeypatch.setattr(service_core, "service_output", no_summary)
+        envelope = demo.pilot_envelope(payer, provider.config, "requester", provider.public_key, "POST", demo.SESSION_PATH,
+                                       {"action": "replay", "artifacts": artifacts})
+        before = provider.backend.store.snapshot()
+        if accepted:
+            reply = provider.dispatch("POST", demo.SESSION_PATH, demo._pilot_bytes(envelope))
+            assert reply["payload"]["error"] == "replay"
+            assert reply["payload"]["evidence"]["service_executed"] is False
+        else:
+            with pytest.raises(demo.PublicTestnetError, match="unknown_payment"):
+                provider.dispatch("POST", demo.SESSION_PATH, demo._pilot_bytes(envelope))
+        assert provider.backend.store.snapshot() == before
+    finally:
+        provider.close()
+
+
+def test_private_pilot_real_http_restart_and_cleanup(tmp_path):
+    import selectors
+    import time
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        port = probe.getsockname()[1]
+    config = _pilot_config(port)
+    config_path = tmp_path / "public-config.json"
+    config_path.write_bytes(demo._pilot_bytes(config))
+    artifacts_path = tmp_path / "public-artifacts.json"
+    commands = [sys.executable, "-B", "-m", "coin.public_testnet_service_demo"]
+    provider_reports = []
+    pids = []
+    for restart in (False, True):
+        provider = subprocess.Popen(commands + ["--role", "provider", "--private-pilot", "--pilot-config", str(config_path), "--state-dir", str(tmp_path / "state")],
+                                    cwd=REPO_ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        pids.append(provider.pid)
+        try:
+            with selectors.DefaultSelector() as selector:
+                selector.register(provider.stdout, selectors.EVENT_READ)
+                assert selector.select(10), "provider did not report readiness"
+                line = provider.stdout.readline()
+                assert line, "startup failed: " + provider.stderr.read()
+                ready = json.loads(line)
+            assert ready["coordination"] == "pilot_provider_ready"
+            options = ["--replay-artifacts", str(artifacts_path)] if restart else []
+            requester = subprocess.run(commands + ["--role", "requester", "--private-pilot", "--pilot-config", str(config_path), "--input", INPUT_TEXT] + options,
+                                       cwd=REPO_ROOT, capture_output=True, text=True, timeout=20)
+            assert requester.returncode == 0, requester.stderr
+            result = json.loads(requester.stdout)
+            assert result["physical_remote_verified"] is False
+            assert result["replay"]["replay_rejected"] is True
+            assert result["replay"]["service_executed"] is False
+            assert result["issued_supply"] == result["mint_height"] == 0
+            if not restart:
+                assert result["service_output"]["input_digest"] == hashlib.sha256(INPUT_TEXT.encode()).hexdigest()
+                assert result["receipt_verified"] and result["service_result_verified"]
+                artifacts_path.write_bytes(demo._pilot_bytes(result["public_artifacts"]))
+            output, error = provider.communicate(timeout=10)
+            assert provider.returncode == 0, error
+            report = json.loads(output)
+            provider_reports.append(report)
+            assert report["state"]["state_version"] == 1
+            assert sorted(report["state"]["balances"].values()) == [28, 72]
+            assert report["listener_closed"] is True
+        finally:
+            if provider.poll() is None:
+                provider.terminate()
+                provider.wait(timeout=5)
+            provider.stdout.close()
+            provider.stderr.close()
+        with socket.socket() as probe:
+            assert probe.connect_ex(("127.0.0.1", port)) != 0
+    assert pids[0] != pids[1]
+    assert provider_reports[0]["state_commitment"] == provider_reports[1]["state_commitment"]
+    assert provider_reports[1]["evidence"]["durable_state_reopened"] is True
+    assert provider_reports[0]["purchase_evidence"]["service_executed"] is True
+
+
 def test_public_identity_binding_and_authorization_flags_stay_false():
     binding = demo.public_testnet_binding()
     assert binding["network_id"] == "L28-DISPOSABLE-PUBLIC001"
@@ -385,9 +631,15 @@ def test_local_release_example_command_exercises_actual_http_product():
 
 
 def test_release_manifest_and_sha256_inventory_are_reproducible():
+    # This immutable inventory describes the paid-summary release commit, not
+    # later feature worktrees. Verify those exact Git objects; never rewrite it.
+    release_commit = "b6f9afdb12dee86639476d4fcd357a75843a2008"
+    def release_bytes(path):
+        return subprocess.check_output(["git", "show", f"{release_commit}:{path}"], cwd=REPO_ROOT)
     manifest_path = RELEASE_DIR / "manifest.json"
     sums_path = RELEASE_DIR / "SHA256SUMS"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert manifest_path.read_bytes() == release_bytes("release/public-testnet-v0.1.0-rc1/manifest.json")
     assert manifest["schema"] == "l28.public-testnet-release-manifest"
     assert manifest["schema_version"] == "0.1"
     assert manifest["release_candidate"] == "l28-public-testnet-v0.1.0-rc1"
@@ -402,8 +654,7 @@ def test_release_manifest_and_sha256_inventory_are_reproducible():
 
     manifest_paths = []
     for artifact in manifest["artifacts"]:
-        path = REPO_ROOT / artifact["path"]
-        content = path.read_bytes()
+        content = release_bytes(artifact["path"])
         manifest_paths.append(artifact["path"])
         assert len(content) == artifact["size_bytes"]
         assert hashlib.sha256(content).hexdigest() == artifact["sha256"]
@@ -417,7 +668,7 @@ def test_release_manifest_and_sha256_inventory_are_reproducible():
         manifest_paths + ["release/public-testnet-v0.1.0-rc1/manifest.json"]
     )
     for path, digest in expected_sums.items():
-        assert hashlib.sha256((REPO_ROOT / path).read_bytes()).hexdigest() == digest
+        assert hashlib.sha256(release_bytes(path)).hexdigest() == digest
 
 
 def test_existing_http_service_still_purchases_and_source_has_no_secrets():

@@ -40,6 +40,102 @@ from coin.two_agent_service_transaction_demo import (
 INPUT_TEXT = "L28 enables machine payments between autonomous systems."
 
 
+def _summary_package(provider, payer):
+    from coin.two_agent_service_transaction_demo import SUMMARY_SERVICE_ID
+    request = build_service_request(payer, provider_identity=provider.identity, input_text=INPUT_TEXT, service_id=SUMMARY_SERVICE_ID)
+    quote = provider.quote_for(request)
+    tx = build_signed_transfer(payer, receiver=provider.identity, amount=28, timestamp=DEMO_TIMESTAMP, nonce=100)
+    return {"request": request, "quote": quote, "payment_tx": tx,
+            "payment_authorization": build_payment_authorization(payer, request=request, quote=quote, payment_tx=tx)}
+
+
+@pytest.mark.parametrize("fault", [None, "before_commit", "after_commit"])
+def test_pilot_summary_durable_commit_precedes_work_and_replay_never_repeats_it(tmp_path, monkeypatch, fault):
+    from coin.two_agent_service_transaction_demo import SUMMARY_SERVICE_ID, text_summary
+    payer = Ed25519PrivateKey.generate()
+    path = tmp_path / "state"
+    provider = demo.DurableProvider(path, service_id=SUMMARY_SERVICE_ID, context_digest="1" * 64)
+    original = demo._perform_paid_service
+    calls = []
+    def work(text, **kwargs):
+        snapshot = provider.store.snapshot()
+        assert snapshot["state_version"] == 1
+        assert len(snapshot["accepted"]) == 1
+        assert sorted(snapshot["balances"].values()) == [28, 72]
+        calls.append(text)
+        return original(text, **kwargs)
+    monkeypatch.setattr(demo, "_perform_paid_service", work)
+    try:
+        package = _summary_package(provider, payer)
+        if fault:
+            with pytest.raises(demo.DurableRuntimeError, match="interrupted_"):
+                provider.handle_payment(package, fault=fault)
+        else:
+            result = provider.handle_payment(package)
+            assert result["service_result"]["output"] == text_summary(INPUT_TEXT)
+        snapshot = provider.store.snapshot()
+        assert len(calls) == (1 if fault is None else 0)
+        if fault == "before_commit":
+            assert snapshot["state_version"] == 0 and snapshot["balances"] == {} and snapshot["accepted"] == {}
+            return
+    finally:
+        provider.close()
+    reopened = demo.DurableProvider(path, service_id=SUMMARY_SERVICE_ID, context_digest="1" * 64)
+    try:
+        before = reopened.store.snapshot()
+        disk = {p.name: p.read_bytes() for p in path.iterdir() if p.is_file()}
+        replay = reopened.handle_payment(package)
+        assert replay["error"] == "replay" and replay["evidence"]["service_executed"] is False
+        assert reopened.store.snapshot() == before
+        assert {p.name: p.read_bytes() for p in path.iterdir() if p.is_file()} == disk
+        assert len(calls) == (1 if fault is None else 0)
+        assert before["accepted"][package["payment_tx"]["id"]]["service_executed"] is (fault is None)
+    finally:
+        reopened.close()
+
+
+def test_pilot_context_mismatch_rejects_before_state_or_generation_mutation(tmp_path):
+    from coin.two_agent_service_transaction_demo import SUMMARY_SERVICE_ID
+    store = demo.DurableProvider(tmp_path, service_id=SUMMARY_SERVICE_ID, context_digest="1" * 64)
+    store.close()
+    before = {p.name: p.read_bytes() for p in tmp_path.iterdir() if p.is_file()}
+    with pytest.raises(demo.DurableRuntimeError, match="context_mismatch"):
+        demo.DurableProvider(tmp_path, service_id=SUMMARY_SERVICE_ID, context_digest="2" * 64)
+    assert {p.name: p.read_bytes() for p in tmp_path.iterdir() if p.is_file()} == before
+
+
+@pytest.mark.parametrize("kind", ["signature", "amount", "recipient", "quote", "service"])
+def test_pilot_durable_invalid_signed_intent_does_not_mutate_or_work(tmp_path, monkeypatch, kind):
+    from coin.two_agent_service_transaction_demo import SUMMARY_SERVICE_ID
+    provider = demo.DurableProvider(tmp_path, service_id=SUMMARY_SERVICE_ID, context_digest="1" * 64)
+    payer = Ed25519PrivateKey.generate()
+    try:
+        package = _summary_package(provider, payer)
+        if kind in {"amount", "recipient"}:
+            tx = build_signed_transfer(payer, receiver=provider.identity if kind == "amount" else "l28disp_" + "0" * 64,
+                                       amount=27 if kind == "amount" else 28, timestamp=DEMO_TIMESTAMP, nonce=100)
+            package["payment_tx"] = tx
+            package["payment_authorization"] = build_payment_authorization(payer, request=package["request"], quote=package["quote"], payment_tx=tx)
+        elif kind == "signature":
+            package["payment_tx"]["signature"] = "00" * 64
+            package["payment_tx"]["id"] = compute_tx_id(package["payment_tx"])
+        elif kind == "quote":
+            package["quote"]["amount"] = 27
+        else:
+            package["request"]["service_id"] = "other"
+        def no_work(*args, **kwargs):
+            raise AssertionError("invalid payment reached work")
+        monkeypatch.setattr(demo, "_perform_paid_service", no_work)
+        before = provider.store.snapshot()
+        disk = {p.name: p.read_bytes() for p in tmp_path.iterdir() if p.is_file()}
+        with pytest.raises((demo.DurableRuntimeError, DemoError)):
+            provider.handle_payment(package)
+        assert provider.store.snapshot() == before
+        assert {p.name: p.read_bytes() for p in tmp_path.iterdir() if p.is_file()} == disk
+    finally:
+        provider.close()
+
+
 def _package(provider: demo.DurableProvider, payer: Ed25519PrivateKey, nonce: int, **changes: object) -> dict:
     request = build_service_request(payer, provider_identity=provider.identity, input_text=INPUT_TEXT)
     quote = provider.quote_for(request)

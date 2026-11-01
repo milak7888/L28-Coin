@@ -1,11 +1,204 @@
 # L28 — SYSTEM_STATE.md
 
-Last updated: 2026-10-31
+Last updated: 2026-11-01
 
 ## PROJECT STATE
-PROJECT_STATE: ACTIVE
+PROJECT_STATE: COMPLETE
 
 Only the operator may change PROJECT_STATE.
+
+## CURRENT — REMOTE PAID SERVICE PILOT v0.1 — COMPLETE
+
+Operator authority: L28 — AUTHORIZE FROZEN-SLICE COMPLETION, 2026-11-01.
+Slice status: PROJECT_COMPLETE / PHYSICAL PASS. This closes only the accepted
+Remote AI-to-AI Paid Service Pilot v0.1; it does not complete or activate a
+production native cryptocurrency. No new frozen slice is opened.
+Branch: codex/remote-paid-service-pilot-v0-1.
+Base/HEAD: 7dbf0f01ad6c119db62372cc43e97e350a7f629d.
+The exact nine-path implementation candidate remains UNCOMMITTED and unstaged.
+Main's three pre-existing Independent Peer Spending closure records are untouched.
+
+### Accepted physical evidence — Purchase 1 and fresh-state REUSE
+
+Runtime digest, unchanged on both hosts:
+49c627d75fee56ee3ff3f830021084dff74e6245c3170ef6091905e815a1350b.
+The requester host purchased l28.service.text_summary/v0.1 from the provider
+host over the verified private Tailscale route. Operational device and endpoint
+details remain in the original local acceptance record, not this public summary.
+Public configuration was handed off through Taildrop, not delayed through chat.
+Each independent fresh fixture moved 100/0 -> 72/28 with issued supply/mint
+height 0. Durable canonical payment acceptance preceded useful summary work.
+Requester native execution independently verified the signed result/receipt.
+Each state retained exactly one accepted payment, one work record and one receipt;
+state version 1, restart generation 2. Restart replay caused no debit or work.
+
+Purchase 1 session: a5363cf0f9254a88a4662a2b57a030e6.
+Payment: 719617780cc1433061238c4b933bcd40707ccb9847588af957bdc05a0d543ac7.
+Receipt: 7b5b7e333b65f8b56ed0608f9f370d6f9664ce416290b8bbe5a3797b2a728841.
+Input SHA-256: ae8490f69a406c7399e64ca7b7e1ff6e0fd36c593d4070dc9e156781c92fbca0.
+Config SHA-256: dd2579bc8c2493554c0a5275eecd2e2d21da4c6ce129d70373089b9c61101963.
+Initial/restart state commitment:
+588b36a9a807dd8885c146fa60ec8893b32af03284081145d4bafc2cd335e715.
+Provider evidence (local path omitted):
+Initial.jsonl SHA-256: 989918e903f76926207cde75707ef5b7a5b7f7a694a8d1ccca7a9f8277eb8ba6.
+Restart.jsonl SHA-256: 7e5a5e6925df63738158f74b8eedf619ba58684cc66c891331209f31015a4f31.
+Initial/Restart bundle SHA-256, respectively:
+5794be1a4a9405b51d41d0a220a7d0dc79dafdb11e2792e6530cedc454bd8921;
+3fbfa1e89a53d9cbecd3f3cc0688d1bc1c71efc9f7970670a3a0cb1e9b6065b7.
+Initial and restarted provider and requester processes exited 0.
+
+REUSE session: db861d34e13645c89299a7cbb7dd6481.
+Separate disposable state, identities and different input; Purchase 1 unchanged.
+Payment: c4b507aa9da60be0e7d73a00f4609e459ffc94dd4f896b0b7531fe1e4dc38ece.
+Receipt: 89e7d8e4857bf0dd9ecdb0601a27ec95c39e246d2cc59d30ba0b2290896e77a3.
+Input SHA-256: 718c4069b1d32f03dd1eb060c632bcf4ef4eeeb891a47ed209a24949bb0c87a4.
+Config SHA-256: c933fe34048b88afb5fe03b91fd24182ad11bfc137c239870338eb21bddf02ae.
+Initial/restart state commitment:
+86eb7c2866dcb8dfd411a1a0be1432557697d5c637e8bb78ff310f396e5e7625.
+Provider evidence (local path omitted):
+Initial.jsonl SHA-256: f1b5755c3aa0810fed03c53201cd8fc264a585b4b22fe385c3cfd6b484823dc8.
+Restart.jsonl SHA-256: bd0cc61a674c8751449812c7f80571f1c07c15bdd687e3733e5ab27dd717e93a.
+Initial/Restart bundle SHA-256, respectively:
+c10e86cc391d3b6c23f0057298cb74d77e64182033b3750adf4532c19cda7ebb;
+a721e92a623ee90039fb7c365c8669c05b28d2144c64b7883dbe0326f8f266d9.
+Both provider processes exited 0. Operator-reported initial/restart
+requesters PASS; all four owned Python checks/executions exited 0, no errors.
+Both phases used identical configuration bytes/hash, without session extension.
+
+Both purchases report INITIAL_REQUESTER_PASS, RESTART_REQUESTER_PASS and
+TAILDROP_PURCHASE_AND_RESTART_COMPLETE. SQLite read-only integrity/accounting,
+original report/config/bundle bindings and fresh provider PIDs reconcile with the
+requester outputs. Requester artifacts were not independently retrieved by
+the agent. Provider reports/state were inspected directly; requester execution/physical
+separation/cleanup operator-attested. Tailscale identities/route independently
+checked. physical_remote_verified=false remains unchanged in original reports:
+software does not independently attest remote physical topology. It is not a
+failed payment check. Do not rewrite the flag or claim independent security audit.
+
+Cleanup PASS: all owned application processes stopped, the provider listener
+was absent, and requester cleanup was reported. No firewall/PF/Tailscale policy was
+changed. Isolated public evidence and disposable state retained, never imported
+into canonical history. No further runtime or credential reuse is authorized.
+
+Final frozen review PASS; operator accepts completion. Reuse the existing 45
+focused and 168 disjoint affected passing cases, pre/post-commit interruption and
+adversarial coverage, actual loopback evidence and consolidated review below.
+Interruption cases were not reinjected in physical sessions. No unresolved
+Critical/High affecting this bounded capability; NOT_INDEPENDENTLY_AUDITED=true.
+
+### Accepted boundary / remaining blockers / STOP
+
+For these disposable sessions only, operator authorization replaced the earlier
+packet-level ingress requirement with exact IPv4 binding, authenticated Tailscale
+device/route checks and signed application-level source/peer/payment validation.
+The existing allow-all tailnet policy remains unchanged; other tailnet peers can
+connect before application rejection. Endpoint/tailnet-admin compromise remains
+outside the trust boundary. The host IPv6 policy was unrestricted; the provider binds IPv4
+only. HTTP confidentiality depends on Tailscale, including encrypted DERP relay.
+Durable accepted payment may remain charged without delivered work/result after
+interruption. No atomic delivery, refund, resume or production anti-rollback claim.
+
+Protocol v1.0.0, protected economics/history and canonical validator unchanged.
+Production custody/F171, authenticated canonical continuation and production
+settlement remain BLOCKED. Disposable commerce fixtures are not native canonical
+issuance, finality or spendable historical balances. No production activation.
+Only FROZEN_SLICE, SYSTEM_STATE and DEFER completion records changed in this batch;
+all implementation/test/doc bytes and unrelated main changes preserved. No tests,
+service/session, staging, commit, merge, push or deployment. A proposed future
+commit would contain only the existing nine-path candidate after separate exact-
+path review/authorization. STOP; no new slice or work until operator authorization.
+
+The earlier ACTIVE/PENDING/offline-only records below remain historical evidence,
+superseded only for this slice by the accepted sessions and completion above.
+
+## HISTORICAL — REMOTE PAID SERVICE PILOT v0.1 — OFFLINE IMPLEMENTATION
+
+Authority: AUTHORIZE_FROZEN_SLICE_L28_REMOTE_PAID_SERVICE_PILOT_V0_1.
+Isolated branch codex/remote-paid-service-pilot-v0-1 at base
+7dbf0f01ad6c119db62372cc43e97e350a7f629d. Nine-path scope in FROZEN_SLICE.
+Offline implementation/actual-product acceptance PASS; physical acceptance PENDING.
+Independent Peer Spending v0.1 is operator-closed COMPLETE at that published base
+under L28 — CLOSE COMPLETED SLICE + PREPARE NATIVE CONSENSUS PHASE. Its session
+06f62ed48123b24f11d5d1dd3eb76df2, commitment
+c534aa087ad96d375948c8e0341ea609199493120e9b94ae1ee18cd666fc2450 and all prior
+PASS evidence/qualifications remain below as history. Main's three uncommitted
+closure files are preserved byte-for-byte. PROJECT_STATE stays ACTIVE; production
+custody/F171 and canonical continuity remain BLOCKED. No commit/merge/push.
+
+### Remote paid service — verified offline evidence
+
+Opt-in `--private-pilot` reuses existing HTTP paths, signed commerce artifacts,
+canonical validator and DurableProvider; default structured analysis/public HTTPS
+remain unchanged. New signed catalog/envelopes bind exact endpoints, roles, source,
+session/service/network and peer payment identities. Private-route acknowledgement
+is not trusted: future nonloopback use requires installed Tailscale status checks
+for exact local/peer node keys/IPs, plus independent device/route operator checks.
+Only IPv4 loopback was exercised in this offline phase.
+The commerce fixture remains preloaded 100/0 -> 72/28, not coinbase issuance.
+
+Durable context marker prevents cross-session state reseeding. SQLite/canonical
+acceptance precedes summary work. Accepted IDs are replay-only after interruption
+and fresh-key restart; provider replay checks only accepted payment proofs, never
+summary recomputation. Requester independently verifies summary/result/receipt and
+retains complete signed public HTTP transcript/configuration. Crash after payment
+can leave delivery incomplete; no atomic delivery/refund/resume claim is made.
+
+Focused: 45 unique cases PASS. Initial run: 41 PASS, one actual restart bind failure;
+bounded startup diagnostic and inherited address-reuse correction, then only failed
+case PASS. Review added three cases, all PASS: absolute slow-response deadline and
+known/unknown replay with no summary work. 168 disjoint regressions PASS once across
+legacy HTTP/durable service, commerce core/external access, disposable transfer,
+limited service, identity and protocol conformance. No installations; existing
+Python 3.11.9 / cryptography 49.0.0 / pytest 8.4.1 reused. Existing release manifest
+bytes remain immutable; its test verifies exact b6f9afd release Git objects rather
+than later worktree files, and does not claim that historical inventory covers this
+pilot. Protocol, validator, economics, history, custody and F171 are unchanged.
+
+Final runtime digest:
+49c627d75fee56ee3ff3f830021084dff74e6245c3170ef6091905e815a1350b.
+Final actual-product status: ACTUAL_REMOTE_PAID_SERVICE_OFFLINE_PASS.
+Evidence digest (local path omitted):
+SHA-256: 3522f341691dadac467b0b2bb81c2c0bee649e530a96bd76e1f569f51ba9137c.
+
+Purchase 1 session: 54fb217b0cd84c5e8846a6df70f1e7e5.
+Payment: bf5d149fce18f0ab9cd18071f3f01e41b162012788e0b36e95be640ccd3af350.
+Initial/restart commitment:
+3f3419b8cb44192d58bc307d3ecd5c80e8aaaaca698ddcabbbaed6c1d67be5f2.
+Purchase 2 / REUSE session: a92dddcd037e43f0ab5d42c22db7dd13.
+Payment: 657d71b81ac0d09fee47faf2240b18014faf9b26b61ab9f70fea60c08fe78b4f.
+Initial/restart commitment:
+8b4c02d8e86bb04537def8041516ce340cdf20e62435c8af30b089cd652ed4c7.
+Both independent fresh purchases return useful source-ordered extractive summaries;
+signatures/session envelopes/input digests/results/receipts independently checked.
+Each has one accepted transaction, 72/28 balances, issued supply/mint height 0.
+All eight initial and restart processes exited 0; genuine fresh-process recovery
+matches commitments and accepted-payment replay rejects without debit/work.
+Both loopback listeners closed; disposable runtime state removed after cleanup. Public
+configs, original artifacts, signed transcripts and per-process records retained.
+
+Earlier loopback evidence additionally recorded 12 HTTP wrong-session/peer/forged
+signature rejections and 12 artifact-tampering rejections. That evidence predates
+the final replay-proof-only correction, and is not mislabeled as final-digest data:
+Local evidence path omitted.
+SHA-256: f460e048373e28b0ef0621e2c3f1ccd0ce265f89229bf0dc39355f1a4844a0b3.
+Final replay-correction cases and actual CLI were verified separately above.
+Focused invalid signature/amount/recipient/quote/peer/session/network and durable
+pre/post-commit interruption cases reject without work or memory/disk mutation.
+
+One primary-agent consolidated security review, scan
+54b430cc-5a1f-47ab-99ac-c8e927ec0485, completed with no surviving reportable finding
+or unresolved Critical/High affecting the corrected bounded capability.
+Local review report path omitted.
+Version qualification: its initial working-tree snapshot predates the two reviewed
+deadline/replay corrections, not claimed safe; final current-source review and CLI
+are pinned by the runtime digest above. NOT_INDEPENDENTLY_AUDITED=true.
+
+Main HEAD and its three pre-existing dirty closure files remain untouched; their
+hashes rechecked against the initial values. No staging/commit/merge/push or state
+transition. Offline scope PASS, full physical acceptance PENDING. Next authority:
+source synchronization and native requester parity preparation, then separately
+approved exact Tailscale device/IP/port/session and any narrowly scoped provider
+ingress rule. No inbound listener/rule is needed for the outbound requester. STOP.
 
 ## CURRENT — INDEPENDENT PEER SPENDING v0.1 — 2026-10-31
 

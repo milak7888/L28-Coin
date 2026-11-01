@@ -698,3 +698,18 @@ Report vulnerabilities according to [SECURITY.md](SECURITY.md).
 
 Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) and
 [NOTICE](NOTICE).
+
+# Remote paid text-summary pilot v0.1 (opt-in, NON-PRODUCTION)
+
+The HTTP/JSON summary can use the existing durable provider: signed discovery,
+session/peer/source-bound messages, a 28 disposable L28 payment committed before
+work, independently verified summary/result/receipt, and restart-safe replay
+rejection. The original structured-analysis/public-HTTPS paths remain unchanged.
+This uses the 100/0 -> 72/28 commerce fixture, not persistent-node coinbase state.
+
+See [the executable procedure](docs/remote_paid_service_pilot_v0.1.md). Runtime
+check (no listener): `python -B -m coin.public_testnet_service_demo --role pilot-runtime-check`.
+This example is loopback only. Any new two-device run
+requires separate approval and live verification of both Tailscale device keys,
+addresses, source/dependencies, private route and bounded session. No public HTTP,
+canonical settlement, production custody/F171 or independent audit is implied.

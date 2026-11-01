@@ -54,6 +54,8 @@ from coin.disposable_testnet_identity import (
 )
 from coin.two_agent_service_transaction_demo import (
     PRICE_L28,
+    SERVICE_ID,
+    SERVICE_IDS,
     DemoError as ServiceDemoError,
     _perform_paid_service,
     _public_key_hex,
@@ -201,7 +203,10 @@ def _connect(path: Path) -> sqlite3.Connection:
 
 
 class DurableStore:
-    def __init__(self, state_dir: str | Path) -> None:
+    def __init__(self, state_dir: str | Path, *, context_digest: str | None = None) -> None:
+        if context_digest is not None and (len(context_digest) != 64 or any(c not in "0123456789abcdef" for c in context_digest)):
+            raise DurableRuntimeError("context_invalid")
+        self.context_digest = context_digest
         self.state_dir = Path(state_dir)
         self.db_path = self.state_dir / DB_NAME
         self.marker_path = self.state_dir / MARKER_NAME
@@ -221,6 +226,10 @@ class DurableStore:
         marker = self.marker_path.exists()
         database = self.db_path.exists()
         lineage = self.lineage_path.exists()
+        expected_marker = RUNTIME_PROFILE + "\n" + (self.context_digest + "\n" if self.context_digest else "")
+        if not fresh and self.context_digest is not None:
+            if not marker or self.marker_path.read_text(encoding="utf-8") != expected_marker:
+                raise DurableRuntimeError("context_mismatch")
         if fresh:
             pass
         elif marker and not database:
@@ -238,7 +247,7 @@ class DurableStore:
                 self._create()
                 os.chmod(self.db_path, PRIVATE_FILE_MODE)
                 _require_private(self.db_path, directory=False)
-                self.marker_path.write_text(RUNTIME_PROFILE + "\n", encoding="utf-8")
+                self.marker_path.write_text(expected_marker, encoding="utf-8")
                 os.chmod(self.marker_path, PRIVATE_FILE_MODE)
                 self._write_lineage(0, GENESIS_AUDIT_HASH)
                 self.restart_generation = 1
@@ -648,9 +657,13 @@ def _evidence(
 
 
 class DurableProvider:
-    def __init__(self, state_dir: str | Path, external_signer: Any | None = None) -> None:
+    def __init__(self, state_dir: str | Path, external_signer: Any | None = None, *,
+                 service_id: str = SERVICE_ID, context_digest: str | None = None) -> None:
+        if service_id not in SERVICE_IDS or (external_signer is not None and service_id != SERVICE_ID):
+            raise DurableRuntimeError("service_invalid")
+        self.service_id = service_id
         production_entry_binding()
-        self.store = DurableStore(state_dir)
+        self.store = DurableStore(state_dir, context_digest=context_digest)
         self.store.open()
         self._external = external_signer
         if external_signer is None:
@@ -674,7 +687,7 @@ class DurableProvider:
         return {"provider_identity": self.identity, "provider_public_key": self.public_key}
 
     def quote_for(self, request: Mapping[str, Any]) -> dict[str, Any]:
-        verified = verify_service_request(request)
+        verified = verify_service_request(request, service_id=self.service_id)
         if verified["provider_identity"] != self.identity:
             raise DurableRuntimeError("wrong_provider_identity")
         if self._external is None:
@@ -743,6 +756,12 @@ class DurableProvider:
                 }
             if not canonical_ok or canonical_reason != "ok":
                 raise DurableRuntimeError(canonical_reason or "canonical_validation_failed")
+            # Opt-in services must retain the current provider/service authority.
+            # Known payments above remain replay-only after keyless restart.
+            if self.service_id != SERVICE_ID:
+                verified = verify_service_request(package["request"], service_id=self.service_id)
+                if verified["provider_identity"] != self.identity:
+                    raise DurableRuntimeError("wrong_provider_identity")
             if payment_tx.get("amount") != PRICE_L28:
                 raise DurableRuntimeError("wrong_amount")
             if type(payment_tx.get("timestamp")) is not int or payment_tx["timestamp"] < snapshot["timestamp_high_water"]:
@@ -775,7 +794,10 @@ class DurableProvider:
             )
             if fault == "after_commit":
                 raise DurableRuntimeError("interrupted_after_commit")
-            output = _perform_paid_service(package["request"]["input"]["text"], payment_verified=True)
+            if self.service_id == SERVICE_ID:
+                output = _perform_paid_service(package["request"]["input"]["text"], payment_verified=True)
+            else:
+                output = _perform_paid_service(package["request"]["input"]["text"], payment_verified=True, service_id=self.service_id)
             if self._external is None:
                 service_result = build_service_result(
                     self._key,

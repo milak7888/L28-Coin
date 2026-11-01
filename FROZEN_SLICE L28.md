@@ -1,5 +1,121 @@
 # L28 — FROZEN_SLICE.md
 
+## CURRENT — REMOTE PAID SERVICE PILOT v0.1 — COMPLETE — 2026-11-01
+
+PROJECT_STATE: COMPLETE
+Slice status: PROJECT_COMPLETE / PHYSICAL PASS.
+Authority: L28 — AUTHORIZE FROZEN-SLICE COMPLETION. The operator explicitly
+accepts completion of this disposable frozen slice only, following the final
+two-computer evidence reconciliation. No production-readiness claim is made.
+
+Accepted runtime digest:
+49c627d75fee56ee3ff3f830021084dff74e6245c3170ef6091905e815a1350b.
+Purchase 1: a5363cf0f9254a88a4662a2b57a030e6.
+Fresh-state REUSE: db861d34e13645c89299a7cbb7dd6481.
+Both purchases independently verified useful summaries and signed receipts,
+100/0 -> 72/28 balances, zero issuance, genuine same-context durable restarts,
+replay rejection without duplicate debit/work, and process/listener cleanup.
+Exact identifiers, commitments, evidence paths and qualifications are recorded
+in SYSTEM_STATE. Reuse the accepted 45 focused / 168 affected passing cases,
+interruption/adversarial coverage and consolidated primary-agent security review;
+no unresolved Critical/High affecting this bounded capability was identified.
+NOT_INDEPENDENTLY_AUDITED=true.
+
+Provider evidence was inspected directly; requester native execution/output, physical
+separation and cleanup are operator-attested, with independently checked Tailscale
+device identities/route. Original physical_remote_verified=false flags remain
+unchanged: software does not attest physical topology. The operator-approved
+application-level ingress boundary superseded packet-level source restriction
+for these disposable sessions only. HTTP confidentiality depended on Tailscale;
+other tailnet peers could connect before application rejection. Endpoint/tailnet
+admin compromise and incomplete delivery after accepted payment remain residual
+risks. No refund, atomic-delivery or production settlement guarantee is claimed.
+
+Only completion records change under this authorization. Preserve the nine-path
+uncommitted implementation, main's three unrelated closure records and all prior
+COMPLETE evidence. Protocol v1.0.0, economics/history and canonical validator are
+unchanged. Production custody/F171, canonical continuation and settlement remain
+BLOCKED. No new slice, test/runtime, staging, commit, merge, push or deployment.
+STOP. Reopening or committing requires separate operator authorization.
+
+The original offline scope/results below are preserved as historical evidence.
+Their ACTIVE/PENDING and future-session instructions are superseded only by the
+accepted physical sessions and operator-authorized completion above.
+
+## HISTORICAL — REMOTE PAID SERVICE PILOT v0.1 — OFFLINE SCOPE — 2026-11-01
+
+PROJECT_STATE: ACTIVE
+Authority: AUTHORIZE_FROZEN_SLICE_L28_REMOTE_PAID_SERVICE_PILOT_V0_1.
+Base: 7dbf0f01ad6c119db62372cc43e97e350a7f629d.
+Branch: codex/remote-paid-service-pilot-v0-1 (isolated worktree).
+
+Objective/deliverable: opt-in private HTTP/JSON paid text summary at 28 disposable
+L28 using existing commerce signatures, canonical validation and DurableProvider.
+Sign discovery/session/endpoint/source/peer bindings; durably accept payment before
+work. Reject duplicate debit/work after interruption/restart. Independently verify
+summary, result and receipt. Preserve default services/public HTTPS behavior.
+Fixture 100/0 -> 72/28; no issuance or historical import. Two fresh purchases use
+separate disposable state. Do not compose persistent-node coinbase/network state
+with the commerce fixture or treat route acknowledgements as authentication.
+
+Exact nine paths: FROZEN_SLICE L28.md; SYSTEM_STATE L28.md; DEFER L28.md; README.md;
+coin/public_testnet_service_demo.py; coin/durable_restart_safe_service_demo.py;
+tests/test_public_testnet_service_demo.py;
+tests/test_durable_restart_safe_service_demo.py;
+docs/remote_paid_service_pilot_v0.1.md.
+
+Acceptance: focused tests once; directly affected regressions once; actual two-
+process loopback HTTP purchases including fresh-session REUSE; durable restart,
+accepted-payment replay rejection; forged/wrong-peer/amount/recipient/session and
+artifact tampering reject without unauthorized mutation/work; summary/receipt and
+100/0 -> 72/28 accounting verified; listener/process cleanup; public evidence;
+one consolidated security review, no unresolved Critical/High affecting scope.
+Offline PASS is not physical remote acceptance: physical execution remains PENDING.
+
+Safety: IPv4 loopback runtime only, at most two application processes, bounded
+requests and 120-second invocations; disposable memory-only signing. No production
+keys, custody/F171 bypass, canonical settlement, mining, protocol/economics/history
+change, physical networking, Tailscale/firewall changes, installation, deployment,
+commit, merge or push. Future nonloopback HTTP requires independently verified
+encrypted private route/devices and separate exact-endpoint/session authorization.
+Stop after offline actual-product evidence and PASS/FAIL review; report exact
+physical prerequisites. No further slice or new framework.
+
+### OFFLINE ACCEPTANCE — PASS / PHYSICAL ACCEPTANCE PENDING
+
+45 unique focused cases PASS: initial 41 passed / one real restart case failed;
+the inherited non-reusable listening socket was corrected and only that case
+rerun PASS. Review added three cases (absolute slow-response timeout, known and
+unknown replay without summary recomputation), all PASS. 168 disjoint directly
+affected regressions PASS once. No passing full suite repeated. Real CLI evidence
+was refreshed when runtime bytes changed; final runtime digest:
+49c627d75fee56ee3ff3f830021084dff74e6245c3170ef6091905e815a1350b.
+Two fresh purchases, each 100/0 -> 72/28, independently verified summary/receipt,
+accepted replay rejection and genuinely fresh provider/requester restart PASS.
+Issued supply/mint height remain 0; no canonical issuance/history import.
+Public evidence and exact commitments are recorded in SYSTEM_STATE and pilot doc.
+All eight final application PIDs exited, both listeners closed and generated
+disposable state removed. Only public artifacts/evidence retained.
+One consolidated primary-agent security review completed; the initial review
+snapshot predates two reviewed in-scope corrections, explicitly qualified in its
+report. Final corrected runtime has no unresolved Critical/High affecting scope;
+NOT_INDEPENDENTLY_AUDITED=true. At-most-once work is not atomic paid delivery:
+an interrupted accepted payment may remain charged without a delivered result.
+PROJECT_STATE ACTIVE; nine-path candidate UNCOMMITTED. Full remote physical
+acceptance remains PENDING. STOP; no physical session, commit, merge or push.
+
+## PRESERVED OPERATOR SLICE CLOSURE — 2026-11-01
+
+Independent Peer Spending v0.1 is operator-closed COMPLETE at published commit
+7dbf0f01ad6c119db62372cc43e97e350a7f629d under L28 — CLOSE COMPLETED SLICE +
+PREPARE NATIVE CONSENSUS PHASE. Frozen PASS, session
+06f62ed48123b24f11d5d1dd3eb76df2, commitment
+c534aa087ad96d375948c8e0341ea609199493120e9b94ae1ee18cd666fc2450,
+and all evidence/security qualifications below remain historical. Prior pending
+and build instructions are superseded only by closure/replacement above. Main's
+three existing completion records remain byte-for-byte untouched. No closure
+commit or PROJECT_STATE transition is authorized.
+
 ## CURRENT — INDEPENDENT PEER SPENDING v0.1 — 2026-10-31
 
 PROJECT_STATE: ACTIVE
