@@ -1,5 +1,43 @@
 # Remote Paid Service Pilot v0.1
 
+## Limited Private Testnet v0.1 — two purchases, one balance
+
+For the separately frozen two-purchase mode, use the existing loopback
+procedure below with these changes:
+
+1. Add `--two-purchases` to `--role pilot-config`. Use a fresh session,
+   free loopback port and new temporary state directory. Keep the exact
+   configuration bytes for both phases, within the original 120-second window.
+2. Start the provider as documented. Give the requester both `--input`
+   and `--second-input` with different valid text. One requester process and
+   one provider process sign both purchases with the same respective keys.
+   Expect 100/0 -> 72/28 -> 44/56 and two signed result/receipt bundles.
+3. Save the requester's `public_artifacts` object as shown below. It contains
+   two ordered purchases and their original signed delivery envelopes.
+   After both processes exit, restart the provider on the **same** state and
+   configuration. Restart the requester with both original inputs plus
+   `--replay-artifacts`. Require two rejected replays, no new work/debit,
+   unchanged state commitment and a different provider PID.
+4. Verify both listeners are closed and remove only this run's temporary
+   state. Keep only sanitized evidence if needed.
+
+The focused executable acceptance driver invokes the actual CLI roles, checks
+the signed receipts, and cleans up owned processes and temporary state:
+
+```sh
+python -B -m pytest -p no:cacheprovider -q -s \
+  tests/test_public_testnet_service_demo.py::test_private_reuse_actual_cli
+```
+
+The signed purchase index and transaction nonce distinguish the two
+purchases. Reopening the store only permits verification; it does not recover
+keys or resume spending. A post-commit interruption may leave an accepted
+payment without a result. No refund, atomic delivery or canonical settlement
+is provided. This mode is authorized on IPv4 loopback only; two-device
+acceptance requires fresh operator permission and verified private routing.
+
+## Historical single-purchase pilot
+
 NON-PRODUCTION / disposable commerce only. PROJECT_STATE ACTIVE.
 The historical offline implementation is documented below; see SYSTEM_STATE for
 the separately accepted physical outcome and its qualifications.

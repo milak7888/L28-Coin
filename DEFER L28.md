@@ -1,10 +1,25 @@
 # L28 — DEFER.md
 
-Last updated: 2026-11-01
+Last updated: 2026-11-03
 
 PROJECT_STATE: COMPLETE
 
-## CURRENT — REMOTE PAID SERVICE PILOT v0.1 — COMPLETE / STOP
+## CURRENT — LIMITED PRIVATE TESTNET v0.1 — COMPLETE / STOP
+
+Authority: AUTHORIZE_L28_LIMITED_PRIVATE_TESTNET_PROJECT_COMPLETE.
+PROJECT_COMPLETE / PHYSICAL PASS for the disposable slice only. The
+accepted two-device session d12bbb52f32644418fc988177724bbbb and its
+restart, accounting and cleanup evidence are recorded in SYSTEM_STATE.
+physical_remote_verified=false remains unchanged; no independent audit
+or production-readiness claim.
+
+Post-restart spending, persistent wallets, public exposure, atomic delivery,
+canonical continuation/settlement and production custody/F171 remain
+deferred or blocked. Nothing deferred grants authority. Preserve all six
+candidate paths and main's unrelated edits. No new slice, tests, runtime,
+staging, commit, merge, push or deployment. STOP.
+
+## HISTORICAL — REMOTE PAID SERVICE PILOT v0.1 — COMPLETE / STOP
 
 Authority: L28 — AUTHORIZE FROZEN-SLICE COMPLETION, 2026-11-01. The operator
 accepts PROJECT_COMPLETE / PHYSICAL PASS for this disposable slice only.

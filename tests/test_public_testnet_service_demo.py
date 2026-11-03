@@ -50,6 +50,217 @@ def _pilot_config(port=28429):
                              port=port, created_at=int(time.time()))
 
 
+SECOND_INPUT = "A second signed purchase spends the remaining disposable balance."
+
+
+def _reuse_config():
+    return demo.validate_pilot_config({**_pilot_config(), "profile": demo.PILOT_REUSE_PROFILE})
+
+
+def test_private_reuse_rejects_stale_context_peer_and_artifact_tampering(tmp_path, monkeypatch):
+    config = _reuse_config()
+    provider = demo.PrivatePilotProvider(config, tmp_path / "state")
+    posts = []
+    rejected = []
+
+    def reject(payload, expected):
+        before = provider.backend.store.snapshot()
+        with pytest.raises((demo.PublicTestnetError, service_core.DemoError), match=expected):
+            provider.dispatch("POST", demo.SESSION_PATH, payload)
+        assert provider.backend.store.snapshot() == before
+        rejected.append(expected)
+
+    def exchange(_config, method, path, body):
+        if method == "POST":
+            envelope = json.loads(body)
+            if len(posts) == 2:
+                # An intact, correctly signed purchase-1 request is stale.
+                reject(posts[0], "pilot_purchase_index_invalid")
+                rogue = Ed25519PrivateKey.generate()
+                other = {**config, "session_id": "ab" * 16}
+                for context in (other, config):
+                    wrong = demo.pilot_envelope(rogue, context, "requester", provider.public_key,
+                                                method, path, envelope["payload"])
+                    reject(demo._pilot_bytes(wrong), "pilot_peer_or_context_invalid")
+            if envelope["payload"]["message"] == {"action": "finish"}:
+                # The two accepted payments cap the live context.
+                reject(posts[2], "pilot_purchase_index_invalid")
+            posts.append(body)
+        return demo._pilot_bytes(provider.dispatch(method, path, body))
+
+    monkeypatch.setattr(demo, "pilot_http_exchange", exchange)
+    try:
+        result = demo.run_pilot_requester(config, INPUT_TEXT, second_input=SECOND_INPUT)
+        first, second = result["public_artifacts"]["purchases"]
+        assert len(rejected) == 4
+        with pytest.raises(demo.PublicTestnetError, match="input_binding_invalid"):
+            demo._verify_reuse_purchase(config, second, 1, INPUT_TEXT)
+        with pytest.raises(demo.PublicTestnetError, match="pilot_peer_or_context_invalid"):
+            demo._verify_reuse_purchase({**config, "session_id": "ab" * 16}, first, 1, INPUT_TEXT)
+        with pytest.raises(demo.PublicTestnetError, match="purchase_artifacts_invalid"):
+            demo._verify_reuse_purchase(config, first, 2, INPUT_TEXT)
+        swapped = deepcopy(first)
+        swapped["artifacts"]["receipt"] = second["artifacts"]["receipt"]
+        with pytest.raises(service_core.DemoError):
+            demo._verify_reuse_purchase(config, swapped, 1, INPUT_TEXT)
+        tampered = deepcopy(first)
+        tampered["delivery"]["payload"]["purchase_index"] = 2
+        with pytest.raises(service_core.DemoError):
+            demo._verify_reuse_purchase(config, tampered, 1, INPUT_TEXT)
+        assert provider.backend.store.snapshot()["state_version"] == 2
+    finally:
+        provider.close()
+
+
+@pytest.mark.parametrize("fault,accepted", [("before_commit", 1), ("after_commit", 2)])
+def test_private_reuse_second_interruption_cannot_resume_spending(tmp_path, monkeypatch, fault, accepted):
+    from coin.durable_restart_safe_service_demo import DurableRuntimeError
+
+    config = _reuse_config()
+    state_dir = tmp_path / "state"
+    provider = demo.PrivatePilotProvider(config, state_dir)
+    handle_payment = provider.backend.handle_payment
+
+    def interrupted(package):
+        return handle_payment(package, fault=fault if package["payment_tx"]["nonce"] == 101 else None)
+
+    monkeypatch.setattr(provider.backend, "handle_payment", interrupted)
+
+    def exchange(_config, method, path, body):
+        return demo._pilot_bytes(provider.dispatch(method, path, body))
+
+    monkeypatch.setattr(demo, "pilot_http_exchange", exchange)
+    try:
+        with pytest.raises(DurableRuntimeError, match="interrupted_" + fault):
+            demo.run_pilot_requester(config, INPUT_TEXT, second_input=SECOND_INPUT)
+        snapshot = provider.backend.store.snapshot()
+        assert snapshot["state_version"] == accepted
+        assert len(snapshot["accepted"]) == accepted
+        assert sum(record["service_executed"] for record in snapshot["accepted"].values()) == 1
+        assert sorted(snapshot["balances"].values()) == ([28, 72] if accepted == 1 else [44, 56])
+    finally:
+        provider.close()
+    provider = demo.PrivatePilotProvider(config, state_dir)
+    try:
+        with pytest.raises(demo.PublicTestnetError, match="pilot_purchase_index_invalid"):
+            demo.run_pilot_requester(config, INPUT_TEXT, second_input=SECOND_INPUT)
+        assert provider.backend.store.snapshot() == {**snapshot, "restart_generation": snapshot["restart_generation"] + 1}
+    finally:
+        provider.close()
+
+
+def test_private_reuse_actual_cli():
+    import selectors
+    import tempfile
+
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        port = probe.getsockname()[1]
+    cli = [sys.executable, "-B", "-m", "coin.public_testnet_service_demo"]
+    with tempfile.TemporaryDirectory(prefix="l28-two-purchase-") as directory:
+        root = Path(directory)
+        config_path, artifacts_path = root / "config.json", root / "artifacts.json"
+        config_run = subprocess.run(cli + ["--role", "pilot-config", "--two-purchases",
+            "--pilot-session", "23" * 16, "--port", str(port)], cwd=REPO_ROOT, capture_output=True, timeout=10)
+        assert config_run.returncode == 0, config_run.stderr
+        config_path.write_bytes(config_run.stdout)
+        config = json.loads(config_run.stdout)
+        options = ["--private-pilot", "--pilot-config", str(config_path)]
+        providers, requesters = [], []
+        for restart in (False, True):
+            with subprocess.Popen(cli + options + ["--role", "provider", "--state-dir", str(root / "state")],
+                                  cwd=REPO_ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) as provider:
+                try:
+                    with selectors.DefaultSelector() as selector:
+                        selector.register(provider.stdout, selectors.EVENT_READ)
+                        assert selector.select(10), "provider did not report readiness"
+                        ready = json.loads(provider.stdout.readline())
+                    assert ready["coordination"] == "pilot_provider_ready"
+                    replay = ["--replay-artifacts", str(artifacts_path)] if restart else []
+                    requester = subprocess.run(cli + options + ["--role", "requester", "--input", INPUT_TEXT,
+                        "--second-input", SECOND_INPUT] + replay, cwd=REPO_ROOT, capture_output=True, timeout=25)
+                    assert requester.returncode == 0, requester.stderr
+                    result = json.loads(requester.stdout)
+                    requesters.append(result)
+                    if not restart:
+                        artifacts_path.write_bytes(demo._pilot_bytes(result["public_artifacts"]))
+                    output, error = provider.communicate(timeout=10)
+                    assert provider.returncode == 0, error
+                    providers.append(json.loads(output))
+                finally:
+                    if provider.poll() is None:
+                        provider.kill()
+                        provider.wait(timeout=5)
+            with socket.socket() as probe:
+                probe.settimeout(1)
+                assert probe.connect_ex(("127.0.0.1", port)) != 0
+
+        live, reopened = providers
+        assert live["pid"] != reopened["pid"]
+        assert live["listener_closed"] and reopened["listener_closed"]
+        assert live["state_commitment"] == reopened["state_commitment"]
+        assert live["state"] == reopened["state"]
+        assert reopened["purchases"] == []
+        assert requesters[1]["restart_replay_only"]
+        assert requesters[0]["public_artifacts"] == requesters[1]["public_artifacts"]
+        purchases = requesters[0]["public_artifacts"]["purchases"]
+        expected = [(100, 0, 72, 28), (72, 28, 44, 56)]
+        ids, receipts, parties = [], [], []
+        for index, text in enumerate((INPUT_TEXT, SECOND_INPUT), 1):
+            artifacts = demo._verify_reuse_purchase(config, purchases[index - 1], index, text)
+            ids.append(artifacts["payment_tx"]["id"])
+            receipts.append(artifacts["receipt"]["receipt_id"])
+            assert artifacts["service_result"]["output"] == service_core.text_summary(text)
+            parties.append((artifacts["payment_tx"]["sender"], artifacts["payment_tx"]["receiver"]))
+            evidence = live["purchases"][index - 1]
+            assert evidence["payment_applied"] and evidence["service_executed"]
+            assert tuple(evidence[k] for k in ("requester_balance_before", "provider_balance_before",
+                         "requester_balance_after", "provider_balance_after")) == expected[index - 1]
+            record = live["state"]["accepted"][ids[-1]]
+            assert record["state_version"] == index and record["amount"] == 28
+            assert record["receipt_id"] == receipts[-1] and record["service_executed"]
+        assert len(set(ids)) == len(set(receipts)) == 2 and parties[0] == parties[1]
+        assert live["state"]["state_version"] == 2 and set(live["state"]["accepted"]) == set(ids)
+        assert live["state"]["balances"] == dict(zip(parties[0], (44, 56)))
+        for restart, result in enumerate(requesters):
+            assert result["issued_supply"] == result["mint_height"] == 0
+            assert result["physical_remote_verified"] is result["production_settlement"] is False
+            assert [item["payment_tx_id"] for item in result["replays"]] == ids
+            for item in result["replays"]:
+                assert item["durable_state_reopened"] is bool(restart)
+                assert item["replay_rejected"] and not item["payment_applied"] and not item["service_executed"]
+        print(json.dumps({"status": "TWO_PURCHASE_LOOPBACK_PASS", "payment_ids": ids, "receipt_ids": receipts,
+                          "source_digest": config["source_digest"], "state_commitment": live["state_commitment"],
+                          "provider_pids": [live["pid"], reopened["pid"]], "balances": expected, "issued_supply": 0}))
+    assert not root.exists()
+
+
+def test_private_reuse_local_bundle_bound_preserves_wire_bound(tmp_path, monkeypatch):
+    config = _reuse_config()
+    provider = demo.PrivatePilotProvider(config, tmp_path / "state")
+
+    def exchange(_config, method, path, body):
+        response = demo._pilot_bytes(provider.dispatch(method, path, body))
+        assert len(response) <= demo.MAX_BODY_BYTES
+        return response
+
+    monkeypatch.setattr(demo, "pilot_http_exchange", exchange)
+    try:
+        inputs = ("a" + "\x01" * 4095, "b" + "\x01" * 4095)
+        result = demo.run_pilot_requester(config, inputs[0], second_input=inputs[1])
+        raw = demo._pilot_bytes(result["public_artifacts"])
+        assert demo.MAX_BODY_BYTES < len(raw) <= demo.MAX_REPLAY_BUNDLE_BYTES
+        with pytest.raises(demo.PublicTestnetError, match="oversized_body"):
+            demo._pilot_json(raw)
+        purchases = demo._pilot_json(raw, purchase_bundle=True)["purchases"]
+        for index, text in enumerate(inputs, 1):
+            demo._verify_reuse_purchase(config, purchases[index - 1], index, text)
+        with pytest.raises(demo.PublicTestnetError, match="oversized_body"):
+            demo._pilot_json(b"x" * (demo.MAX_REPLAY_BUNDLE_BYTES + 1), purchase_bundle=True)
+    finally:
+        provider.close()
+
+
 def _pilot_package(provider, payer):
     request = build_service_request(payer, provider_identity=provider.identity, input_text=INPUT_TEXT,
                                     service_id=demo.SUMMARY_SERVICE_ID)

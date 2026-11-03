@@ -69,6 +69,7 @@ from coin.two_agent_service_transaction_demo import (
     DemoError as ServiceDemoError,
     _perform_paid_service,
     _sign_domain,
+    _validate_service_input,
     _verify_domain,
     build_payment_authorization,
     build_service_quote,
@@ -98,6 +99,9 @@ HELLO_PATH = "/v1/l28/public-testnet/provider_hello"
 SESSION_PATH = "/v1/l28/public-testnet/session"
 LOOPBACK_HOST = "127.0.0.1"
 MAX_BODY_BYTES = 65536
+# Local-only: two proofs and their duplicated signed result/receipt envelopes.
+# HTTP frames still use MAX_BODY_BYTES and the same structural limits.
+MAX_REPLAY_BUNDLE_BYTES = 3 * MAX_BODY_BYTES
 REQUEST_TIMEOUT_SECONDS = 10.0
 SESSION_DEADLINE_SECONDS = 120.0
 FRAME_FIELDS = (
@@ -504,7 +508,8 @@ def verify_purchase_artifacts(
 
 
 def run_requester(exchange: Any, input_text: str, binding: Mapping[str, Any], *, service_id: str = SERVICE_ID,
-                  payer_key: Ed25519PrivateKey | None = None, private_pilot: bool = False) -> dict[str, Any]:
+                  payer_key: Ed25519PrivateKey | None = None, private_pilot: bool = False,
+                  payment_nonce: int = 100) -> dict[str, Any]:
     discovery_body = exchange("GET", DISCOVERY_PATH, None)
     discovery = validate_service_discovery(discovery_body, binding, service_id=service_id, private_pilot=private_pilot)
     service = discovery["services"][0]
@@ -524,7 +529,7 @@ def run_requester(exchange: Any, input_text: str, binding: Mapping[str, Any], *,
         receiver=hello["provider_identity"],
         amount=PRICE_L28,
         timestamp=DEMO_TIMESTAMP,
-        nonce=100,
+        nonce=payment_nonce,
     )
     authorization = build_payment_authorization(payer, request=request, quote=quote, payment_tx=payment_tx)
     result_body = exchange(
@@ -672,6 +677,8 @@ def build_public_evidence(endpoint: str, provider_evidence: Mapping[str, Any], r
 
 
 PILOT_PROFILE = "l28-remote-paid-service-pilot/v0.1"
+PILOT_REUSE_PROFILE = "l28-limited-private-testnet/v0.1"
+PILOT_PURCHASE_NONCES = (100, 101)
 PILOT_DOMAIN = b"L28-REMOTE-PAID-SERVICE-PILOT-V0.1\x00"
 PILOT_PAYMENT_NETWORK = "DISPOSABLE_OFFLINE"
 PILOT_SOURCE_FILES = (
@@ -693,13 +700,26 @@ def _pilot_bytes(value: Any) -> bytes:
     return json.dumps(value, ensure_ascii=False, allow_nan=False, separators=(",", ":")).encode("utf-8")
 
 
-def _pilot_json(body: bytes) -> dict[str, Any]:
-    enforce_body_bound(len(body))
+def _pilot_json(body: bytes, *, purchase_bundle: bool = False) -> dict[str, Any]:
+    if purchase_bundle:
+        if not 0 < len(body) <= MAX_REPLAY_BUNDLE_BYTES:
+            raise PublicTestnetError("oversized_body")
+    else:
+        enforce_body_bound(len(body))
     try:
         value = json.loads(body.decode("utf-8"), object_pairs_hook=_reject_duplicate_keys,
                            parse_constant=lambda _value: (_ for _ in ()).throw(ValueError()))
         from coin.durable_restart_safe_service_demo import _walk_bounded
-        _walk_bounded(value, 0, [0])
+        if purchase_bundle:
+            if (not isinstance(value, dict) or set(value) != {"purchases"}
+                or not isinstance(value["purchases"], list) or len(value["purchases"]) != 2):
+                raise PublicTestnetError("purchase_artifacts_invalid")
+            # Each original receipt bundle gets the same per-message structural
+            # budget. The entire local file still shares the existing byte cap.
+            for purchase in value["purchases"]:
+                _walk_bounded(purchase, 0, [0])
+        else:
+            _walk_bounded(value, 0, [0])
     except (UnicodeError, ValueError, RecursionError) as exc:
         raise PublicTestnetError("malformed_json") from exc
     if not isinstance(value, dict):
@@ -708,10 +728,11 @@ def _pilot_json(body: bytes) -> dict[str, Any]:
 
 
 def pilot_config(*, session_id: str, provider_host: str, requester_host: str, port: int,
-                 created_at: int, route_keys: Mapping[str, str] | None = None) -> dict[str, Any]:
+                 created_at: int, route_keys: Mapping[str, str] | None = None,
+                 two_purchases: bool = False) -> dict[str, Any]:
     """Public configuration only. A route declaration is NOT route verification."""
     return validate_pilot_config({
-        "profile": PILOT_PROFILE, "session_id": session_id,
+        "profile": PILOT_REUSE_PROFILE if two_purchases else PILOT_PROFILE, "session_id": session_id,
         "provider_host": provider_host, "requester_host": requester_host, "port": port,
         "created_at": created_at, "expires_at": created_at + 120,
         "service_id": SUMMARY_SERVICE_ID, "price": PRICE_L28,
@@ -755,7 +776,9 @@ def validate_pilot_config(value: Any) -> dict[str, Any]:
         not 0 < result["expires_at"] - result["created_at"] <= 120 or
         result["created_at"] > time.time() + 5 or result["expires_at"] <= time.time()):
         raise PublicTestnetError("pilot_session_expired")
-    for name, expected in (("profile", PILOT_PROFILE), ("service_id", SUMMARY_SERVICE_ID),
+    if result["profile"] not in (PILOT_PROFILE, PILOT_REUSE_PROFILE):
+        raise PublicTestnetError("pilot_binding_invalid")
+    for name, expected in (("service_id", SUMMARY_SERVICE_ID),
                            ("network_id", NETWORK_ID), ("payment_network_id", PILOT_PAYMENT_NETWORK),
                            ("source_digest", pilot_source_digest())):
         if result[name] != expected:
@@ -816,8 +839,16 @@ def verify_pilot_envelope(value: Any, config: Mapping[str, Any], role: str, peer
     return value["payload"]
 
 
+def _pilot_indexed_payload(payload: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    index = payload.get("purchase_index")
+    message = payload.get("message")
+    if set(payload) != {"purchase_index", "message"} or type(index) is not int or index not in (1, 2) or not isinstance(message, dict):
+        raise PublicTestnetError("pilot_purchase_index_invalid")
+    return index, message
+
+
 class PrivatePilotProvider(PublicProvider):
-    """One purchase per context; the existing durable store remains sole payment authority."""
+    """Bounded purchases; the existing durable store remains sole payment authority."""
     def __init__(self, config: Mapping[str, Any], state_dir: str | Path) -> None:
         from coin.durable_restart_safe_service_demo import DurableProvider
         self.config = validate_pilot_config(dict(config))
@@ -833,6 +864,9 @@ class PrivatePilotProvider(PublicProvider):
         self._request = self._quote = None
         self.evidence = None
         self.purchase_evidence = None
+        self.two_purchases = self.config["profile"] == PILOT_REUSE_PROFILE
+        self.purchases: list[dict[str, Any]] = []
+        self.replayed_indices: set[int] = set()
         self.deadline = time.monotonic() + min(115, self.config["expires_at"] - time.time())
 
     def close(self) -> None:
@@ -856,14 +890,29 @@ class PrivatePilotProvider(PublicProvider):
                 payload = verify_pilot_envelope(envelope, self.config, "requester", self.public_key, method, path,
                                                 public_key=self.client_key)
                 candidate_key = envelope["public_key"]
-                if set(payload) == {"action", "artifacts"} and payload["action"] == "replay":
-                    artifacts = payload["artifacts"]
-                    if not isinstance(artifacts, dict) or set(artifacts) != {
-                        "request", "quote", "payment_tx", "payment_authorization", "service_result", "receipt"
-                    } or not isinstance(artifacts["payment_tx"], dict) or not isinstance(artifacts["payment_tx"].get("id"), str):
+                index = 1
+                if self.two_purchases:
+                    index, payload = _pilot_indexed_payload(payload)
+                replay_field = "proof" if self.two_purchases else "artifacts"
+                if set(payload) == {"action", replay_field} and payload["action"] == "replay":
+                    artifacts = payload[replay_field]
+                    proof_fields = {"request", "quote", "payment_tx", "payment_authorization"}
+                    fields = proof_fields if self.two_purchases else proof_fields | {"service_result", "receipt"}
+                    if not isinstance(artifacts, dict) or set(artifacts) != fields or not isinstance(
+                        artifacts["payment_tx"], dict
+                    ) or not isinstance(artifacts["payment_tx"].get("id"), str):
                         raise PublicTestnetError("purchase_artifacts_invalid")
-                    if artifacts["payment_tx"]["id"] not in self.backend.store.snapshot()["accepted"]:
+                    snapshot = self.backend.store.snapshot()
+                    record = snapshot["accepted"].get(artifacts["payment_tx"]["id"])
+                    if record is None:
                         raise PublicTestnetError("unknown_payment")
+                    if self.two_purchases and (
+                        snapshot["state_version"] != 2 or record["state_version"] != index
+                        or not record["service_executed"] or not record["receipt_id"]
+                        or artifacts["payment_tx"].get("nonce") != PILOT_PURCHASE_NONCES[index - 1]
+                        or index in self.replayed_indices
+                    ):
+                        raise PublicTestnetError("pilot_purchase_index_invalid")
                     # A payment replay probe must never recompute useful work,
                     # even as a side effect of result verification. The requester
                     # independently verifies result/receipt; this endpoint checks
@@ -875,17 +924,31 @@ class PrivatePilotProvider(PublicProvider):
                     if not verify_transfer_signature(package["payment_tx"]):
                         raise PublicTestnetError("payment_signature_invalid")
                     payload = self.backend.handle_payment(package)
+                    if self.two_purchases:
+                        if payload.get("error") != "replay":
+                            raise PublicTestnetError("replay_not_rejected")
+                        payload["receipt_id"] = record["receipt_id"]
+                        self.replayed_indices.add(index)
                 elif payload == {"action": "finish"} and self.evidence is not None:
+                    if self.two_purchases and (index != 2 or self.replayed_indices != {1, 2}):
+                        raise PublicTestnetError("pilot_purchases_incomplete")
                     payload = {"finished": True}
                     self.finished.set()
                 else:
+                    if self.two_purchases and (
+                        self.backend.store.reopened or index != len(self.purchases) + 1
+                        or self.backend.store.snapshot()["state_version"] != index - 1
+                    ):
+                        raise PublicTestnetError("pilot_purchase_index_invalid")
                     frame = parse_frame(_pilot_bytes(payload), expected_sequence=self.expected, binding=self.binding)
                     if frame["message_type"] == "service_request":
                         request = frame["payload"]
                         if request.get("payer_public_key") != candidate_key:
                             raise PublicTestnetError("pilot_payer_mismatch")
-                        if self.backend.store.snapshot()["state_version"] != 0:
+                        if not self.two_purchases and self.backend.store.snapshot()["state_version"] != 0:
                             raise PublicTestnetError("pilot_purchase_already_accepted")
+                        if self.two_purchases and index == 2 and request.get("input") == self._request["input"]:
+                            raise PublicTestnetError("pilot_distinct_inputs_required")
                         quote = self.backend.quote_for(request)
                         self._request, self._quote = request, quote
                         self.client_key = candidate_key
@@ -894,12 +957,16 @@ class PrivatePilotProvider(PublicProvider):
                     elif frame["message_type"] == "payment_package" and self._request is not None:
                         if set(frame["payload"]) != {"payment_tx", "payment_authorization"}:
                             raise PublicTestnetError("unexpected_field")
+                        if self.two_purchases and frame["payload"]["payment_tx"]["nonce"] != PILOT_PURCHASE_NONCES[index - 1]:
+                            raise PublicTestnetError("pilot_purchase_nonce_invalid")
                         result = self.backend.handle_payment({"request": self._request, "quote": self._quote, **frame["payload"]})
                         if not result["ok"]:
                             raise PublicTestnetError(result["error"])
                         self.evidence = result["evidence"]
                         self.purchase_evidence = result["evidence"]
-                        self.expected = 0
+                        if self.two_purchases:
+                            self.purchases.append(result["evidence"])
+                        self.expected = 1 if self.two_purchases and index == 1 else 0
                         payload = json.loads(frame_bytes("service_result_package", 5,
                             {"service_result": result["service_result"], "receipt": result["receipt"]}, self.binding))
                     else:
@@ -908,6 +975,8 @@ class PrivatePilotProvider(PublicProvider):
                 if payload.get("error") == "replay":
                     self.evidence = payload["evidence"]
                     self.client_key = candidate_key
+                if self.two_purchases:
+                    payload = {"purchase_index": index, "message": payload}
             else:
                 raise PublicTestnetError("wrong_sequence")
             return pilot_envelope(self._key, self.config, "provider", peer, method, path, payload)
@@ -1102,17 +1171,50 @@ def pilot_http_exchange(config: Mapping[str, Any], method: str, path: str, body:
         connection.close()
 
 
-def run_pilot_requester(config: Mapping[str, Any], input_text: str, *, replay_artifacts: dict[str, Any] | None = None) -> dict[str, Any]:
+def _verify_reuse_purchase(config: Mapping[str, Any], purchase: Any, index: int, input_text: str) -> dict[str, Any]:
+    if not isinstance(purchase, dict) or set(purchase) != {"artifacts", "delivery"}:
+        raise PublicTestnetError("purchase_artifacts_invalid")
+    artifacts = purchase["artifacts"]
+    verify_purchase_artifacts(artifacts, input_text=input_text, service_id=SUMMARY_SERVICE_ID)
+    signed = verify_pilot_envelope(
+        purchase["delivery"], config, "provider", artifacts["request"]["payer_public_key"],
+        "POST", SESSION_PATH, public_key=artifacts["quote"]["provider_public_key"],
+    )
+    delivered_index, message = _pilot_indexed_payload(signed)
+    frame = parse_frame(_pilot_bytes(message), expected_sequence=5, binding=public_testnet_binding())
+    if (delivered_index != index or artifacts["payment_tx"]["nonce"] != PILOT_PURCHASE_NONCES[index - 1]
+        or frame["message_type"] != "service_result_package"
+        or frame["payload"] != {k: artifacts[k] for k in ("service_result", "receipt")}):
+        raise PublicTestnetError("purchase_artifacts_invalid")
+    return artifacts
+
+
+def run_pilot_requester(config: Mapping[str, Any], input_text: str, *, replay_artifacts: dict[str, Any] | None = None,
+                        second_input: str | None = None) -> dict[str, Any]:
     config = validate_pilot_config(dict(config))
+    two_purchases = config["profile"] == PILOT_REUSE_PROFILE
+    if two_purchases:
+        _validate_service_input(input_text, SUMMARY_SERVICE_ID)
+        _validate_service_input(second_input, SUMMARY_SERVICE_ID)
+        if input_text == second_input:
+            raise PublicTestnetError("pilot_distinct_inputs_required")
+    elif second_input is not None:
+        raise PublicTestnetError("pilot_cli_invalid")
     verify_pilot_route(config, "requester")
     payer = Ed25519PrivateKey.generate()
     payer_public = _public_key_hex(payer)
     provider_public: str | None = None
     transcript: list[dict[str, Any]] = []
+    index = 1
 
     def exchange(method: str, path: str, body: bytes | None) -> bytes:
         nonlocal provider_public
-        request_envelope = None if body is None else pilot_envelope(payer, config, "requester", provider_public or "", method, path, _pilot_json(body))
+        request_envelope = None
+        if body is not None:
+            request = _pilot_json(body)
+            if two_purchases:
+                request = {"purchase_index": index, "message": request}
+            request_envelope = pilot_envelope(payer, config, "requester", provider_public or "", method, path, request)
         message = None if request_envelope is None else _pilot_bytes(request_envelope)
         envelope = _pilot_json(pilot_http_exchange(config, method, path, message))
         payload = verify_pilot_envelope(envelope, config, "provider", "" if method == "GET" else payer_public,
@@ -1121,11 +1223,33 @@ def run_pilot_requester(config: Mapping[str, Any], input_text: str, *, replay_ar
             provider_public = envelope["public_key"]
         if path == HELLO_PATH and payload.get("payload") != {"provider_identity": public_identity(provider_public), "provider_public_key": provider_public}:
             raise PublicTestnetError("pilot_peer_or_context_invalid")
+        if two_purchases and method == "POST":
+            response_index, payload = _pilot_indexed_payload(payload)
+            if response_index != index:
+                raise PublicTestnetError("pilot_purchase_index_invalid")
         transcript.append({"request": request_envelope, "response": envelope})
         return _pilot_bytes(payload)
 
     try:
-        if replay_artifacts is None:
+        if two_purchases:
+            inputs = (input_text, second_input)
+            if replay_artifacts is None:
+                purchases = []
+                for index, text in enumerate(inputs, 1):
+                    purchase = run_requester(exchange, text, public_testnet_binding(), service_id=SUMMARY_SERVICE_ID,
+                                             payer_key=payer, private_pilot=True, payment_nonce=PILOT_PURCHASE_NONCES[index - 1])
+                    purchases.append({"artifacts": purchase["public_artifacts"], "delivery": transcript[-1]["response"]})
+            else:
+                purchases = replay_artifacts.get("purchases")
+                if set(replay_artifacts) != {"purchases"} or not isinstance(purchases, list) or len(purchases) != 2:
+                    raise PublicTestnetError("purchase_artifacts_invalid")
+            verified = [_verify_reuse_purchase(config, purchase, i, text)
+                        for i, (purchase, text) in enumerate(zip(purchases, inputs), 1)]
+            if replay_artifacts is not None:
+                validate_service_discovery(exchange("GET", DISCOVERY_PATH, None), public_testnet_binding(),
+                                           service_id=SUMMARY_SERVICE_ID, private_pilot=True)
+            result = {"public_artifacts": {"purchases": purchases}, "restart_replay_only": replay_artifacts is not None}
+        elif replay_artifacts is None:
             result = run_requester(exchange, input_text, public_testnet_binding(), service_id=SUMMARY_SERVICE_ID,
                                    payer_key=payer, private_pilot=True)
             artifacts = result["public_artifacts"]
@@ -1137,15 +1261,27 @@ def run_pilot_requester(config: Mapping[str, Any], input_text: str, *, replay_ar
             artifacts = replay_artifacts
             verify_purchase_artifacts(artifacts, input_text=input_text, service_id=SUMMARY_SERVICE_ID)
             result = {"public_artifacts": artifacts, "restart_replay_only": True}
-        replay = _pilot_json(exchange("POST", SESSION_PATH, _pilot_bytes({"action": "replay", "artifacts": artifacts})))
-        if replay.get("ok") is not False or replay.get("error") != "replay" or replay["evidence"]["payment_applied"] is not False or replay["evidence"]["service_executed"] is not False:
-            raise PublicTestnetError("replay_not_rejected")
-        if (replay["evidence"]["requester_balance_after"], replay["evidence"]["provider_balance_after"]) != (72, 28):
-            raise PublicTestnetError("payment_binding_invalid")
+        replays = []
+        for index, artifacts in enumerate(verified if two_purchases else [artifacts], 1):
+            proof = {k: artifacts[k] for k in ("request", "quote", "payment_tx", "payment_authorization")}
+            replay = _pilot_json(exchange("POST", SESSION_PATH, _pilot_bytes(
+                {"action": "replay", "proof": proof} if two_purchases else {"action": "replay", "artifacts": artifacts}
+            )))
+            evidence = replay["evidence"]
+            if (replay.get("ok") is not False or replay.get("error") != "replay"
+                or evidence["payment_applied"] is not False or evidence["service_executed"] is not False
+                or evidence["payment_tx_id"] != artifacts["payment_tx"]["id"]):
+                raise PublicTestnetError("replay_not_rejected")
+            if ((evidence["requester_balance_after"], evidence["provider_balance_after"]) != ((44, 56) if two_purchases else (72, 28))
+                or (two_purchases and replay.get("receipt_id") != artifacts["receipt"]["receipt_id"])):
+                raise PublicTestnetError("payment_binding_invalid")
+            replays.append(evidence)
         finish = _pilot_json(exchange("POST", SESSION_PATH, _pilot_bytes({"action": "finish"})))
         if finish != {"finished": True}:
             raise PublicTestnetError("pilot_finish_failed")
-        return {**result, "pilot_profile": PILOT_PROFILE, "session_id": config["session_id"],
+        if two_purchases:
+            result["replays"] = replays
+        return {**result, "pilot_profile": config["profile"], "session_id": config["session_id"],
                 "context_digest": _pilot_context(config), "source_digest": config["source_digest"],
                 "public_config": config, "signed_http_transcript": transcript,
                 "replay": replay["evidence"], "issued_supply": 0, "mint_height": 0,
@@ -1173,6 +1309,7 @@ def run_pilot_provider(config: Mapping[str, Any], state_dir: str | Path) -> dict
         public_state = {k: v for k, v in snapshot.items() if k != "restart_generation"}
         return {"coordination": "pilot_provider_evidence", "pid": os.getpid(), "evidence": provider.evidence,
                 "purchase_evidence": provider.purchase_evidence,
+                **({"purchases": provider.purchases} if provider.two_purchases else {}),
                 "state": public_state, "state_commitment": hashlib.sha256(json.dumps(public_state, sort_keys=True, separators=(",", ":")).encode()).hexdigest(),
                 "context_digest": _pilot_context(config), "source_digest": pilot_source_digest(),
                 "listener_closed": True, "physical_remote_verified": False}
@@ -1394,6 +1531,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--service-id", choices=SERVICE_IDS, default=SERVICE_ID)
     parser.add_argument("--input", default="L28 enables machine payments between autonomous systems.")
     parser.add_argument("--private-pilot", action="store_true")
+    parser.add_argument("--two-purchases", action="store_true", help="Generate a two-purchase pilot configuration")
+    parser.add_argument("--second-input", help="Second distinct input for the two-purchase requester")
     parser.add_argument("--pilot-config", type=Path)
     parser.add_argument("--state-dir", type=Path)
     parser.add_argument("--replay-artifacts", type=Path)
@@ -1406,6 +1545,10 @@ def main(argv: list[str] | None = None) -> int:
     try:
         from coin.durable_restart_safe_service_demo import DurableRuntimeError
         assert_identity_flags_unchanged()
+        if (args.two_purchases and args.role != "pilot-config") or (
+            args.second_input is not None and not (args.private_pilot and args.role == "requester")
+        ):
+            raise PublicTestnetError("pilot_cli_invalid")
         if args.role == "pilot-runtime-check":
             result = {"status": "RUNTIME_CHECK_PASS", "source_digest": pilot_source_digest(), "network_started": False}
             print(json.dumps(result))
@@ -1414,7 +1557,8 @@ def main(argv: list[str] | None = None) -> int:
             keys = {} if args.provider_node_key is None and args.requester_node_key is None else {
                 "provider": args.provider_node_key, "requester": args.requester_node_key}
             result = pilot_config(session_id=args.pilot_session, provider_host=args.provider_host,
-                                  requester_host=args.requester_host, port=args.port, created_at=int(time.time()), route_keys=keys)
+                                  requester_host=args.requester_host, port=args.port, created_at=int(time.time()),
+                                  route_keys=keys, two_purchases=args.two_purchases)
             print(_pilot_bytes(result).decode())
             return 0
         if args.private_pilot:
@@ -1428,8 +1572,13 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 if args.state_dir is not None:
                     raise PublicTestnetError("pilot_cli_invalid")
-                replay = _pilot_json(args.replay_artifacts.read_bytes()) if args.replay_artifacts else None
-                result = run_pilot_requester(config, args.input, replay_artifacts=replay)
+                replay = None
+                if args.replay_artifacts:
+                    bundle = config["profile"] == PILOT_REUSE_PROFILE
+                    limit = MAX_REPLAY_BUNDLE_BYTES if bundle else MAX_BODY_BYTES
+                    with args.replay_artifacts.open("rb") as artifacts_file:
+                        replay = _pilot_json(artifacts_file.read(limit + 1), purchase_bundle=bundle)
+                result = run_pilot_requester(config, args.input, replay_artifacts=replay, second_input=args.second_input)
             print(_pilot_bytes(result).decode(), flush=True)
             return 0
         if any((args.pilot_config, args.state_dir, args.replay_artifacts, args.pilot_session, args.provider_node_key, args.requester_node_key)):

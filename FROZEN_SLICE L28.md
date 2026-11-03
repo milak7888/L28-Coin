@@ -1,6 +1,56 @@
 # L28 — FROZEN_SLICE.md
 
-## CURRENT — REMOTE PAID SERVICE PILOT v0.1 — COMPLETE — 2026-11-01
+## CURRENT — LIMITED PRIVATE TESTNET v0.1 — COMPLETE — 2026-11-03
+
+PROJECT_STATE: COMPLETE
+Slice status: PROJECT_COMPLETE / PHYSICAL PASS.
+Completion authority: AUTHORIZE_L28_LIMITED_PRIVATE_TESTNET_PROJECT_COMPLETE.
+Implementation authority: AUTHORIZE_L28_LIMITED_PRIVATE_TESTNET_V0_1.
+Base: 9014f5ee1f1a7297169ff7be7013df2c2e6c170e.
+Branch: codex/limited-private-testnet-v0-1.
+
+Deliverable: opt-in two-purchase text-summary mode over the existing HTTP/JSON
+CLI, with distinct inputs, signed purchase indices and transfer nonces, one
+session, one disposable payer/provider pair and one durable SQLite store.
+Reuse the existing validator, payment-before-work and receipt verification.
+
+Exact scope: FROZEN_SLICE L28.md; SYSTEM_STATE L28.md; DEFER L28.md;
+coin/public_testnet_service_demo.py; tests/test_public_testnet_service_demo.py;
+docs/remote_paid_service_pilot_v0.1.md.
+
+Acceptance: real requester/provider processes, balances 100/0 -> 72/28 -> 44/56,
+two payment IDs, two useful work records and two verified signed receipts, no
+reseed and zero issuance/mint height. Genuine provider restart reopens the same
+store; replay both originals without debit or work, preserve the payment-state
+commitment, and refuse further purchases. Reject tampering, swapped artifacts,
+stale indices, wrong context/peer and unauthorized payment. Focused tests,
+affected regressions, process/listener cleanup, sanitized evidence and one
+consolidated security/acceptance review. Full acceptance also requires an
+equivalent two-device run under separate operator authorization.
+
+Safety: implementation verification was IPv4 loopback only; at most two
+application processes, existing request and 120-second context bounds,
+disposable signing keys in memory, temporary state only. Restart is
+verification, not wallet recovery or resumed spending. Protocol v1.0.0,
+protected economics/history, project isolation, canonical validator and
+production custody/F171 blocks unchanged. No public testnet, firewall/VPN
+changes, canonical settlement, merge, push or deployment.
+
+The separately authorized two-device session
+d12bbb52f32644418fc988177724bbbb passed the final frozen review. Two signed
+purchases used one durable store without reset or reseed. Balances moved
+100/0 -> 72/28 -> 44/56, with exactly two payments, two work records, two
+verified signed receipts, and zero issuance/mint height. Genuine provider
+restart preserved the state commitment and rejected both replays without
+further debit or work; no third purchase. Cleanup PASS. Exact evidence and
+qualifications are in SYSTEM_STATE. Requester execution is operator-attested;
+physical_remote_verified=false and NOT_INDEPENDENTLY_AUDITED=true remain.
+
+Completion is disposable-only and grants no production or publication
+authority. STOP after verifying the completion records. No further runtime,
+tests, implementation, staging, commit, merge, push or deployment authorized.
+
+## HISTORICAL — REMOTE PAID SERVICE PILOT v0.1 — COMPLETE — 2026-11-01
 
 PROJECT_STATE: COMPLETE
 Slice status: PROJECT_COMPLETE / PHYSICAL PASS.

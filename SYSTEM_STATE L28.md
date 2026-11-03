@@ -1,13 +1,105 @@
 # L28 — SYSTEM_STATE.md
 
-Last updated: 2026-11-01
+Last updated: 2026-11-03
 
 ## PROJECT STATE
 PROJECT_STATE: COMPLETE
 
 Only the operator may change PROJECT_STATE.
 
-## CURRENT — REMOTE PAID SERVICE PILOT v0.1 — COMPLETE
+## CURRENT — LIMITED PRIVATE TESTNET v0.1 — COMPLETE
+
+Completion authority: AUTHORIZE_L28_LIMITED_PRIVATE_TESTNET_PROJECT_COMPLETE.
+Slice status: PROJECT_COMPLETE / PHYSICAL PASS, 2026-11-03.
+Implementation authority: AUTHORIZE_L28_LIMITED_PRIVATE_TESTNET_V0_1.
+Isolated worktree only, based on completed pilot commit 9014f5ee.
+The six-path candidate remains uncommitted and unstaged. Main's three
+pre-existing edits remain untouched.
+
+### Accepted physical evidence — two purchases, one store
+
+Physical authority: AUTHORIZE_L28_LIMITED_PRIVATE_TESTNET_PHYSICAL_V0_1.
+Provider and requester hosts used the verified private Tailscale route
+with the approved application-level ingress boundary and public Taildrop
+handoff. Session: d12bbb52f32644418fc988177724bbbb.
+Runtime source digest:
+601af54bc9221d2d5709719a0c6a5abf16a5e161581e400af14600994a46faff.
+Context digest:
+0215271b98a791af3ff2eb2d6732f902a3f38f3c357a43b61cf8bf35735a016b.
+Config SHA-256 (same in both phases):
+fadb07825463f1ff7efce6cf702e7b37db1a482cd9bdab2fb21d899a5c58c0c9.
+Requester-reported artifact SHA-256:
+33c3fd69a56cf4c451cda98e2dd7a864e6dce04eaf4a3b87f7d0d9c9039ba371.
+Payment IDs in order:
+bef8587cd8206002d35fcd2048c92bc06ef3ce74b6965127452df80d8dc7bebe;
+58f7811170e031c67e4d6c4ebeef828db6920350ce1bd27cf0eb6335834041da.
+Verified signed receipt IDs in the same order:
+3a333a02ccbcae63812ba67b5f23de4915623bd25f9ee6501d7ffebe0f7f45ad;
+43b58b63fd38a6bad9ebf166eba73d0e0031504e50f328c1ba70646938a56959.
+
+One payer/provider identity pair, one session and one durable SQLite store
+served two distinct inputs. Balances 100/0 -> 72/28 -> 44/56 without reset
+or reseeding; exactly two accepted payments, two work records and two signed
+receipts, with zero issuance and mint height. The provider-side read-only SQLite
+integrity, accounting and audit checks confirmed each payment committed
+before work and receipt linkage. State version 2 and restart generation 2
+recorded one opening seed. Distinct initial and restarted provider processes exited 0.
+Both original payments rejected on restart without debit or work; no third
+purchase. Identical payment-state commitment across restart:
+978e0cefab7ea3a18e30c787d7b9f54cb3e62733e6ec4559a6e9080f8c2b86bb.
+
+Provider reports were inspected directly. Native requester preflight, initial and
+restart requester exits 0, receipt verification, and cleanup were
+operator-attested. Both reports reconciled on session, source/context/config
+digests, payment and receipt IDs, and final balances. Requester artifact
+bytes were not independently retrieved. physical_remote_verified=false is
+unchanged: the software does not independently attest physical topology.
+Provider temporary state was removed; both provider processes were absent and
+the listener was clear on independent readback. Requester cleanup was reported
+PASS. Operational identifiers and local evidence paths are omitted.
+
+Disposable-only acceptance, not canonical settlement or production
+readiness. Preserve the accepted ingress and interrupted-payment risks:
+private-route confidentiality, connection attempts before application
+rejection, trusted endpoints/tailnet administration, and durable payment
+without guaranteed result delivery. No atomic delivery or refund claim.
+Protocol v1.0.0, protected economics/history and canonical validator
+unchanged. Production custody/F171, authenticated canonical continuation,
+production settlement, public exposure and deployment remain BLOCKED.
+NOT_INDEPENDENTLY_AUDITED=true. STOP; no new slice or runtime, tests,
+staging, commit, merge, push or deployment authorized by completion.
+
+### Preserved loopback and review evidence
+
+Loopback PASS, 2026-11-03: real CLI requester/provider ran two distinct
+paid summaries on the same identities and store, 100/0 -> 72/28 -> 44/56.
+Two payments, work records and signed receipts; zero issuance/mint height.
+Distinct initial and restarted provider processes; both original payment proofs rejected on
+restart without debit/work. Matching state commitment:
+44d4d217c8849e52b7d9a0bb7a6c83b5c4385d31e3e4074da594e4261cf6e804.
+Runtime source digest:
+601af54bc9221d2d5709719a0c6a5abf16a5e161581e400af14600994a46faff.
+Payment IDs:
+bcaec353bae136cb88b6657ba3cf4e685a85955bbe5381178d09d553d9f53a95;
+d6e56c2cac73e7e03de92b1ebb8445f56dd06f5ae27620107c46635d6d715603.
+Receipt IDs:
+86dec2f7df94dcaacd6b598ff27aad39d0ef394bfe2e62e6c28d6ccc1f3b5697;
+70a0372d4bd66e2c89fb6ba16d6eab7a886548ba592f4441903db2b123100614.
+Owned processes exited, port closed, temporary state removed.
+Final focused run: 13 PASS, including actual CLI, maximum escaped-input
+receipt bundle, signed artifact rejection, interruption and legacy cases.
+213 affected cases passed across one run and one isolated retry: the unchanged
+single-recv oversized-body test initially received headers alone, then passed.
+Consolidated primary-agent security review fd151817-a3c1-4671-befb-b9c9cde01ee8
+recorded no reportable security findings on its snapshot. It reproduced a
+local replay-file size edge case. The final correction is local-file-only
+(196608-byte cap, strict two-record shape, existing per-record structural
+limits). The HTTP cap remains 65536 bytes. Reviewed that correction against
+the final source and repeated the directly affected checks above.
+This review preceded the separately authorized physical execution above.
+NOT_INDEPENDENTLY_AUDITED=true.
+
+## HISTORICAL — REMOTE PAID SERVICE PILOT v0.1 — COMPLETE
 
 Operator authority: L28 — AUTHORIZE FROZEN-SLICE COMPLETION, 2026-11-01.
 Slice status: PROJECT_COMPLETE / PHYSICAL PASS. This closes only the accepted
