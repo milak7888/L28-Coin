@@ -1,9 +1,16 @@
 # L28 — SYSTEM_STATE.md
 
+## Public Developer Testnet v0.1 rebuild — loopback accepted
+
+Accepted provider and MCP digests, payment and receipt IDs, and original
+evidence SHA-256 are recorded in docs/public_developer_testnet_v0.1.md.
+The prior worktree was not recovered. This branch preserves the accepted
+rebuild bytes. External ingress and purchase remain unauthorized.
+
 Last updated: 2026-11-03
 
 ## PROJECT STATE
-PROJECT_STATE: COMPLETE
+PROJECT_STATE: ACTIVE (isolated offline preservation slice only)
 
 Only the operator may change PROJECT_STATE.
 

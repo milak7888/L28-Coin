@@ -1,5 +1,20 @@
 # L28 — FROZEN_SLICE.md
 
+## Active offline preservation slice
+
+PROJECT_STATE: ACTIVE (this isolated worktree only).
+Authority: AUTHORIZE_L28_PUBLIC_DEVELOPER_DURABLE_CANDIDATE_PRESERVATION_V0_1.
+Preserve the accepted rebuild on codex/public-developer-external-v0-1 at
+base f9bb1467. Exact seven-path allowlist below. No runtime, external
+networking or commit. Stop at candidate ready for commit approval.
+
+## Public Developer Testnet v0.1 rebuild
+
+Authority: AUTHORIZE_L28_PUBLIC_DEVELOPER_TESTNET_REBUILD_V0_1.
+ACTIVE in isolated archive of f9bb1467 only. New source and evidence.
+Exact allowlist: coin/public_testnet_service_demo.py; coin/two_agent_service_external_access_demo.py; tests/test_public_testnet_service_demo.py; tests/test_two_agent_service_external_access.py; docs/public_developer_testnet_v0.1.md; FROZEN_SLICE L28.md; SYSTEM_STATE L28.md.
+Reuse existing disposable service and validator. One bounded provider and outbound HTTPS/MCP client. IPv4-loopback mTLS acceptance only, one payment before useful work, 100/0 to 72/28, zero issuance, verified signatures and replay rejection. Stop on uncertainty, failure or LOOPBACK_PASS.
+
 ## CURRENT — LIMITED PRIVATE TESTNET v0.1 — COMPLETE — 2026-11-03
 
 PROJECT_STATE: COMPLETE

@@ -373,3 +373,189 @@ def test_verified_purchase_requires_core_success_semantics():
     bad["purchase"]["payment_verified"] = False
     with pytest.raises(ext.ExternalAccessError):
         ext._verified_purchase(bad)
+
+
+def test_developer_mcp_lists_and_dispatches_summary_tool():
+    def purchase(text):
+        assert text == "One useful summary."
+        return {"receipt_verified": True}
+
+    message = {"jsonrpc": "2.0", "id": 1, "method": "tools/list"}
+    tool, = ext.handle_mcp_message(message, developer_purchase=purchase)["result"]["tools"]
+    assert tool["name"] == "l28_purchase_developer_summary"
+    assert tool["inputSchema"]["properties"]["service_id"]["const"] == ext.SUMMARY_SERVICE_ID
+    message.update(method="tools/call", params={"name": tool["name"], "arguments": {
+        "service_id": ext.SUMMARY_SERVICE_ID, "input": "One useful summary."}})
+    result = ext.handle_mcp_message(message, developer_purchase=purchase)["result"]
+    assert not result["isError"] and result["structuredContent"]["receipt_verified"]
+
+
+def test_developer_real_mtls_mcp_purchase(tmp_path):
+    import datetime
+    import hashlib
+    import ipaddress
+    import socket
+    import sqlite3
+    import ssl
+    import subprocess
+    import sys
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+
+    from cryptography import x509
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import ec
+    from cryptography.x509.oid import NameOID
+    from coin import public_testnet_service_demo as demo
+    from coin.durable_restart_safe_service_demo import DB_NAME
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+
+    def cert(name, issuer=None):
+        key = ec.generate_private_key(ec.SECP256R1())
+        subject = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, name)])
+        builder = (x509.CertificateBuilder().subject_name(subject)
+                   .issuer_name(subject if issuer is None else issuer[1].subject)
+                   .public_key(key.public_key()).serial_number(x509.random_serial_number())
+                   .not_valid_before(now - datetime.timedelta(minutes=1))
+                   .not_valid_after(now + datetime.timedelta(minutes=5))
+                   .add_extension(x509.BasicConstraints(ca=issuer is None, path_length=None), critical=True))
+        if name == "edge":
+            builder = builder.add_extension(x509.SubjectAlternativeName([
+                x509.IPAddress(ipaddress.IPv4Address("127.0.0.1"))]), critical=False)
+        certificate = builder.sign(key if issuer is None else issuer[0], hashes.SHA256())
+        cert_path, key_path = tmp_path / (name + ".pem"), tmp_path / (name + ".key")
+        cert_path.write_bytes(certificate.public_bytes(serialization.Encoding.PEM))
+        key_path.write_bytes(key.private_bytes(serialization.Encoding.PEM,
+            serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))
+        return key, certificate, cert_path, key_path
+
+    ca = cert("ca")
+    edge, client, wrong = [cert(name, ca) for name in ("edge", "client", "wrong")]
+    approved = client[1].public_bytes(serialization.Encoding.DER)
+    state = tmp_path / "store"
+    provider_capture = tmp_path / "provider-signed.json"
+    mcp_capture = tmp_path / "mcp-response.json"
+    for path in (provider_capture, mcp_capture):
+        path.touch(mode=0o600, exist_ok=False)
+    provider = subprocess.Popen([sys.executable, "-B", "-m", "coin.public_testnet_service_demo",
+                                 "--role", "developer-provider", "--state-dir", str(state)],
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    edge_server = thread = None
+    forwarded = []
+    try:
+        ready = ext._read_json_line(provider.stdout, timeout=5)
+
+        class Edge(BaseHTTPRequestHandler):
+            def log_message(self, *_):
+                pass
+
+            def forward(self):
+                if self.connection.getpeercert(binary_form=True) != approved:
+                    self.send_error(403)
+                    return
+                if (self.command, self.path) not in {("GET", demo.DISCOVERY_PATH),
+                        ("GET", demo.HELLO_PATH), ("POST", demo.SESSION_PATH)}:
+                    self.send_error(404)
+                    return
+                body = self.rfile.read(int(self.headers.get("Content-Length", "0")))
+                assert len(body) <= demo.MAX_BODY_BYTES
+                origin = http.client.HTTPConnection("127.0.0.1", ready["port"], timeout=2)
+                try:
+                    forwarded.append((self.command, self.path, body))
+                    origin.request(self.command, self.path, body=body)
+                    response = origin.getresponse()
+                    data = response.read()
+                    if self.command == "POST" and json.loads(body).get("message_type") == "payment_package":
+                        provider_capture.write_bytes(data)
+                    self.send_response(response.status)
+                    self.send_header("Content-Length", str(len(data)))
+                    self.end_headers()
+                    self.wfile.write(data)
+                finally:
+                    origin.close()
+
+            do_GET = do_POST = forward
+
+        edge_server = HTTPServer(("127.0.0.1", 0), Edge)
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ctx.load_cert_chain(edge[2], edge[3])
+        ctx.load_verify_locations(cafile=ca[2])
+        ctx.verify_mode = ssl.CERT_REQUIRED
+        edge_server.socket = ctx.wrap_socket(edge_server.socket, server_side=True)
+        thread = threading.Thread(target=edge_server.serve_forever, daemon=True)
+        thread.start()
+        url = f"https://127.0.0.1:{edge_server.server_port}"
+
+        for presented in (None, wrong):
+            tls = ssl.create_default_context(cafile=ca[2])
+            if presented:
+                tls.load_cert_chain(presented[2], presented[3])
+            with pytest.raises(demo.PublicTestnetError):
+                demo.purchase_developer_summary(url, "A useful summary.", expected_provider_key=ready["provider_public_key"],
+                                                tls_context=tls, loopback_test=True)
+        assert not forwarded
+
+        # A wrong pin is covered by the focused test. Run the real one-shot
+        # MCP client only with the approved pin so the hello slot stays unused.
+        text = "L28 supports machine payments. This test buys a useful text summary."
+        call = {"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {
+            "name": "l28_purchase_developer_summary", "arguments": {
+                "service_id": ext.SUMMARY_SERVICE_ID, "input": text}}}
+        proc = subprocess.run([sys.executable, "-B", "-m", "coin.two_agent_service_external_access_demo",
+            "--runtime", "mcp", "--developer-endpoint", url, "--developer-loopback-test",
+            "--developer-ca", str(ca[2]), "--developer-client-cert", str(client[2]),
+            "--developer-client-key", str(client[3]), "--expected-provider-key", ready["provider_public_key"]],
+            input=json.dumps(call) + "\n", capture_output=True, text=True, timeout=10, check=True)
+        mcp_capture.write_text(proc.stdout)
+        result = json.loads(proc.stdout)["result"]
+        assert not result["isError"], result
+        text_carrier = json.loads(result["content"][0]["text"])
+        result = result["structuredContent"]
+        artifacts = result["public_artifacts"]
+        original = json.loads(provider_capture.read_bytes())["payload"]
+        for carrier in (result, text_carrier):
+            delivered = carrier["public_artifacts"]
+            for key in ("service_result", "receipt"):
+                assert demo._pilot_bytes(original[key]) == demo._pilot_bytes(delivered[key])
+            demo.verify_purchase_artifacts(delivered, input_text=text, service_id=ext.SUMMARY_SERVICE_ID)
+        out, err = provider.communicate(timeout=5)
+        assert provider.returncode == 0, err
+        evidence = json.loads(out)
+        assert evidence["listener_closed"]
+        tx_id = result["payment_tx_id"]
+        assert evidence["evidence"]["payment_tx_id"] == tx_id
+        assert [evidence["evidence"][key] for key in (
+            "requester_balance_before", "provider_balance_before",
+            "requester_balance_after", "provider_balance_after")] == [100, 0, 72, 28]
+        assert sum(json.loads(body).get("message_type") == "payment_package"
+                   for method, _, body in forwarded if method == "POST") == 1
+        db_path = state / DB_NAME
+        digest = hashlib.sha256(db_path.read_bytes()).hexdigest()
+        with socket.socket() as probe:
+            probe.settimeout(1)
+            assert probe.connect_ex(("127.0.0.1", ready["port"])) != 0
+        assert digest == hashlib.sha256(db_path.read_bytes()).hexdigest()
+        with sqlite3.connect((state / DB_NAME).as_uri() + "?mode=ro", uri=True) as db:
+            assert db.execute("SELECT event,payment_tx_id FROM audit ORDER BY id").fetchall() == [
+                ("payment_committed", tx_id), ("receipt_linked", tx_id)]
+            receipt_id = artifacts["receipt"]["receipt_id"]
+            assert db.execute("SELECT receipt_id,amount FROM accepted_payments").fetchall() == [(receipt_id, 28)]
+        record = {"provider": evidence, "requester": result, "receipt_id": receipt_id,
+                  "database_sha256": hashlib.sha256((state / DB_NAME).read_bytes()).hexdigest()}
+        (tmp_path / "acceptance.json").write_text(json.dumps(record))
+    finally:
+        if edge_server is not None:
+            if thread is not None:
+                edge_server.shutdown()
+                thread.join(timeout=2)
+            edge_server.server_close()
+        if provider.poll() is None:
+            provider.kill()
+            provider.communicate(timeout=5)
+    assert not thread.is_alive()
+    with socket.socket() as probe:
+        probe.settimeout(1)
+        assert probe.connect_ex(("127.0.0.1", edge_server.server_port)) != 0
+    record["cleanup_verified"] = True
+    record["provider_pid"] = provider.pid
+    (tmp_path / "acceptance.json").write_text(json.dumps(record))

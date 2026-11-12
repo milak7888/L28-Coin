@@ -1125,3 +1125,123 @@ with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as server:
     assert time.monotonic() - start < 2
     assert processes[0].poll() is not None
     assert processes[0].stdout.closed and processes[0].stderr.closed
+
+
+def test_developer_wrong_pin_stops_before_service_request():
+    provider = demo.PublicProvider(service_id=demo.SUMMARY_SERVICE_ID)
+
+    def exchange(method, path, body):
+        assert method == "GET" and body is None
+        if path == demo.DISCOVERY_PATH:
+            return json.dumps(demo.build_service_discovery(
+                provider.binding, service_id=provider.service_id)).encode()
+        assert path == demo.HELLO_PATH
+        return json.dumps(provider.hello_frame()).encode()
+
+    try:
+        wrong_pin = ("0" if provider.public_key[0] != "0" else "1") + provider.public_key[1:]
+        with pytest.raises(demo.PublicTestnetError, match="provider_pin_mismatch"):
+            demo.run_requester(exchange, "One useful summary.", provider.binding,
+                               service_id=provider.service_id, expected_provider_key=wrong_pin)
+        assert provider.evidence is None
+    finally:
+        provider.close()
+
+
+def test_developer_deadline_interrupts_stream_despite_active_peer():
+    import threading
+    import time
+
+    reader, writer = socket.socketpair()
+    with reader, writer:
+        guard = demo._DeveloperSocketDeadline(reader, time.monotonic() + 0.15)
+
+        def stream():
+            try:
+                while True:
+                    writer.sendall(b"x")
+                    time.sleep(0.01)
+            except OSError:
+                pass
+
+        thread = threading.Thread(target=stream)
+        thread.start()
+        try:
+            reader.settimeout(1)
+            assert reader.recv(1) == b"x"
+            while reader.recv(1):
+                pass
+            with pytest.raises(demo.PublicTestnetError, match="developer_deadline_expired"):
+                guard.check()
+        finally:
+            guard.close()
+            writer.close()
+            thread.join(timeout=1)
+        assert not thread.is_alive()
+
+
+def test_stalled_developer_dns_reaped_before_socket(monkeypatch):
+    import ssl
+    import time
+
+    started = []
+    popen = demo.subprocess.Popen
+
+    def record(*args, **kwargs):
+        proc = popen(*args, **kwargs)
+        started.append(proc)
+        return proc
+
+    monkeypatch.setattr(demo.subprocess, "Popen", record)
+    monkeypatch.setattr(demo, "_DEVELOPER_RESOLVER", "import time; time.sleep(30)")
+    monkeypatch.setattr(demo, "REQUEST_TIMEOUT_SECONDS", 0.2)
+    monkeypatch.setattr(demo.http.client, "HTTPSConnection",
+                        lambda *_a, **_k: pytest.fail("TCP path reached after DNS timeout"))
+    before = time.monotonic()
+    with pytest.raises(demo.PublicTestnetError, match="developer_deadline_expired"):
+        demo.purchase_developer_summary("https://developer.example", "One useful summary.",
+                                       expected_provider_key="a" * 64,
+                                       tls_context=ssl.create_default_context())
+    assert time.monotonic() - before < 2
+    assert len(started) == 1 and started[0].returncode is not None
+
+
+def test_developer_mcp_signed_fixture_roundtrip_without_payment(monkeypatch):
+    import io
+    from coin import two_agent_service_external_access_demo as ext
+
+    provider_key, payer = (Ed25519PrivateKey.generate() for _ in range(2))
+    identity = public_identity(_public_key_hex(provider_key))
+    request = build_service_request(payer, provider_identity=identity,
+                                    input_text=SUMMARY_INPUT, service_id=SUMMARY_ID)
+    quote = build_service_quote(provider_key, request=request)
+    tx = build_signed_transfer(payer, receiver=identity, amount=28,
+                               timestamp=DEMO_TIMESTAMP, nonce=100)
+    auth = build_payment_authorization(payer, request=request, quote=quote, payment_tx=tx)
+    result = service_core.build_service_result(provider_key, request=request, quote=quote,
+        payment_tx_id=tx["id"], output=service_core.text_summary(SUMMARY_INPUT))
+    receipt = service_core.build_service_receipt(provider_key, request=request, quote=quote,
+        service_result=result, payment_tx_id=tx["id"])
+    artifacts = {"request": request, "quote": quote, "payment_tx": tx,
+                 "payment_authorization": auth, "service_result": result, "receipt": receipt}
+    signed_bytes = demo._pilot_bytes(artifacts)
+    reordered = json.loads(json.dumps(artifacts, sort_keys=True))
+    with pytest.raises(service_core.DemoError):
+        demo.verify_purchase_artifacts(reordered, input_text=SUMMARY_INPUT, service_id=SUMMARY_ID)
+
+    call = {"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {
+        "name": "l28_purchase_developer_summary", "arguments": {
+            "service_id": SUMMARY_ID, "input": SUMMARY_INPUT}}}
+    monkeypatch.setattr(sys, "stdin", io.StringIO(json.dumps(call) + "\n"))
+    stdout = io.StringIO()
+    monkeypatch.setattr(sys, "stdout", stdout)
+    ext.run_mcp_stdio_runtime(developer_purchase=lambda _: {"public_artifacts": artifacts})
+    response = json.loads(stdout.getvalue())["result"]
+    for carrier in (response["structuredContent"], json.loads(response["content"][0]["text"])):
+        delivered = carrier["public_artifacts"]
+        assert demo._pilot_bytes(delivered) == signed_bytes
+        assert demo.verify_purchase_artifacts(delivered, input_text=SUMMARY_INPUT, service_id=SUMMARY_ID)
+    tampered = deepcopy(artifacts)
+    tampered["service_result"]["output"]["summary"] += " altered"
+    with pytest.raises(service_core.DemoError):
+        demo.verify_purchase_artifacts(tampered, input_text=SUMMARY_INPUT, service_id=SUMMARY_ID)

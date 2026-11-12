@@ -19,6 +19,7 @@ import json
 import os
 import selectors
 import socket
+import ssl
 import subprocess
 import sys
 import threading
@@ -509,7 +510,7 @@ def verify_purchase_artifacts(
 
 def run_requester(exchange: Any, input_text: str, binding: Mapping[str, Any], *, service_id: str = SERVICE_ID,
                   payer_key: Ed25519PrivateKey | None = None, private_pilot: bool = False,
-                  payment_nonce: int = 100) -> dict[str, Any]:
+                  payment_nonce: int = 100, expected_provider_key: str | None = None) -> dict[str, Any]:
     discovery_body = exchange("GET", DISCOVERY_PATH, None)
     discovery = validate_service_discovery(discovery_body, binding, service_id=service_id, private_pilot=private_pilot)
     service = discovery["services"][0]
@@ -517,6 +518,8 @@ def run_requester(exchange: Any, input_text: str, binding: Mapping[str, Any], *,
     hello_body = exchange("GET", HELLO_PATH, None)
     hello_frame = parse_frame(hello_body, expected_sequence=1, binding=binding)
     hello = verify_provider_hello(hello_frame["payload"])
+    if expected_provider_key is not None and hello["provider_public_key"] != expected_provider_key:
+        raise PublicTestnetError("provider_pin_mismatch")
     request = build_service_request(payer, provider_identity=hello["provider_identity"], input_text=input_text, service_id=service_id)
     quote_body = exchange("POST", SESSION_PATH, frame_bytes("service_request", 2, request, binding))
     quote_frame = parse_frame(quote_body, expected_sequence=3, binding=binding)
@@ -1063,9 +1066,11 @@ class _Handler(BaseHTTPRequestHandler):
             return
         try:
             body = self._read_body()
+            if isinstance(self.server, _DeveloperServer):
+                self.server.request_guard.check()
             response = self.server.provider.handle_frame(body)
             self._ok(response)
-            if self.server.provider.finished.is_set():
+            if self.server.provider.finished.is_set() and not isinstance(self.server, _DeveloperServer):
                 threading.Thread(target=self.server.shutdown, daemon=True).start()
         except (PublicTestnetError, ServiceDemoError, LimitedTestnetError) as exc:
             self._error(getattr(exc, "code", "request_rejected"))
@@ -1327,6 +1332,178 @@ def run_pilot_provider(config: Mapping[str, Any], state_dir: str | Path) -> dict
         provider.close()
 
 
+class _DeveloperSocketDeadline:
+    """Interrupt the underlying TCP connection even after TLS takes its fd."""
+
+    def __init__(self, transport: socket.socket, deadline: float) -> None:
+        self.deadline = deadline
+        self.interrupt = transport.dup()
+        self.timer = threading.Timer(max(0, deadline - time.monotonic()), self._expire)
+        self.timer.daemon = True
+        self.timer.start()
+
+    def _expire(self) -> None:
+        try:
+            self.interrupt.shutdown(socket.SHUT_RDWR)
+        except OSError:
+            pass
+
+    def check(self) -> None:
+        if time.monotonic() >= self.deadline:
+            raise PublicTestnetError("developer_deadline_expired")
+
+    def close(self) -> None:
+        self.timer.cancel()
+        self.timer.join()
+        self.interrupt.close()
+
+
+class _DeveloperServer(_Server):
+    request_count = 0
+
+    def process_request(self, request: Any, client_address: Any) -> None:
+        self.request_count += 1
+        guard = _DeveloperSocketDeadline(
+            request, min(self.deadline, time.monotonic() + REQUEST_TIMEOUT_SECONDS))
+        self.request_guard = guard
+        try:
+            guard.check()
+            HTTPServer.process_request(self, request, client_address)
+        finally:
+            guard.close()
+
+
+class DeveloperProvider(PublicProvider):
+    """Existing wire protocol backed by the existing durable disposable store."""
+
+    def __init__(self, state_dir: Path) -> None:
+        from coin.durable_restart_safe_service_demo import DurableProvider
+
+        state_dir.mkdir(mode=0o700)
+        super().__init__(service_id=SUMMARY_SERVICE_ID)
+        self.backend = DurableProvider(state_dir, service_id=SUMMARY_SERVICE_ID)
+        self._key = self.backend._key
+        self.public_key, self.identity = self.backend.public_key, self.backend.identity
+
+    def close(self) -> None:
+        self.backend.close()
+        super().close()
+
+    def _settle(self, package: Mapping[str, Any]) -> dict[str, Any]:
+        from coin.durable_restart_safe_service_demo import DurableRuntimeError
+
+        if self._request is None or self._quote is None or set(package) != {"payment_tx", "payment_authorization"}:
+            raise PublicTestnetError("unexpected_field")
+        # Consume before entering the durable payment path, even on interruption.
+        self.expected = 0
+        try:
+            result = self.backend.handle_payment({"request": self._request, "quote": self._quote, **package})
+        except DurableRuntimeError as exc:
+            raise PublicTestnetError(exc.code) from exc
+        if not result["ok"]:
+            raise PublicTestnetError(result["error"])
+        self.evidence = result["evidence"]
+        reply = json.loads(frame_bytes("service_result_package", 5,
+            {"service_result": result["service_result"], "receipt": result["receipt"]}, self.binding))
+        self.finished.set()
+        return reply
+
+
+_DEVELOPER_RESOLVER = (
+    "import json,socket,sys; "
+    "print(json.dumps(sorted({r[4][0] for r in socket.getaddrinfo("
+    "sys.argv[1],int(sys.argv[2]),socket.AF_INET,socket.SOCK_STREAM)})))"
+)
+
+
+def _developer_resolve(host: str, port: int, deadline: float) -> set[str]:
+    if time.monotonic() >= deadline:
+        raise PublicTestnetError("developer_deadline_expired")
+    try:
+        return {str(ipaddress.IPv4Address(host))}
+    except ipaddress.AddressValueError:
+        pass
+    with subprocess.Popen([sys.executable, "-I", "-B", "-c", _DEVELOPER_RESOLVER, host, str(port)],
+                          stdout=subprocess.PIPE, stderr=subprocess.DEVNULL) as resolver:
+        try:
+            raw, _ = resolver.communicate(timeout=max(0, deadline - time.monotonic()))
+        except subprocess.TimeoutExpired as exc:
+            resolver.kill()
+            resolver.communicate()
+            raise PublicTestnetError("developer_deadline_expired") from exc
+        if time.monotonic() >= deadline:
+            raise PublicTestnetError("developer_deadline_expired")
+        if resolver.returncode != 0:
+            raise PublicTestnetError("developer_route_invalid")
+        return {str(ipaddress.IPv4Address(ip)) for ip in json.loads(raw)}
+
+
+def purchase_developer_summary(endpoint: str, input_text: str, *, expected_provider_key: str,
+                               tls_context: ssl.SSLContext, loopback_test: bool = False) -> dict[str, Any]:
+    parsed = urllib.parse.urlsplit(endpoint)
+    host = parsed.hostname
+    if (parsed.scheme != "https" or not host or parsed.username or parsed.password
+            or parsed.path not in ("", "/") or parsed.query or parsed.fragment
+            or tls_context.verify_mode != ssl.CERT_REQUIRED or not tls_context.check_hostname
+            or not _lan_pin(expected_provider_key)):
+        raise PublicTestnetError("developer_endpoint_or_trust_invalid")
+    if loopback_test and host != LOOPBACK_HOST:
+        raise PublicTestnetError("developer_loopback_required")
+    deadline = time.monotonic() + SESSION_DEADLINE_SECONDS
+
+    def exchange(method: str, path: str, body: bytes | None) -> bytes:
+        request_deadline = min(deadline, time.monotonic() + REQUEST_TIMEOUT_SECONDS)
+        port = parsed.port or 443
+        ips = _developer_resolve(host, port, request_deadline)
+        if not ips or (ips != {LOOPBACK_HOST} if loopback_test else
+                       any(not ipaddress.IPv4Address(ip).is_global for ip in ips)):
+            raise PublicTestnetError("developer_route_invalid")
+        conn = http.client.HTTPSConnection(host, port, context=tls_context)
+        guard = None
+
+        def connect(_address: Any, _timeout: Any, _source: Any) -> socket.socket:
+            nonlocal guard
+            remaining = request_deadline - time.monotonic()
+            if remaining <= 0:
+                raise PublicTestnetError("developer_deadline_expired")
+            transport = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            try:
+                guard = _DeveloperSocketDeadline(transport, request_deadline)
+                transport.settimeout(remaining)
+                transport.connect((min(ips), port))
+                guard.check()
+                return transport
+            except BaseException:
+                transport.close()
+                raise
+
+        conn._create_connection = connect
+        try:
+            conn.request(method, path, body=body, headers={"Content-Type": "application/json"})
+            reply = conn.getresponse()
+            payload = reply.read(MAX_BODY_BYTES + 1)
+            guard.check()
+            enforce_body_bound(len(payload))
+            if reply.status != 200:
+                raise PublicTestnetError("request_rejected")
+            return payload
+        except (OSError, http.client.HTTPException) as exc:
+            if guard is not None:
+                guard.check()
+            raise PublicTestnetError("developer_transport_failed_stop") from exc
+        finally:
+            conn.close()
+            if guard is not None:
+                guard.close()
+
+    return run_requester(exchange, input_text, public_testnet_binding(), service_id=SUMMARY_SERVICE_ID,
+                         expected_provider_key=expected_provider_key)
+
+
+def _lan_pin(pin: str) -> bool:
+    return isinstance(pin, str) and len(pin) == 64 and all(c in "0123456789abcdef" for c in pin)
+
+
 def start_one_shot_server(port: int = 0, *, service_id: str = SERVICE_ID) -> tuple[_Server, threading.Thread, PublicProvider]:
     provider = PublicProvider(service_id=service_id)
     server = _Server(provider, port)
@@ -1523,7 +1700,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m coin.public_testnet_service_demo")
     parser.add_argument(
         "--role",
-        choices=("parent", "provider", "requester", "local-example", "pilot-config", "pilot-runtime-check"),
+        choices=("parent", "provider", "requester", "local-example", "pilot-config", "pilot-runtime-check", "developer-provider"),
         default="parent",
     )
     parser.add_argument("--public-endpoint")
@@ -1580,6 +1757,26 @@ def main(argv: list[str] | None = None) -> int:
                         replay = _pilot_json(artifacts_file.read(limit + 1), purchase_bundle=bundle)
                 result = run_pilot_requester(config, args.input, replay_artifacts=replay, second_input=args.second_input)
             print(_pilot_bytes(result).decode(), flush=True)
+            return 0
+        if args.role == "developer-provider":
+            if args.state_dir is None or not args.state_dir.is_absolute():
+                raise PublicTestnetError("developer_state_dir_required")
+            provider = DeveloperProvider(args.state_dir)
+            try:
+                with _DeveloperServer(provider, args.port) as server:
+                    server.timeout = 0.25
+                    deadline = server.deadline = time.monotonic() + SESSION_DEADLINE_SECONDS - 5
+                    print(json.dumps({"coordination": "developer_ready", "port": server.server_port,
+                                      "provider_public_key": provider.public_key}), flush=True)
+                    while server.request_count < 12 and not provider.finished.is_set() and time.monotonic() < deadline:
+                        # Serve serially so completion cannot race the response.
+                        server.handle_request()
+                    if provider.evidence is None:
+                        raise PublicTestnetError("developer_incomplete_preserve_store")
+                print(json.dumps({"coordination": "developer_evidence", "evidence": provider.evidence,
+                                  "listener_closed": True}), flush=True)
+            finally:
+                provider.close()
             return 0
         if any((args.pilot_config, args.state_dir, args.replay_artifacts, args.pilot_session, args.provider_node_key, args.requester_node_key)):
             raise PublicTestnetError("pilot_cli_invalid")

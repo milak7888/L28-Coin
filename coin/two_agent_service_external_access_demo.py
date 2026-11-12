@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import http.client
 import json
+import ssl
 import selectors
 import subprocess
 import sys
@@ -25,6 +26,7 @@ from coin.two_agent_service_transaction_demo import (
     MAX_INPUT_CHARS,
     PRICE_L28,
     SERVICE_ID,
+    SUMMARY_SERVICE_ID,
     DemoError,
     execute_two_agent_service_transaction,
 )
@@ -45,22 +47,22 @@ class ExternalAccessError(Exception):
         self.code = code
 
 
-def _json_bytes(value: Any) -> bytes:
+def _json_bytes(value: Any, *, sort_keys: bool = True) -> bytes:
     return json.dumps(
         value,
-        sort_keys=True,
+        sort_keys=sort_keys,
         separators=(",", ":"),
         ensure_ascii=False,
         allow_nan=False,
     ).encode("utf-8")
 
 
-def _validate_purchase_payload(payload: Any) -> str:
+def _validate_purchase_payload(payload: Any, *, service_id: str = SERVICE_ID) -> str:
     if not isinstance(payload, dict):
         raise ExternalAccessError("request_body_invalid")
     if set(payload) != {"service_id", "input"}:
         raise ExternalAccessError("request_fields_invalid")
-    if payload.get("service_id") != SERVICE_ID:
+    if payload.get("service_id") != service_id:
         raise ExternalAccessError("service_id_invalid")
     input_text = payload.get("input")
     if not isinstance(input_text, str) or not input_text or len(input_text) > MAX_INPUT_CHARS:
@@ -207,7 +209,7 @@ def _mcp_error(request_id: Any, code: int, message: str) -> dict[str, Any]:
     }
 
 
-def handle_mcp_message(message: Any) -> dict[str, Any] | None:
+def handle_mcp_message(message: Any, *, developer_purchase=None) -> dict[str, Any] | None:
     if not isinstance(message, dict) or message.get("jsonrpc") != "2.0":
         return _mcp_error(message.get("id") if isinstance(message, dict) else None, -32600, "invalid_request")
 
@@ -240,7 +242,11 @@ def handle_mcp_message(message: Any) -> dict[str, Any] | None:
     if method == "tools/list":
         if "id" not in message:
             return _mcp_error(None, -32600, "tools_list_requires_id")
-        return _mcp_result(request_id, {"tools": [_mcp_tool_definition()]})
+        tool = _mcp_tool_definition()
+        if developer_purchase is not None:
+            tool["name"] = "l28_purchase_developer_summary"
+            tool["inputSchema"]["properties"]["service_id"]["const"] = SUMMARY_SERVICE_ID
+        return _mcp_result(request_id, {"tools": [tool]})
 
     if method == "tools/call":
         if "id" not in message:
@@ -248,11 +254,12 @@ def handle_mcp_message(message: Any) -> dict[str, Any] | None:
         params = message.get("params")
         if not isinstance(params, dict):
             return _mcp_error(request_id, -32602, "params_invalid")
-        if params.get("name") != MCP_TOOL_NAME:
+        if params.get("name") != (MCP_TOOL_NAME if developer_purchase is None else "l28_purchase_developer_summary"):
             return _mcp_error(request_id, -32602, "tool_unsupported")
         arguments = params.get("arguments")
         try:
-            result = purchase_service(arguments)
+            result = (purchase_service(arguments) if developer_purchase is None else
+                      developer_purchase(_validate_purchase_payload(arguments, service_id=SUMMARY_SERVICE_ID)))
         except ExternalAccessError as exc:
             error_payload = {"ok": False, "error": exc.code}
             return _mcp_result(
@@ -274,7 +281,7 @@ def handle_mcp_message(message: Any) -> dict[str, Any] | None:
                 "content": [
                     {
                         "type": "text",
-                        "text": _json_bytes(result).decode("utf-8"),
+                        "text": _json_bytes(result, sort_keys=developer_purchase is None).decode("utf-8"),
                     }
                 ],
                 "structuredContent": result,
@@ -287,7 +294,7 @@ def handle_mcp_message(message: Any) -> dict[str, Any] | None:
     return _mcp_error(request_id, -32601, "method_not_found")
 
 
-def run_mcp_stdio_runtime() -> int:
+def run_mcp_stdio_runtime(*, developer_purchase=None) -> int:
     for raw_line in sys.stdin:
         line = raw_line.strip()
         if not line:
@@ -297,9 +304,9 @@ def run_mcp_stdio_runtime() -> int:
         except json.JSONDecodeError:
             response = _mcp_error(None, -32700, "parse_error")
         else:
-            response = handle_mcp_message(message)
+            response = handle_mcp_message(message, developer_purchase=developer_purchase)
         if response is not None:
-            sys.stdout.write(_json_bytes(response).decode("utf-8") + "\n")
+            sys.stdout.write(_json_bytes(response, sort_keys=developer_purchase is None).decode("utf-8") + "\n")
             sys.stdout.flush()
     return 0
 
@@ -641,7 +648,39 @@ def main(argv: list[str] | None = None) -> int:
         default="L28 enables machine payments between autonomous systems.",
     )
     parser.add_argument("--port", type=int, default=0)
+    parser.add_argument("--developer-endpoint")
+    parser.add_argument("--expected-provider-key")
+    parser.add_argument("--developer-client-cert")
+    parser.add_argument("--developer-client-key")
+    parser.add_argument("--developer-ca")
+    parser.add_argument("--developer-loopback-test", action="store_true")
     args = parser.parse_args(sys.argv[1:] if argv is None else argv)
+
+    developer_fields = (args.developer_endpoint, args.expected_provider_key,
+                        args.developer_client_cert, args.developer_client_key)
+    if any(developer_fields) or args.developer_loopback_test or args.developer_ca:
+        if args.runtime != "mcp" or not all(developer_fields):
+            parser.error("developer mode requires MCP, endpoint, provider pin and client certificate/key")
+        from coin.public_testnet_service_demo import PublicTestnetError, purchase_developer_summary
+        from coin.limited_testnet_service_demo import LimitedTestnetError
+
+        ctx = ssl.create_default_context(cafile=args.developer_ca)
+        ctx.load_cert_chain(args.developer_client_cert, args.developer_client_key)
+        consumed = False
+
+        def purchase(text: str) -> dict[str, Any]:
+            nonlocal consumed
+            if consumed:
+                raise ExternalAccessError("developer_attempt_consumed")
+            consumed = True
+            try:
+                return purchase_developer_summary(args.developer_endpoint, text,
+                    expected_provider_key=args.expected_provider_key, tls_context=ctx,
+                    loopback_test=args.developer_loopback_test)
+            except (PublicTestnetError, LimitedTestnetError, DemoError, ValueError, OSError) as exc:
+                raise ExternalAccessError("developer_purchase_failed_stop") from exc
+
+        return run_mcp_stdio_runtime(developer_purchase=purchase)
 
     if args.runtime == "http":
         return run_http_runtime(args.port)
