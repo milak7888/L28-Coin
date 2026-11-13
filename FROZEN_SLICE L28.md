@@ -2,8 +2,12 @@
 
 ## CURRENT — PUBLIC-ORIGIN DEVELOPER TESTNET EDGE RC v0.1 — 2026-11-13
 
-PROJECT_STATE: ACTIVE
-Authority: AUTHORIZE_L28_PUBLIC_TESTNET_PUBLIC_ORIGIN_EDGE_RC_V0_1.
+PROJECT_STATE: COMPLETE
+Slice status: PROJECT_COMPLETE.
+Implementation authority: AUTHORIZE_L28_PUBLIC_TESTNET_PUBLIC_ORIGIN_EDGE_RC_V0_1.
+Completion authority: AUTHORIZE_L28_PUBLIC_ORIGIN_EDGE_RC_PROJECT_COMPLETE.
+Published product commit: ab4c13282c1efacf078960c8b921ff8514d62952.
+Production activation: NOT AUTHORIZED.
 Base: 5a54b36452e33274959fd3a5e0b4c7d3cb88584c.
 Branch: codex/public-origin-edge-rc-v0-1.
 
@@ -23,8 +27,8 @@ process/listener cleanup. Record evidence and one consolidated security review.
 
 Safety: isolated test traffic and disposable fixtures only. Public listener,
 deployment, production keys, canonical settlement, historical or economic
-changes and Git push are outside scope. Stop at COMPLETE_PENDING_OPERATOR
-after acceptance, or at the concrete blocker. Never retry an uncertain payment.
+changes and Git push are outside scope. Isolated acceptance passed and the
+operator closed this slice. Never retry an uncertain payment.
 
 ## HISTORICAL — LIMITED PRIVATE TESTNET v0.1 — COMPLETE — 2026-11-03
 

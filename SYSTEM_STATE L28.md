@@ -3,19 +3,19 @@
 Last updated: 2026-11-13
 
 ## PROJECT STATE
-PROJECT_STATE: ACTIVE
+PROJECT_STATE: COMPLETE
 
 Only the operator may change PROJECT_STATE.
 
 ## CURRENT — PUBLIC-ORIGIN DEVELOPER TESTNET EDGE RC v0.1
 
-Operator authority: AUTHORIZE_L28_PUBLIC_TESTNET_PUBLIC_ORIGIN_EDGE_RC_V0_1.
-ACTIVE applies only to this isolated five-path slice from
-5a54b36452e33274959fd3a5e0b4c7d3cb88584c. Prior COMPLETE records and
-evidence are preserved below.
-
-Slice result: COMPLETE_PENDING_OPERATOR. Actual-product and scoped defensive
-security review PASS for isolated acceptance. PROJECT_STATE remains ACTIVE.
+Implementation authority: AUTHORIZE_L28_PUBLIC_TESTNET_PUBLIC_ORIGIN_EDGE_RC_V0_1.
+Implementation base: 5a54b36452e33274959fd3a5e0b4c7d3cb88584c.
+Completion authority: AUTHORIZE_L28_PUBLIC_ORIGIN_EDGE_RC_PROJECT_COMPLETE.
+Published product commit: ab4c13282c1efacf078960c8b921ff8514d62952.
+Slice result: PROJECT_COMPLETE. Actual-product and scoped defensive security
+review PASS for isolated acceptance. PROJECT_STATE: COMPLETE.
+Production activation: NOT AUTHORIZED.
 
 - Focused edge and affected provider/MCP regressions: 139 passed.
 - Real provider, edge and MCP processes completed one disposable text summary.
@@ -51,7 +51,7 @@ would still need network-layer ingress and rate controls to bound TCP
 accept pressure before mTLS, an owner draining process logs and enforcing
 the shared cleanup cutoff, and separately approved deployment. A committed
 debit can outlive failed result delivery. No retries or automatic restarts.
-NOT_INDEPENDENTLY_AUDITED=true. Stop for operator review.
+NOT_INDEPENDENTLY_AUDITED=true. This slice is closed.
 
 ## HISTORICAL — LIMITED PRIVATE TESTNET v0.1 — COMPLETE
 
