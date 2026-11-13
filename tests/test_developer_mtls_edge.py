@@ -135,7 +135,7 @@ e.serve(bind=e.LOOPBACK, port=0, source=e.LOOPBACK, hostname=e.HOST,
 
 
 @pytest.mark.parametrize("flags,expected", [
-    (["--physical"], ("100.66.229.15", 443, "100.98.56.15", 28429)),
+    (["--physical"], ("100.66.229.15", 8443, "100.98.56.15", 28429)),
     (["--loopback-test", "--upstream-port", "18080"],
      ("127.0.0.1", 0, "127.0.0.1", 18080)),
     ([], None),
@@ -165,3 +165,75 @@ def test_edge_mode_selection(monkeypatch, flags, expected):
         assert options["hostname"] == "pjay.tail8ba219.ts.net"
         assert options["fingerprint"] == "a" * 64
         assert options["context"].verify_mode == ssl.CERT_REQUIRED
+
+
+def _post(body, extra=b"", length=None):
+    target = edge_module.SESSION_PATH.encode()
+    size = str(len(body)).encode() if length is None else length
+    return (b"POST " + target + b" HTTP/1.1\r\nHost: edge:8443\r\nContent-Length: "
+            + size + b"\r\n" + extra + b"\r\n" + body)
+
+
+@pytest.mark.parametrize("extra,length", [
+    (b"Content-Length: 1\r\n", None), (b"Transfer-Encoding: chunked\r\n", None),
+    (b"", b"1, 1"), (b"", b"65537"), (b"", b"+1"), (b"", b"2"),
+])
+def test_purchase_framing_denied(extra, length):
+    import io
+    with pytest.raises(ValueError):
+        edge_module._read_route(io.BytesIO(_post(b"x", extra, length)), "edge:8443", purchase=True)
+
+
+def test_purchase_slot_consumed_before_failed_forward(monkeypatch):
+    import io
+    from contextlib import nullcontext
+    from types import SimpleNamespace
+    from coin import public_testnet_service_demo as demo
+
+    slot = edge_module._PurchaseSlot()
+    sent = []
+    replies = []
+    leaf = b"fixture certificate"
+    fingerprint = hashlib.sha256(leaf).hexdigest()
+    monkeypatch.setattr(edge_module, "_DeveloperSocketDeadline",
+        lambda *_: SimpleNamespace(check=lambda: None, close=lambda: None))
+    monkeypatch.setattr(edge_module, "_reply", lambda _, status, body=b"": replies.append((status, body)))
+
+    def proxy(method, target, body, *_):
+        sent.append((method, target, body))
+        if len(sent) == 2:
+            assert slot.sequence == 0
+            raise TimeoutError("upstream outcome unknown")
+        return b'{ "signed": {"z":1,"a":2} }'
+
+    monkeypatch.setattr(edge_module, "_proxy", proxy)
+    binding = demo.public_testnet_binding()
+    quote = demo.frame_bytes("service_request", 2, {"z": 1, "a": 2}, binding)
+    payment = demo.frame_bytes("payment_package", 4, {"z": 1, "a": 2}, binding)
+
+    def handle(body, presented=leaf, gate=slot):
+        client = SimpleNamespace(getpeercert=lambda **_: presented,
+                                 makefile=lambda _: io.BytesIO(_post(body)))
+        raw = io.BytesIO()
+        raw.settimeout = lambda _: None
+        ctx = SimpleNamespace(wrap_socket=lambda *_a, **_k: nullcontext(client))
+        edge_module._handle(raw, ctx, fingerprint, "edge:8443", 28429,
+                            time.monotonic()+10, gate)
+
+    handle(quote, presented=b"wrong certificate")
+    handle(quote, gate=None)
+    assert not sent and slot.sequence == 2
+    handle(quote)
+    assert replies[-1] == ("200 OK", b'{ "signed": {"z":1,"a":2} }')
+    handle(payment)
+    handle(payment)
+    assert [body for _, _, body in sent] == [quote, payment]
+    assert replies[-1][0] == "400 Bad Request"
+
+
+def test_purchase_expired_shared_attempt_rejected_before_socket(monkeypatch):
+    monkeypatch.setattr(edge_module.socket, "socket", lambda *_: pytest.fail("socket opened"))
+    with pytest.raises(ValueError, match="invalid_shared_attempt_start"):
+        edge_module.serve(bind=edge_module.MAC, port=8443, source=edge_module.CLIENT,
+            hostname=edge_module.HOST, context=None, fingerprint="a"*64, upstream_port=28429,
+            purchase=True, attempt_start=time.monotonic()-106)

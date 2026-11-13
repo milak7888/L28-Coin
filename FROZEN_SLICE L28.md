@@ -1,5 +1,28 @@
 # L28 — FROZEN_SLICE.md
 
+## One external disposable purchase edge amendment
+
+PROJECT_STATE: ACTIVE for this isolated amendment only.
+Authority: AUTHORIZE_L28_FIRST_EXTERNAL_DISPOSABLE_PURCHASE_V0_1.
+Base: 0895f01bd0040bed7a374a50e7d692bcf7c12caa plus the existing TCP 8443 amendment.
+Allowlist: coin/developer_mtls_edge.py, tests/test_developer_mtls_edge.py,
+FROZEN_SLICE L28.md, SYSTEM_STATE L28.md.
+Explicit single-purchase mode only: Mac 100.66.229.15:8443,
+pjay.tail8ba219.ts.net, client 100.98.56.15, upstream 127.0.0.1:28429.
+One 28 disposable L28 purchase from a fresh provider/store, conditional on
+offline PASS and live identity, certificate, source and shared cutoff gates.
+Stop on uncertainty, preserve evidence, and never retry or reseed.
+
+## Private mTLS port amendment
+
+Authority: AUTHORIZE_L28_PRIVATE_MTLS_PORT_8443_V0_1.
+Base: 0895f01bd0040bed7a374a50e7d692bcf7c12caa.
+Physical bind: 100.66.229.15:8443.
+Origin: https://pjay.tail8ba219.ts.net:8443.
+Client: 100.98.56.15. Upstream: 127.0.0.1:28429.
+Four paths: edge, edge tests and these frozen-slice and system-state records.
+No physical listener or payment in this source amendment.
+
 ## Mac–DigitalOcean private mTLS physical mode
 
 Authority: AUTHORIZE_L28_MAC_DIGITALOCEAN_PRIVATE_MTLS_CONNECTIVITY_V0_1.

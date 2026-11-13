@@ -1,5 +1,20 @@
 # L28 — SYSTEM_STATE.md
 
+## Single external purchase edge — offline patch candidate
+
+Authority: AUTHORIZE_L28_FIRST_EXTERNAL_DISPOSABLE_PURCHASE_V0_1.
+Edge SHA-256: 0701d7e83d43373543e1ebdaa5a4a6423140d534d69546c476d920ec90562888.
+30 offline tests passed. The shared clock closes ingress at T+105 and
+budgets edge cleanup through T+115; the operator must bound the full
+provider/client cleanup through T+120. No physical purchase was run.
+
+## Private mTLS port 8443 source candidate
+
+The operator reported a successful nonprivileged bind to 100.66.229.15:8443.
+Physical origin: https://pjay.tail8ba219.ts.net:8443.
+Edge SHA-256: 8f3527d5b04c4b0b5dca1e348e9a2cc769b5faf4c866f7032ee25dd610c00fea.
+Requester and MCP source are unchanged. No physical connectivity result.
+
 ## Physical mTLS edge patch
 
 Authority: AUTHORIZE_L28_MAC_DIGITALOCEAN_PRIVATE_MTLS_CONNECTIVITY_V0_1.
@@ -2636,3 +2651,56 @@ Update after every completed frozen slice.
 Repository/files are authoritative.
 
 Do not treat chat memory as authoritative implementation state.
+
+## EXTERNAL DISPOSABLE AI PURCHASE — 2026-11-13
+
+Product result: PRODUCT_TRANSACTION_PASS.
+Independent remote attestation: NOT FULLY ESTABLISHED.
+
+Execution:
+- Apple Mac L28 provider and DigitalOcean MCP requester.
+- Private Tailscale transport with HTTPS/mTLS.
+- One accepted disposable payment of 28 L28.
+- Opening balances: 100/0.
+- Final balances: 72/28.
+- Payment committed before useful work.
+- Signed result and receipt independently verified.
+- Canonical replay rejected without ledger mutation.
+- Zero issuance supported by provider pre-commit checks.
+
+Payment ID:
+9c39937139875a6f53d75b59a5f6c17483d8fee152f68a111142ee1cba09e398
+
+Receipt ID:
+5f840db2d1001a2baa44ee4dcfd468e80b9e89259a1c7889a4719492421626bf
+
+Evidence:
+Local acceptance directory:
+/Users/pjaydondup/l28-external-purchase-evidence-anp3pit2
+
+Original DigitalOcean MCP response SHA-256:
+a7cf67b73b491f4a9bcf34d4dbe6319766822f478d271db8bf149fbe62e7ad6c
+
+Remote response hash verified against the accepted record.
+Remote started/exited PID markers both reported 7297.
+Remote error log was empty.
+
+Limitations:
+- Historical Tailscale peer identity was not independently
+  retained in the purchase evidence.
+- Observed client TLS certificate fingerprint was not
+  independently retained in the purchase evidence.
+- Historical remote process exit status and cleanup
+  were not independently established.
+- The full 120-second deadline was not exercised.
+- Remote response and lifecycle markers corroborate
+  execution but do not close the above evidence gaps.
+
+Assurance:
+OPEN_SOURCE_PUBLIC_REVIEW.
+NOT_INDEPENDENTLY_AUDITED=true.
+
+This is disposable developer-testnet execution only.
+It is not canonical MAIN settlement or production mining.
+Do not declare PROJECT_COMPLETE on this evidence alone.
+No further payment retry is authorized.

@@ -1,4 +1,4 @@
-"""One GET-only mTLS connectivity window. Never starts an upstream."""
+"""One bounded mTLS window. Never starts or restarts an upstream."""
 from __future__ import annotations
 
 import argparse
@@ -6,13 +6,17 @@ import hashlib
 import hmac
 import http.client
 import json
+import math
 import re
 import socket
 import ssl
 import threading
 import time
 
-from coin.public_testnet_service_demo import DISCOVERY_PATH, HELLO_PATH, PublicTestnetError, _DeveloperSocketDeadline
+from coin.public_testnet_service_demo import (
+    DISCOVERY_PATH, HELLO_PATH, SESSION_PATH, PublicTestnetError,
+    _DeveloperSocketDeadline, parse_frame, public_testnet_binding,
+)
 
 MAC = "100.66.229.15"
 CLIENT = "100.98.56.15"
@@ -26,12 +30,14 @@ SESSION_SECONDS = 120
 CLEANUP_SECONDS = 5
 
 
-def _read_route(stream, authority):
+def _read_route(stream, authority, *, purchase=False):
     line = stream.readline(MAX_HEADERS + 1)
     if len(line) > MAX_HEADERS or not line.endswith(b"\r\n"):
         raise ValueError("request_line")
     method, target, version = line[:-2].decode("ascii").split(" ")
-    if method != "GET" or target not in (DISCOVERY_PATH, HELLO_PATH) or version != "HTTP/1.1":
+    allowed = (method == "GET" and target in (DISCOVERY_PATH, HELLO_PATH)
+               or purchase and (method, target) == ("POST", SESSION_PATH))
+    if not allowed or version != "HTTP/1.1":
         raise ValueError("route")
     size = len(line)
     headers = {}
@@ -47,10 +53,33 @@ def _read_route(stream, authority):
         if not re.fullmatch(r"[a-z0-9-]+", name) or name in headers:
             raise ValueError("header_name")
         headers[name] = value.strip()
-    if (headers.get("host") != authority or "transfer-encoding" in headers
-            or headers.get("content-length", "0") != "0"):
-        raise ValueError("authority_or_body")
-    return target
+    if headers.get("host") != authority or "transfer-encoding" in headers:
+        raise ValueError("authority_or_framing")
+    length = headers.get("content-length")
+    if method == "GET":
+        if length not in (None, "0"):
+            raise ValueError("get_body")
+        return method, target, b""
+    if length is None or not re.fullmatch(r"[1-9][0-9]{0,4}", length) or int(length) > MAX_BODY:
+        raise ValueError("post_body_length")
+    body = stream.read(int(length))
+    if len(body) != int(length):
+        raise ValueError("truncated_body")
+    return method, target, body
+
+
+class _PurchaseSlot:
+    """The edge gates forwarding; the provider validates signatures and settles."""
+
+    def __init__(self):
+        self.sequence = 2
+
+    def admit(self, body):
+        if self.sequence == 0:
+            raise ValueError("payment_slot_consumed")
+        parse_frame(body, expected_sequence=self.sequence, binding=public_testnet_binding())
+        # Reserve before any upstream I/O. Failure cannot reopen the slot.
+        self.sequence = 4 if self.sequence == 2 else 0
 
 
 def _reply(client, status, body=b""):
@@ -59,7 +88,7 @@ def _reply(client, status, body=b""):
     client.sendall(header.encode("ascii") + body)
 
 
-def _proxy(target, upstream_port, deadline):
+def _proxy(method, target, body, upstream_port, deadline):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as upstream:
         guard = _DeveloperSocketDeadline(upstream, deadline)
         try:
@@ -67,7 +96,10 @@ def _proxy(target, upstream_port, deadline):
             upstream.settimeout(max(0.001, deadline - time.monotonic()))
             upstream.connect((LOOPBACK, upstream_port))
             guard.check()
-            upstream.sendall(f"GET {target} HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n".encode("ascii"))
+            headers = f"{method} {target} HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n"
+            if method == "POST":
+                headers += f"Content-Type: application/json\r\nContent-Length: {len(body)}\r\n"
+            upstream.sendall((headers + "\r\n").encode("ascii") + body)
             with http.client.HTTPResponse(upstream) as reply:
                 reply.begin()
                 if reply.status != 200:
@@ -81,7 +113,7 @@ def _proxy(target, upstream_port, deadline):
             guard.close()
 
 
-def _handle(raw, context, fingerprint, authority, upstream_port, deadline):
+def _handle(raw, context, fingerprint, authority, upstream_port, deadline, slot=None):
     with raw:
         guard = _DeveloperSocketDeadline(raw, deadline)
         try:
@@ -94,12 +126,15 @@ def _handle(raw, context, fingerprint, authority, upstream_port, deadline):
                     return
                 with client.makefile("rb") as stream:
                     try:
-                        target = _read_route(stream, authority)
-                    except ValueError:
+                        method, target, payload = _read_route(stream, authority, purchase=slot is not None)
+                        guard.check()
+                        if method == "POST":
+                            slot.admit(payload)
+                    except (ValueError, PublicTestnetError, RecursionError):
                         _reply(client, "400 Bad Request")
                         return
                 guard.check()
-                body = _proxy(target, upstream_port, deadline)
+                body = _proxy(method, target, payload, upstream_port, deadline)
                 guard.check()
                 _reply(client, "200 OK", body)
         except (OSError, ValueError, PublicTestnetError, http.client.HTTPException):
@@ -109,9 +144,17 @@ def _handle(raw, context, fingerprint, authority, upstream_port, deadline):
 
 
 def serve(*, bind, port, source, hostname, context, fingerprint, upstream_port,
-          session_seconds=SESSION_SECONDS, request_seconds=REQUEST_SECONDS):
-    cutoff = time.monotonic() + session_seconds
-    stop_ingress = cutoff - min(CLEANUP_SECONDS, session_seconds / 4)
+          session_seconds=SESSION_SECONDS, request_seconds=REQUEST_SECONDS,
+          purchase=False, attempt_start=None):
+    slot = _PurchaseSlot() if purchase else None
+    if purchase:
+        if attempt_start is None or not math.isfinite(attempt_start) or not 0 <= time.monotonic()-attempt_start < 105:
+            raise ValueError("invalid_shared_attempt_start")
+        cutoff = attempt_start + 115
+        stop_ingress = attempt_start + 105
+    else:
+        cutoff = time.monotonic() + session_seconds
+        stop_ingress = cutoff - min(CLEANUP_SECONDS, session_seconds / 4)
     worker = None
     admitted = 0
 
@@ -142,7 +185,7 @@ def serve(*, bind, port, source, hostname, context, fingerprint, upstream_port,
                 admitted += 1
                 deadline = min(stop_ingress, time.monotonic() + request_seconds)
                 worker = threading.Thread(target=_handle, args=(
-                    raw, context, fingerprint, authority, upstream_port, deadline))
+                    raw, context, fingerprint, authority, upstream_port, deadline, slot))
                 worker.start()
     finally:
         if worker is not None:
@@ -159,14 +202,18 @@ def main(argv=None):
     modes = parser.add_mutually_exclusive_group(required=True)
     modes.add_argument("--loopback-test", action="store_true")
     modes.add_argument("--physical", action="store_true")
+    modes.add_argument("--physical-single-purchase", action="store_true")
+    parser.add_argument("--attempt-start", type=float)
     parser.add_argument("--upstream-port", type=int)
     args = parser.parse_args(argv)
     if not re.fullmatch(r"[a-f0-9]{64}", args.client_sha256):
         parser.error("invalid client fingerprint")
-    if args.physical:
+    if (args.attempt_start is not None) != args.physical_single_purchase:
+        parser.error("--attempt-start is required only for physical single-purchase mode")
+    if args.physical or args.physical_single_purchase:
         if args.upstream_port is not None:
             parser.error("physical mode uses fixed upstream port 28429")
-        bind, port, source, upstream_port = MAC, 443, CLIENT, 28429
+        bind, port, source, upstream_port = MAC, 8443, CLIENT, 28429
     else:
         if args.upstream_port is None or not 1 <= args.upstream_port <= 65535:
             parser.error("loopback mode requires a valid upstream port")
@@ -177,7 +224,8 @@ def main(argv=None):
     ctx.load_cert_chain(args.server_cert, args.server_key)
     ctx.load_verify_locations(cafile=args.client_ca)
     serve(bind=bind, port=port, source=source, hostname=HOST, context=ctx,
-          fingerprint=args.client_sha256, upstream_port=upstream_port)
+          fingerprint=args.client_sha256, upstream_port=upstream_port,
+          purchase=args.physical_single_purchase, attempt_start=args.attempt_start)
 
 
 if __name__ == "__main__":
