@@ -1,70 +1,9 @@
 # L28 — SYSTEM_STATE.md
 
-## Single external purchase edge — offline patch candidate
-
-Authority: AUTHORIZE_L28_FIRST_EXTERNAL_DISPOSABLE_PURCHASE_V0_1.
-Edge SHA-256: 0701d7e83d43373543e1ebdaa5a4a6423140d534d69546c476d920ec90562888.
-30 offline tests passed. The shared clock closes ingress at T+105 and
-budgets edge cleanup through T+115; the operator must bound the full
-provider/client cleanup through T+120. No physical purchase was run.
-
-## Private mTLS port 8443 source candidate
-
-The operator reported a successful nonprivileged bind to 100.66.229.15:8443.
-Physical origin: https://pjay.tail8ba219.ts.net:8443.
-Edge SHA-256: 8f3527d5b04c4b0b5dca1e348e9a2cc769b5faf4c866f7032ee25dd610c00fea.
-Requester and MCP source are unchanged. No physical connectivity result.
-
-## Physical mTLS edge patch
-
-Authority: AUTHORIZE_L28_MAC_DIGITALOCEAN_PRIVATE_MTLS_CONNECTIVITY_V0_1.
-Physical-mode edge SHA-256: 655c0eab1ea4e03bf20b4691e05dce66d63c0338486af1690789f3796d24d14f.
-The explicit --physical mode fixes Mac bind, peer source and upstream.
-The existing loopback mode remains available. No physical runtime evidence.
-
-## Single-session mTLS edge — EDGE_OFFLINE_PASS
-
-Authority: AUTHORIZE_L28_SINGLE_SESSION_PRIVATE_MTLS_EDGE_OFFLINE_V0_1.
-Edge SHA-256: 31fa3f06b23e6f007b367a421f6449c05c8ba1c62225f320f9a5a0434486cb03.
-Two real IPv4 loopback edge/stub cases passed in 117.60 seconds combined.
-The full session case verified exit and listener cleanup under 120 seconds.
-Slow TLS, HTTP and upstream tests used an accelerated 0.25-second request
-budget; the CLI default is 10 seconds. 17 affected offline checks passed.
-Only discovery and hello GET routes; no payment/provider or external
-networking. CLI remains loopback-only. Physical activation is separate.
-
-## Private HTTPS requester amendment — offline PASS
-
-Authority: AUTHORIZE_L28_PRIVATE_HTTPS_REQUESTER_ENDPOINT_AMENDMENT_V0_1.
-ACTIVE for this isolated offline amendment only. The optional approved HTTPS
-origin must match the request origin and resolve exclusively to 100.66.229.15.
-The requester dials the validated numeric address and keeps the hostname for TLS.
-19 offline tests passed. No connection, payment, or deployment.
-Runtime digest: 91170a6b6cb8b997644a7097882a41bf48d4294e680ca86208e7969973a9cd48.
-MCP SHA-256: 153d96304e7523a5a5808602f255046d73a18d4a5dd6ac99a648ef9f6faaaaa0.
-
-## DigitalOcean client deployment v0.1
-
-PROJECT_STATE: ACTIVE for this isolated client-only deployment slice.
-Operator reopening: AUTHORIZE_L28_PROJECT_STATE_ACTIVE_CLIENT_DEPLOYMENT_V0_1.
-Deployment authority: AUTHORIZE_L28_DIGITALOCEAN_CLIENT_DEPLOYMENT_V0_1.
-Source: 8b066931264cb6e531c4edb23d411eccf1b6e601.
-Target: l28-ai-client-01 (134.199.231.226), runtime user l28client.
-One isolated requester install and offline verification. Preserve the
-existing venv. No provider, ingress change or payment. Stop at
-L28_CLIENT_DEPLOYMENT_PASS or the first blocker.
-
-## Public Developer Testnet v0.1 rebuild — loopback accepted
-
-Accepted provider and MCP digests, payment and receipt IDs, and original
-evidence SHA-256 are recorded in docs/public_developer_testnet_v0.1.md.
-The prior worktree was not recovered. This branch preserves the accepted
-rebuild bytes. External ingress and purchase remain unauthorized.
-
 Last updated: 2026-11-03
 
 ## PROJECT STATE
-PROJECT_STATE: ACTIVE (isolated offline preservation slice only)
+PROJECT_STATE: COMPLETE
 
 Only the operator may change PROJECT_STATE.
 
@@ -2651,6 +2590,75 @@ Update after every completed frozen slice.
 Repository/files are authoritative.
 
 Do not treat chat memory as authoritative implementation state.
+
+## Historical developer testnet records — authority closed
+
+Operator decision: AUTHORIZE_L28_INTEGRATION_CONTROL_RECONCILIATION_V0_1.
+The canonical COMPLETE state and current frozen slice above remain authoritative.
+The isolated developer testnet authorities below are closed. These records grant
+no new execution, network, payment or production authority and record no new
+PROJECT_COMPLETE decision.
+
+## Single external purchase edge — offline patch candidate
+
+Authority: AUTHORIZE_L28_FIRST_EXTERNAL_DISPOSABLE_PURCHASE_V0_1.
+Edge SHA-256: 0701d7e83d43373543e1ebdaa5a4a6423140d534d69546c476d920ec90562888.
+30 offline tests passed. The shared clock closes ingress at T+105 and
+budgets edge cleanup through T+115; the operator must bound the full
+provider/client cleanup through T+120. No physical purchase was run.
+
+## Private mTLS port 8443 source candidate
+
+The operator reported a successful nonprivileged bind to 100.66.229.15:8443.
+Physical origin: https://pjay.tail8ba219.ts.net:8443.
+Edge SHA-256: 8f3527d5b04c4b0b5dca1e348e9a2cc769b5faf4c866f7032ee25dd610c00fea.
+Requester and MCP source are unchanged. No physical connectivity result.
+
+## Physical mTLS edge patch
+
+Authority: AUTHORIZE_L28_MAC_DIGITALOCEAN_PRIVATE_MTLS_CONNECTIVITY_V0_1.
+Physical-mode edge SHA-256: 655c0eab1ea4e03bf20b4691e05dce66d63c0338486af1690789f3796d24d14f.
+The explicit --physical mode fixes Mac bind, peer source and upstream.
+The existing loopback mode remains available. No physical runtime evidence.
+
+## Single-session mTLS edge — EDGE_OFFLINE_PASS
+
+Authority: AUTHORIZE_L28_SINGLE_SESSION_PRIVATE_MTLS_EDGE_OFFLINE_V0_1.
+Edge SHA-256: 31fa3f06b23e6f007b367a421f6449c05c8ba1c62225f320f9a5a0434486cb03.
+Two real IPv4 loopback edge/stub cases passed in 117.60 seconds combined.
+The full session case verified exit and listener cleanup under 120 seconds.
+Slow TLS, HTTP and upstream tests used an accelerated 0.25-second request
+budget; the CLI default is 10 seconds. 17 affected offline checks passed.
+Only discovery and hello GET routes; no payment/provider or external
+networking. CLI remains loopback-only. Physical activation is separate.
+
+## Private HTTPS requester amendment — offline PASS
+
+Authority: AUTHORIZE_L28_PRIVATE_HTTPS_REQUESTER_ENDPOINT_AMENDMENT_V0_1.
+ACTIVE for this isolated offline amendment only. The optional approved HTTPS
+origin must match the request origin and resolve exclusively to 100.66.229.15.
+The requester dials the validated numeric address and keeps the hostname for TLS.
+19 offline tests passed. No connection, payment, or deployment.
+Runtime digest: 91170a6b6cb8b997644a7097882a41bf48d4294e680ca86208e7969973a9cd48.
+MCP SHA-256: 153d96304e7523a5a5808602f255046d73a18d4a5dd6ac99a648ef9f6faaaaa0.
+
+## DigitalOcean client deployment v0.1
+
+Historical PROJECT_STATE: ACTIVE for this isolated client-only deployment slice.
+Operator reopening: AUTHORIZE_L28_PROJECT_STATE_ACTIVE_CLIENT_DEPLOYMENT_V0_1.
+Deployment authority: AUTHORIZE_L28_DIGITALOCEAN_CLIENT_DEPLOYMENT_V0_1.
+Source: 8b066931264cb6e531c4edb23d411eccf1b6e601.
+Target: l28-ai-client-01 (134.199.231.226), runtime user l28client.
+One isolated requester install and offline verification. Preserve the
+existing venv. No provider, ingress change or payment. Stop at
+L28_CLIENT_DEPLOYMENT_PASS or the first blocker.
+
+## Public Developer Testnet v0.1 rebuild — loopback accepted
+
+Accepted provider and MCP digests, payment and receipt IDs, and original
+evidence SHA-256 are recorded in docs/public_developer_testnet_v0.1.md.
+The prior worktree was not recovered. This branch preserves the accepted
+rebuild bytes. External ingress and purchase remain unauthorized.
 
 ## EXTERNAL DISPOSABLE AI PURCHASE — 2026-11-13
 

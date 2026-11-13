@@ -1,86 +1,5 @@
 # L28 — FROZEN_SLICE.md
 
-## One external disposable purchase edge amendment
-
-PROJECT_STATE: ACTIVE for this isolated amendment only.
-Authority: AUTHORIZE_L28_FIRST_EXTERNAL_DISPOSABLE_PURCHASE_V0_1.
-Base: 0895f01bd0040bed7a374a50e7d692bcf7c12caa plus the existing TCP 8443 amendment.
-Allowlist: coin/developer_mtls_edge.py, tests/test_developer_mtls_edge.py,
-FROZEN_SLICE L28.md, SYSTEM_STATE L28.md.
-Explicit single-purchase mode only: Mac 100.66.229.15:8443,
-pjay.tail8ba219.ts.net, client 100.98.56.15, upstream 127.0.0.1:28429.
-One 28 disposable L28 purchase from a fresh provider/store, conditional on
-offline PASS and live identity, certificate, source and shared cutoff gates.
-Stop on uncertainty, preserve evidence, and never retry or reseed.
-
-## Private mTLS port amendment
-
-Authority: AUTHORIZE_L28_PRIVATE_MTLS_PORT_8443_V0_1.
-Base: 0895f01bd0040bed7a374a50e7d692bcf7c12caa.
-Physical bind: 100.66.229.15:8443.
-Origin: https://pjay.tail8ba219.ts.net:8443.
-Client: 100.98.56.15. Upstream: 127.0.0.1:28429.
-Four paths: edge, edge tests and these frozen-slice and system-state records.
-No physical listener or payment in this source amendment.
-
-## Mac–DigitalOcean private mTLS physical mode
-
-Authority: AUTHORIZE_L28_MAC_DIGITALOCEAN_PRIVATE_MTLS_CONNECTIVITY_V0_1.
-Current work: patch preparation only; no listeners or payments.
-Base: 8b066931264cb6e531c4edb23d411eccf1b6e601.
-Allowlist: coin/developer_mtls_edge.py, tests/test_developer_mtls_edge.py,
-FROZEN_SLICE L28.md, SYSTEM_STATE L28.md. Preserve prior amendments.
-Fixed Mac 100.66.229.15:443, hostname pjay.tail8ba219.ts.net,
-client 100.98.56.15, upstream 127.0.0.1:28429. Discovery and hello GET only.
-
-## Single-session private mTLS edge
-
-PROJECT_STATE: ACTIVE for offline edge verification only.
-Authority: AUTHORIZE_L28_SINGLE_SESSION_PRIVATE_MTLS_EDGE_OFFLINE_V0_1.
-Base: 8b066931264cb6e531c4edb23d411eccf1b6e601.
-Allowlist: coin/developer_mtls_edge.py, tests/test_developer_mtls_edge.py,
-FROZEN_SLICE L28.md, SYSTEM_STATE L28.md. Preserve requester amendments.
-GET discovery and hello only; IPv4 loopback and disposable TLS fixtures.
-No physical activation, provider startup or payment.
-
-## Private HTTPS requester endpoint amendment
-
-PROJECT_STATE: ACTIVE for this offline amendment only.
-Authority: AUTHORIZE_L28_PRIVATE_HTTPS_REQUESTER_ENDPOINT_AMENDMENT_V0_1.
-Base: 8b066931264cb6e531c4edb23d411eccf1b6e601.
-Allowlist: coin/public_testnet_service_demo.py,
-coin/two_agent_service_external_access_demo.py,
-tests/test_public_testnet_service_demo.py, FROZEN_SLICE L28.md,
-SYSTEM_STATE L28.md and docs/public_developer_testnet_v0.1.md.
-Opt-in exact approved HTTPS origin resolving only to 100.66.229.15.
-Offline verification only. No deployment, connection, provider or payment.
-
-## DigitalOcean client deployment v0.1
-
-PROJECT_STATE: ACTIVE for this isolated client-only deployment slice.
-Operator reopening: AUTHORIZE_L28_PROJECT_STATE_ACTIVE_CLIENT_DEPLOYMENT_V0_1.
-Deployment authority: AUTHORIZE_L28_DIGITALOCEAN_CLIENT_DEPLOYMENT_V0_1.
-Source: 8b066931264cb6e531c4edb23d411eccf1b6e601.
-Target: l28-ai-client-01 (134.199.231.226), runtime user l28client.
-One isolated requester install and offline verification. Preserve the
-existing venv. No provider, ingress change or payment. Stop at
-L28_CLIENT_DEPLOYMENT_PASS or the first blocker.
-
-## Active offline preservation slice
-
-PROJECT_STATE: ACTIVE (this isolated worktree only).
-Authority: AUTHORIZE_L28_PUBLIC_DEVELOPER_DURABLE_CANDIDATE_PRESERVATION_V0_1.
-Preserve the accepted rebuild on codex/public-developer-external-v0-1 at
-base f9bb1467. Exact seven-path allowlist below. No runtime, external
-networking or commit. Stop at candidate ready for commit approval.
-
-## Public Developer Testnet v0.1 rebuild
-
-Authority: AUTHORIZE_L28_PUBLIC_DEVELOPER_TESTNET_REBUILD_V0_1.
-ACTIVE in isolated archive of f9bb1467 only. New source and evidence.
-Exact allowlist: coin/public_testnet_service_demo.py; coin/two_agent_service_external_access_demo.py; tests/test_public_testnet_service_demo.py; tests/test_two_agent_service_external_access.py; docs/public_developer_testnet_v0.1.md; FROZEN_SLICE L28.md; SYSTEM_STATE L28.md.
-Reuse existing disposable service and validator. One bounded provider and outbound HTTPS/MCP client. IPv4-loopback mTLS acceptance only, one payment before useful work, 100/0 to 72/28, zero issuance, verified signatures and replay rejection. Stop on uncertainty, failure or LOOPBACK_PASS.
-
 ## CURRENT — LIMITED PRIVATE TESTNET v0.1 — COMPLETE — 2026-11-03
 
 PROJECT_STATE: COMPLETE
@@ -1008,3 +927,92 @@ or firewall changes are implied by implementation authority.
 After full actual-product PASS update SYSTEM_STATE and make one local exact-path
 commit. If runtime/hardware blocks verification, report BLOCKED, do not claim
 PASS or commit. Do not begin another milestone.
+
+## Historical developer testnet records — authority closed
+
+Operator decision: AUTHORIZE_L28_INTEGRATION_CONTROL_RECONCILIATION_V0_1.
+The canonical COMPLETE state and current frozen slice above remain authoritative.
+The isolated developer testnet authorities below are closed. These records grant
+no new execution, network, payment or production authority and record no new
+PROJECT_COMPLETE decision.
+
+## One external disposable purchase edge amendment
+
+Historical PROJECT_STATE: ACTIVE for this isolated amendment only.
+Authority: AUTHORIZE_L28_FIRST_EXTERNAL_DISPOSABLE_PURCHASE_V0_1.
+Base: 0895f01bd0040bed7a374a50e7d692bcf7c12caa plus the existing TCP 8443 amendment.
+Allowlist: coin/developer_mtls_edge.py, tests/test_developer_mtls_edge.py,
+FROZEN_SLICE L28.md, SYSTEM_STATE L28.md.
+Explicit single-purchase mode only: Mac 100.66.229.15:8443,
+pjay.tail8ba219.ts.net, client 100.98.56.15, upstream 127.0.0.1:28429.
+One 28 disposable L28 purchase from a fresh provider/store, conditional on
+offline PASS and live identity, certificate, source and shared cutoff gates.
+Stop on uncertainty, preserve evidence, and never retry or reseed.
+
+## Private mTLS port amendment
+
+Authority: AUTHORIZE_L28_PRIVATE_MTLS_PORT_8443_V0_1.
+Base: 0895f01bd0040bed7a374a50e7d692bcf7c12caa.
+Physical bind: 100.66.229.15:8443.
+Origin: https://pjay.tail8ba219.ts.net:8443.
+Client: 100.98.56.15. Upstream: 127.0.0.1:28429.
+Four paths: edge, edge tests and these frozen-slice and system-state records.
+No physical listener or payment in this source amendment.
+
+## Mac–DigitalOcean private mTLS physical mode
+
+Authority: AUTHORIZE_L28_MAC_DIGITALOCEAN_PRIVATE_MTLS_CONNECTIVITY_V0_1.
+Current work: patch preparation only; no listeners or payments.
+Base: 8b066931264cb6e531c4edb23d411eccf1b6e601.
+Allowlist: coin/developer_mtls_edge.py, tests/test_developer_mtls_edge.py,
+FROZEN_SLICE L28.md, SYSTEM_STATE L28.md. Preserve prior amendments.
+Fixed Mac 100.66.229.15:443, hostname pjay.tail8ba219.ts.net,
+client 100.98.56.15, upstream 127.0.0.1:28429. Discovery and hello GET only.
+
+## Single-session private mTLS edge
+
+Historical PROJECT_STATE: ACTIVE for offline edge verification only.
+Authority: AUTHORIZE_L28_SINGLE_SESSION_PRIVATE_MTLS_EDGE_OFFLINE_V0_1.
+Base: 8b066931264cb6e531c4edb23d411eccf1b6e601.
+Allowlist: coin/developer_mtls_edge.py, tests/test_developer_mtls_edge.py,
+FROZEN_SLICE L28.md, SYSTEM_STATE L28.md. Preserve requester amendments.
+GET discovery and hello only; IPv4 loopback and disposable TLS fixtures.
+No physical activation, provider startup or payment.
+
+## Private HTTPS requester endpoint amendment
+
+Historical PROJECT_STATE: ACTIVE for this offline amendment only.
+Authority: AUTHORIZE_L28_PRIVATE_HTTPS_REQUESTER_ENDPOINT_AMENDMENT_V0_1.
+Base: 8b066931264cb6e531c4edb23d411eccf1b6e601.
+Allowlist: coin/public_testnet_service_demo.py,
+coin/two_agent_service_external_access_demo.py,
+tests/test_public_testnet_service_demo.py, FROZEN_SLICE L28.md,
+SYSTEM_STATE L28.md and docs/public_developer_testnet_v0.1.md.
+Opt-in exact approved HTTPS origin resolving only to 100.66.229.15.
+Offline verification only. No deployment, connection, provider or payment.
+
+## DigitalOcean client deployment v0.1
+
+Historical PROJECT_STATE: ACTIVE for this isolated client-only deployment slice.
+Operator reopening: AUTHORIZE_L28_PROJECT_STATE_ACTIVE_CLIENT_DEPLOYMENT_V0_1.
+Deployment authority: AUTHORIZE_L28_DIGITALOCEAN_CLIENT_DEPLOYMENT_V0_1.
+Source: 8b066931264cb6e531c4edb23d411eccf1b6e601.
+Target: l28-ai-client-01 (134.199.231.226), runtime user l28client.
+One isolated requester install and offline verification. Preserve the
+existing venv. No provider, ingress change or payment. Stop at
+L28_CLIENT_DEPLOYMENT_PASS or the first blocker.
+
+## Active offline preservation slice
+
+Historical PROJECT_STATE: ACTIVE (this isolated worktree only).
+Authority: AUTHORIZE_L28_PUBLIC_DEVELOPER_DURABLE_CANDIDATE_PRESERVATION_V0_1.
+Preserve the accepted rebuild on codex/public-developer-external-v0-1 at
+base f9bb1467. Exact seven-path allowlist below. No runtime, external
+networking or commit. Stop at candidate ready for commit approval.
+
+## Public Developer Testnet v0.1 rebuild
+
+Authority: AUTHORIZE_L28_PUBLIC_DEVELOPER_TESTNET_REBUILD_V0_1.
+ACTIVE in isolated archive of f9bb1467 only. New source and evidence.
+Exact allowlist: coin/public_testnet_service_demo.py; coin/two_agent_service_external_access_demo.py; tests/test_public_testnet_service_demo.py; tests/test_two_agent_service_external_access.py; docs/public_developer_testnet_v0.1.md; FROZEN_SLICE L28.md; SYSTEM_STATE L28.md.
+Reuse existing disposable service and validator. One bounded provider and outbound HTTPS/MCP client. IPv4-loopback mTLS acceptance only, one payment before useful work, 100/0 to 72/28, zero issuance, verified signatures and replay rejection. Stop on uncertainty, failure or LOOPBACK_PASS.
