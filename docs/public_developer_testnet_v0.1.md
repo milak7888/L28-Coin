@@ -74,3 +74,40 @@ The configured DNS hostname must resolve exclusively to Mac
 100.66.229.15 on every request. Keep certificate and provider-pin options.
 This mode cannot be combined with `--developer-loopback-test`. No private
 origin is assumed or enrolled by this amendment.
+
+### Configurable public-origin candidate
+
+The edge can use one explicitly configured IPv4 listener, one DNS
+hostname, one requester source IPv4, and one enrolled client certificate
+leaf. Public listener activation requires separate host-specific approval.
+The normal MCP HTTPS mode already verifies the server hostname, resolves
+the origin to globally routable IPv4, and checks an independently supplied
+provider signing-key pin. Use its existing command above without either
+the private-origin or loopback-test option.
+
+For one approved attempt, the same local owner captures a monotonic start
+before launching the provider, passes that value to the edge, and controls
+the provider, edge and requester lifetimes through the 120-second cutoff.
+
+```sh
+python -B -m coin.developer_mtls_edge --public-origin-single-purchase \
+  --bind-ip "$APPROVED_LISTENER_IPV4" --bind-port "$APPROVED_LISTENER_PORT" \
+  --hostname "$APPROVED_DNS_HOSTNAME" --source-ip "$APPROVED_REQUESTER_IPV4" \
+  --server-cert "$EDGE_CERT" --server-key "$EDGE_KEY" --client-ca "$TEST_CLIENT_CA" \
+  --client-sha256 "$APPROVED_CLIENT_LEAF_DER_SHA256" --attempt-start "$ATTEMPT_START"
+```
+
+The upstream is fixed to 127.0.0.1:28429. TLS SNI and HTTP Host must match
+the configured origin. Client chain and leaf SHA-256 checks both apply.
+Source admission uses the direct socket peer. Use end-to-end TLS and a
+network path that preserves the approved requester source address. The
+edge logs the admitted source and public leaf fingerprint to its
+attempt log. Direct network restrictions and rate limits for a future
+public deployment are a separate operator decision.
+
+The edge reuses the discovery and hello GET routes and one session POST
+route. It accepts one quote request and consumes the payment slot before
+forwarding one payment package. Ingress closes by T+105; edge worker
+cleanup is budgeted through T+115. The launch owner must complete
+remaining process cleanup by T+120 and preserve evidence if delivery
+is uncertain. No automatic payment retry or restart.

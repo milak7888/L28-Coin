@@ -1,6 +1,32 @@
 # L28 — FROZEN_SLICE.md
 
-## CURRENT — LIMITED PRIVATE TESTNET v0.1 — COMPLETE — 2026-11-03
+## CURRENT — PUBLIC-ORIGIN DEVELOPER TESTNET EDGE RC v0.1 — 2026-11-13
+
+PROJECT_STATE: ACTIVE
+Authority: AUTHORIZE_L28_PUBLIC_TESTNET_PUBLIC_ORIGIN_EDGE_RC_V0_1.
+Base: 5a54b36452e33274959fd3a5e0b4c7d3cb88584c.
+Branch: codex/public-origin-edge-rc-v0-1.
+
+Deliverable: opt-in configurable HTTPS/mTLS ingress for one disposable
+28-L28 summary purchase using the existing HTTP/JSON provider and MCP
+requester. Bind one exact IPv4 endpoint, one DNS hostname, one source
+IPv4 and one enrolled client leaf. Keep the provider on loopback.
+
+Exact scope: coin/developer_mtls_edge.py; tests/test_developer_mtls_edge.py;
+docs/public_developer_testnet_v0.1.md; FROZEN_SLICE L28.md; SYSTEM_STATE L28.md.
+
+Acceptance: focused tests and affected regressions, followed by one isolated
+purchase via real provider, edge and MCP processes. Verify source and client
+leaf admission, signed result and receipt, durable payment before useful work,
+balances 100/0 → 72/28, zero issuance, replay rejection without mutation, and
+process/listener cleanup. Record evidence and one consolidated security review.
+
+Safety: isolated test traffic and disposable fixtures only. Public listener,
+deployment, production keys, canonical settlement, historical or economic
+changes and Git push are outside scope. Stop at COMPLETE_PENDING_OPERATOR
+after acceptance, or at the concrete blocker. Never retry an uncertain payment.
+
+## HISTORICAL — LIMITED PRIVATE TESTNET v0.1 — COMPLETE — 2026-11-03
 
 PROJECT_STATE: COMPLETE
 Slice status: PROJECT_COMPLETE / PHYSICAL PASS.

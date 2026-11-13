@@ -1,13 +1,59 @@
 # L28 — SYSTEM_STATE.md
 
-Last updated: 2026-11-03
+Last updated: 2026-11-13
 
 ## PROJECT STATE
-PROJECT_STATE: COMPLETE
+PROJECT_STATE: ACTIVE
 
 Only the operator may change PROJECT_STATE.
 
-## CURRENT — LIMITED PRIVATE TESTNET v0.1 — COMPLETE
+## CURRENT — PUBLIC-ORIGIN DEVELOPER TESTNET EDGE RC v0.1
+
+Operator authority: AUTHORIZE_L28_PUBLIC_TESTNET_PUBLIC_ORIGIN_EDGE_RC_V0_1.
+ACTIVE applies only to this isolated five-path slice from
+5a54b36452e33274959fd3a5e0b4c7d3cb88584c. Prior COMPLETE records and
+evidence are preserved below.
+
+Slice result: COMPLETE_PENDING_OPERATOR. Actual-product and scoped defensive
+security review PASS for isolated acceptance. PROJECT_STATE remains ACTIVE.
+
+- Focused edge and affected provider/MCP regressions: 139 passed.
+- Real provider, edge and MCP processes completed one disposable text summary.
+  Read-only inspection at entry to useful work observed one durable 28-L28
+  debit with work still unrecorded. Final balances 100/0 → 72/28. Zero
+  issuance and mint height; exactly one payment and receipt in SQLite.
+- Provider response body matched the edge-delivered body byte for byte.
+  Both MCP carriers independently verified against the signed artifacts and
+  the provider pin from the provider's local readiness channel.
+- Edge rejected wrong source, missing and wrong client leaves, wrong SNI and
+  HTTP Host, unauthorized route and POST. Admitted 11 connections and
+  recorded the approved TLS leaf and source for eight authenticated
+  connections. Replayed payment rejected at the edge and by the canonical
+  validator against the persisted state. SQLite SHA-256 stayed unchanged.
+- All three owned processes exited 0. Both loopback ports closed after
+  105.024 seconds, within the shared 120-second budget.
+- Payment ID: `c8ee02916593e2c6c507532b06c79411556f5743600255da2ef6eb31b3df573a`.
+- Receipt ID: `bbd410d3b53227873c24f55113198742d8ab3129a5e92f1c503a1f189b2c3564`.
+- Edge SHA-256: `e0a1266baf821191241374a51596f23f0dfba19a223a5dd858fea622959b4a6e`.
+- Machine-readable evidence: `/private/tmp/l28-origin-evidence.ZmbXSnBv/result.json`.
+- Evidence SHA-256: `7f3da83c5da03efaa5359039c651d044b6d3bc4083ee4ce42dfcbedcb4f59b7b`.
+
+The acceptance harness supplied a global-classified IPv4 fixture to the
+requester's normal route validation and mapped its exact dial to IPv4
+loopback. All sockets were local. Public DNS, routing, ingress and a
+separately operated external host were outside this validation.
+
+Security review checked CLI mode isolation and explicit endpoint selection,
+exact source/SNI/Host and mTLS admission, unchanged signed-body forwarding,
+pre-forward payment-slot consumption, deadlines, and fail-closed cleanup.
+No blocking finding in this bounded review. A future exposed listener
+would still need network-layer ingress and rate controls to bound TCP
+accept pressure before mTLS, an owner draining process logs and enforcing
+the shared cleanup cutoff, and separately approved deployment. A committed
+debit can outlive failed result delivery. No retries or automatic restarts.
+NOT_INDEPENDENTLY_AUDITED=true. Stop for operator review.
+
+## HISTORICAL — LIMITED PRIVATE TESTNET v0.1 — COMPLETE
 
 Completion authority: AUTHORIZE_L28_LIMITED_PRIVATE_TESTNET_PROJECT_COMPLETE.
 Slice status: PROJECT_COMPLETE / PHYSICAL PASS, 2026-11-03.

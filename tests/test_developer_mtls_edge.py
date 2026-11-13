@@ -237,3 +237,66 @@ def test_purchase_expired_shared_attempt_rejected_before_socket(monkeypatch):
         edge_module.serve(bind=edge_module.MAC, port=8443, source=edge_module.CLIENT,
             hostname=edge_module.HOST, context=None, fingerprint="a"*64, upstream_port=28429,
             purchase=True, attempt_start=time.monotonic()-106)
+
+
+@pytest.mark.parametrize("overrides,extra,accepted", [
+    ({}, [], True),
+    ({"bind-ip": None}, [], False),
+    ({"bind-ip": "0.0.0.0"}, [], False),
+    ({"bind-ip": "0.1.2.3"}, [], False),
+    ({"bind-ip": "::1"}, [], False),
+    ({"bind-port": "28429"}, [], False),
+    ({"bind-port": "65536"}, [], False),
+    ({"source-ip": "224.0.0.1"}, [], False),
+    ({"source-ip": "169.254.1.2"}, [], False),
+    ({"source-ip": "127.0.0.0/8"}, [], False),
+    ({"hostname": "test.example:8443"}, [], False),
+    ({"hostname": "*.example"}, [], False),
+    ({"hostname": "1.2.3.4"}, [], False),
+    ({"attempt-start": None}, [], False),
+    ({}, ["--upstream-port", "18100"], False),
+    ({}, ["--physical"], False),
+    ({}, ["--physical-single-purchase"], False),
+    ({}, ["--loopback-test"], False),
+])
+def test_public_origin_mode_selection(monkeypatch, overrides, extra, accepted):
+    from types import SimpleNamespace
+
+    ctx = SimpleNamespace(load_cert_chain=lambda *_: None,
+                          load_verify_locations=lambda **_: None)
+    calls = []
+    monkeypatch.setattr(edge_module.ssl, "SSLContext", lambda _: ctx)
+    monkeypatch.setattr(edge_module, "serve", lambda **kwargs: calls.append(kwargs))
+    config = {"bind-ip": "127.0.0.1", "bind-port": "18443",
+              "source-ip": "127.0.0.2", "hostname": "test.example",
+              "attempt-start": "123.5"}
+    config.update(overrides)
+    argv = ["--public-origin-single-purchase", "--server-cert", "fixture.pem",
+            "--server-key", "fixture.key", "--client-ca", "ca.pem",
+            "--client-sha256", "b" * 64]
+    for key, value in config.items():
+        if value is not None:
+            argv.extend([f"--{key}", value])
+    if not accepted:
+        with pytest.raises(SystemExit) as error:
+            edge_module.main(argv + extra)
+        assert error.value.code == 2
+        assert not calls
+        return
+    edge_module.main(argv)
+    assert calls == [{
+        "bind": "127.0.0.1", "port": 18443, "source": "127.0.0.2",
+        "hostname": "test.example", "context": ctx, "fingerprint": "b" * 64,
+        "upstream_port": 28429, "purchase": True, "attempt_start": 123.5,
+        "report_peer": True,
+    }]
+    assert ctx.verify_mode == ssl.CERT_REQUIRED
+
+
+def test_legacy_mode_rejects_public_origin_options(monkeypatch):
+    monkeypatch.setattr(edge_module, "serve", lambda **_: pytest.fail("listener started"))
+    with pytest.raises(SystemExit) as error:
+        edge_module.main(["--physical", "--source-ip", "127.0.0.1",
+                          "--server-cert", "fixture.pem", "--server-key", "fixture.key",
+                          "--client-ca", "ca.pem", "--client-sha256", "a" * 64])
+    assert error.value.code == 2

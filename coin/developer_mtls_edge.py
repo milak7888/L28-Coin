@@ -5,6 +5,7 @@ import argparse
 import hashlib
 import hmac
 import http.client
+import ipaddress
 import json
 import math
 import re
@@ -113,7 +114,8 @@ def _proxy(method, target, body, upstream_port, deadline):
             guard.close()
 
 
-def _handle(raw, context, fingerprint, authority, upstream_port, deadline, slot=None):
+def _handle(raw, context, fingerprint, authority, upstream_port, deadline, slot=None,
+            *, report_source=None):
     with raw:
         guard = _DeveloperSocketDeadline(raw, deadline)
         try:
@@ -124,6 +126,9 @@ def _handle(raw, context, fingerprint, authority, upstream_port, deadline, slot=
                 actual = hashlib.sha256(client.getpeercert(binary_form=True)).hexdigest()
                 if not hmac.compare_digest(actual, fingerprint):
                     return
+                if report_source is not None:
+                    print(json.dumps({"authenticated_source": report_source,
+                                      "client_leaf_sha256": actual}), flush=True)
                 with client.makefile("rb") as stream:
                     try:
                         method, target, payload = _read_route(stream, authority, purchase=slot is not None)
@@ -145,7 +150,7 @@ def _handle(raw, context, fingerprint, authority, upstream_port, deadline, slot=
 
 def serve(*, bind, port, source, hostname, context, fingerprint, upstream_port,
           session_seconds=SESSION_SECONDS, request_seconds=REQUEST_SECONDS,
-          purchase=False, attempt_start=None):
+          purchase=False, attempt_start=None, report_peer=False):
     slot = _PurchaseSlot() if purchase else None
     if purchase:
         if attempt_start is None or not math.isfinite(attempt_start) or not 0 <= time.monotonic()-attempt_start < 105:
@@ -185,7 +190,8 @@ def serve(*, bind, port, source, hostname, context, fingerprint, upstream_port,
                 admitted += 1
                 deadline = min(stop_ingress, time.monotonic() + request_seconds)
                 worker = threading.Thread(target=_handle, args=(
-                    raw, context, fingerprint, authority, upstream_port, deadline, slot))
+                    raw, context, fingerprint, authority, upstream_port, deadline, slot),
+                    kwargs={"report_source": address[0] if report_peer else None})
                 worker.start()
     finally:
         if worker is not None:
@@ -193,6 +199,22 @@ def serve(*, bind, port, source, hostname, context, fingerprint, upstream_port,
             if worker.is_alive():
                 raise RuntimeError("edge_cleanup_deadline")
     print(json.dumps({"edge_closed": True, "admitted": admitted}), flush=True)
+
+
+def _unicast_ipv4(value):
+    address = ipaddress.IPv4Address(value)
+    if (address.is_unspecified or address.is_multicast or address.is_reserved
+            or address.is_link_local or address in ipaddress.IPv4Network("0.0.0.0/8")):
+        raise ValueError("expected an exact unicast IPv4 address")
+    return str(address)
+
+
+def _dns_hostname(value):
+    label = r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?"
+    if (len(value) > 253 or not re.fullmatch(rf"{label}(?:\.{label})+", value)
+            or not re.search(r"[a-z]", value.rsplit(".", 1)[-1])):
+        raise ValueError("expected a lowercase DNS hostname")
+    return value
 
 
 def main(argv=None):
@@ -203,14 +225,37 @@ def main(argv=None):
     modes.add_argument("--loopback-test", action="store_true")
     modes.add_argument("--physical", action="store_true")
     modes.add_argument("--physical-single-purchase", action="store_true")
+    modes.add_argument("--public-origin-single-purchase", action="store_true")
+    parser.add_argument("--bind-ip")
+    parser.add_argument("--bind-port", type=int)
+    parser.add_argument("--source-ip")
+    parser.add_argument("--hostname")
     parser.add_argument("--attempt-start", type=float)
     parser.add_argument("--upstream-port", type=int)
     args = parser.parse_args(argv)
     if not re.fullmatch(r"[a-f0-9]{64}", args.client_sha256):
         parser.error("invalid client fingerprint")
-    if (args.attempt_start is not None) != args.physical_single_purchase:
-        parser.error("--attempt-start is required only for physical single-purchase mode")
-    if args.physical or args.physical_single_purchase:
+    purchase = args.physical_single_purchase or args.public_origin_single_purchase
+    if (args.attempt_start is not None) != purchase:
+        parser.error("--attempt-start is required exactly in single-purchase modes")
+    origin = (args.bind_ip, args.bind_port, args.source_ip, args.hostname)
+    hostname = HOST
+    if args.public_origin_single_purchase:
+        if any(value is None for value in origin) or args.upstream_port is not None:
+            parser.error("public-origin mode requires --bind-ip, --bind-port, --source-ip and --hostname; "
+                         "upstream is fixed at 127.0.0.1:28429")
+        if not 1 <= args.bind_port <= 65535 or args.bind_port == 28429:
+            parser.error("invalid public-origin edge port")
+        try:
+            bind = _unicast_ipv4(args.bind_ip)
+            source = _unicast_ipv4(args.source_ip)
+            hostname = _dns_hostname(args.hostname)
+        except ValueError as exc:
+            parser.error(str(exc))
+        port, upstream_port = args.bind_port, 28429
+    elif any(value is not None for value in origin):
+        parser.error("endpoint options require --public-origin-single-purchase")
+    elif args.physical or args.physical_single_purchase:
         if args.upstream_port is not None:
             parser.error("physical mode uses fixed upstream port 28429")
         bind, port, source, upstream_port = MAC, 8443, CLIENT, 28429
@@ -223,9 +268,10 @@ def main(argv=None):
     ctx.verify_mode = ssl.CERT_REQUIRED
     ctx.load_cert_chain(args.server_cert, args.server_key)
     ctx.load_verify_locations(cafile=args.client_ca)
-    serve(bind=bind, port=port, source=source, hostname=HOST, context=ctx,
+    serve(bind=bind, port=port, source=source, hostname=hostname, context=ctx,
           fingerprint=args.client_sha256, upstream_port=upstream_port,
-          purchase=args.physical_single_purchase, attempt_start=args.attempt_start)
+          purchase=purchase, attempt_start=args.attempt_start,
+          report_peer=args.public_origin_single_purchase)
 
 
 if __name__ == "__main__":
