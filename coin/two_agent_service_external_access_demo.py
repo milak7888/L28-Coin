@@ -654,13 +654,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--developer-client-key")
     parser.add_argument("--developer-ca")
     parser.add_argument("--developer-loopback-test", action="store_true")
+    parser.add_argument("--developer-private-origin", help="Explicitly approved private HTTPS origin")
     args = parser.parse_args(sys.argv[1:] if argv is None else argv)
 
     developer_fields = (args.developer_endpoint, args.expected_provider_key,
                         args.developer_client_cert, args.developer_client_key)
-    if any(developer_fields) or args.developer_loopback_test or args.developer_ca:
+    if any(developer_fields) or args.developer_loopback_test or args.developer_ca or args.developer_private_origin is not None:
         if args.runtime != "mcp" or not all(developer_fields):
             parser.error("developer mode requires MCP, endpoint, provider pin and client certificate/key")
+        if args.developer_loopback_test and args.developer_private_origin is not None:
+            parser.error("private origin and loopback test are mutually exclusive")
         from coin.public_testnet_service_demo import PublicTestnetError, purchase_developer_summary
         from coin.limited_testnet_service_demo import LimitedTestnetError
 
@@ -676,7 +679,8 @@ def main(argv: list[str] | None = None) -> int:
             try:
                 return purchase_developer_summary(args.developer_endpoint, text,
                     expected_provider_key=args.expected_provider_key, tls_context=ctx,
-                    loopback_test=args.developer_loopback_test)
+                    loopback_test=args.developer_loopback_test,
+                    approved_private_origin=args.developer_private_origin)
             except (PublicTestnetError, LimitedTestnetError, DemoError, ValueError, OSError) as exc:
                 raise ExternalAccessError("developer_purchase_failed_stop") from exc
 

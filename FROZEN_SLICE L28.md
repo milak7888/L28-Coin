@@ -1,5 +1,48 @@
 # L28 — FROZEN_SLICE.md
 
+## Mac–DigitalOcean private mTLS physical mode
+
+Authority: AUTHORIZE_L28_MAC_DIGITALOCEAN_PRIVATE_MTLS_CONNECTIVITY_V0_1.
+Current work: patch preparation only; no listeners or payments.
+Base: 8b066931264cb6e531c4edb23d411eccf1b6e601.
+Allowlist: coin/developer_mtls_edge.py, tests/test_developer_mtls_edge.py,
+FROZEN_SLICE L28.md, SYSTEM_STATE L28.md. Preserve prior amendments.
+Fixed Mac 100.66.229.15:443, hostname pjay.tail8ba219.ts.net,
+client 100.98.56.15, upstream 127.0.0.1:28429. Discovery and hello GET only.
+
+## Single-session private mTLS edge
+
+PROJECT_STATE: ACTIVE for offline edge verification only.
+Authority: AUTHORIZE_L28_SINGLE_SESSION_PRIVATE_MTLS_EDGE_OFFLINE_V0_1.
+Base: 8b066931264cb6e531c4edb23d411eccf1b6e601.
+Allowlist: coin/developer_mtls_edge.py, tests/test_developer_mtls_edge.py,
+FROZEN_SLICE L28.md, SYSTEM_STATE L28.md. Preserve requester amendments.
+GET discovery and hello only; IPv4 loopback and disposable TLS fixtures.
+No physical activation, provider startup or payment.
+
+## Private HTTPS requester endpoint amendment
+
+PROJECT_STATE: ACTIVE for this offline amendment only.
+Authority: AUTHORIZE_L28_PRIVATE_HTTPS_REQUESTER_ENDPOINT_AMENDMENT_V0_1.
+Base: 8b066931264cb6e531c4edb23d411eccf1b6e601.
+Allowlist: coin/public_testnet_service_demo.py,
+coin/two_agent_service_external_access_demo.py,
+tests/test_public_testnet_service_demo.py, FROZEN_SLICE L28.md,
+SYSTEM_STATE L28.md and docs/public_developer_testnet_v0.1.md.
+Opt-in exact approved HTTPS origin resolving only to 100.66.229.15.
+Offline verification only. No deployment, connection, provider or payment.
+
+## DigitalOcean client deployment v0.1
+
+PROJECT_STATE: ACTIVE for this isolated client-only deployment slice.
+Operator reopening: AUTHORIZE_L28_PROJECT_STATE_ACTIVE_CLIENT_DEPLOYMENT_V0_1.
+Deployment authority: AUTHORIZE_L28_DIGITALOCEAN_CLIENT_DEPLOYMENT_V0_1.
+Source: 8b066931264cb6e531c4edb23d411eccf1b6e601.
+Target: l28-ai-client-01 (134.199.231.226), runtime user l28client.
+One isolated requester install and offline verification. Preserve the
+existing venv. No provider, ingress change or payment. Stop at
+L28_CLIENT_DEPLOYMENT_PASS or the first blocker.
+
 ## Active offline preservation slice
 
 PROJECT_STATE: ACTIVE (this isolated worktree only).

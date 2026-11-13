@@ -1439,7 +1439,8 @@ def _developer_resolve(host: str, port: int, deadline: float) -> set[str]:
 
 
 def purchase_developer_summary(endpoint: str, input_text: str, *, expected_provider_key: str,
-                               tls_context: ssl.SSLContext, loopback_test: bool = False) -> dict[str, Any]:
+                               tls_context: ssl.SSLContext, loopback_test: bool = False,
+                               approved_private_origin: str | None = None) -> dict[str, Any]:
     parsed = urllib.parse.urlsplit(endpoint)
     host = parsed.hostname
     if (parsed.scheme != "https" or not host or parsed.username or parsed.password
@@ -1449,14 +1450,32 @@ def purchase_developer_summary(endpoint: str, input_text: str, *, expected_provi
         raise PublicTestnetError("developer_endpoint_or_trust_invalid")
     if loopback_test and host != LOOPBACK_HOST:
         raise PublicTestnetError("developer_loopback_required")
+    private_ip = "100.66.229.15"
+    if approved_private_origin is not None:
+        # The configured origin supplies the operator-approved DNS name and port.
+        # Never substitute the numeric socket address for the TLS server name.
+        labels = host.split(".")
+        dns_name = len(host) <= 253 and len(labels) >= 2 and any(c.isalpha() for c in labels[-1])
+        dns_name = dns_name and all(
+            0 < len(label) <= 63 and label[0] != "-" and label[-1] != "-"
+            and all(c in "abcdefghijklmnopqrstuvwxyz0123456789-" for c in label)
+            for label in labels
+        )
+        if loopback_test or endpoint.rstrip("/") != approved_private_origin.rstrip("/") or not dns_name:
+            raise PublicTestnetError("developer_private_origin_invalid")
     deadline = time.monotonic() + SESSION_DEADLINE_SECONDS
 
     def exchange(method: str, path: str, body: bytes | None) -> bytes:
         request_deadline = min(deadline, time.monotonic() + REQUEST_TIMEOUT_SECONDS)
         port = parsed.port or 443
         ips = _developer_resolve(host, port, request_deadline)
-        if not ips or (ips != {LOOPBACK_HOST} if loopback_test else
-                       any(not ipaddress.IPv4Address(ip).is_global for ip in ips)):
+        if approved_private_origin is not None:
+            allowed = ips == {private_ip}
+        elif loopback_test:
+            allowed = ips == {LOOPBACK_HOST}
+        else:
+            allowed = bool(ips) and all(ipaddress.IPv4Address(ip).is_global for ip in ips)
+        if not allowed:
             raise PublicTestnetError("developer_route_invalid")
         conn = http.client.HTTPSConnection(host, port, context=tls_context)
         guard = None

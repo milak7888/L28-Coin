@@ -1,5 +1,44 @@
 # L28 — SYSTEM_STATE.md
 
+## Physical mTLS edge patch
+
+Authority: AUTHORIZE_L28_MAC_DIGITALOCEAN_PRIVATE_MTLS_CONNECTIVITY_V0_1.
+Physical-mode edge SHA-256: 655c0eab1ea4e03bf20b4691e05dce66d63c0338486af1690789f3796d24d14f.
+The explicit --physical mode fixes Mac bind, peer source and upstream.
+The existing loopback mode remains available. No physical runtime evidence.
+
+## Single-session mTLS edge — EDGE_OFFLINE_PASS
+
+Authority: AUTHORIZE_L28_SINGLE_SESSION_PRIVATE_MTLS_EDGE_OFFLINE_V0_1.
+Edge SHA-256: 31fa3f06b23e6f007b367a421f6449c05c8ba1c62225f320f9a5a0434486cb03.
+Two real IPv4 loopback edge/stub cases passed in 117.60 seconds combined.
+The full session case verified exit and listener cleanup under 120 seconds.
+Slow TLS, HTTP and upstream tests used an accelerated 0.25-second request
+budget; the CLI default is 10 seconds. 17 affected offline checks passed.
+Only discovery and hello GET routes; no payment/provider or external
+networking. CLI remains loopback-only. Physical activation is separate.
+
+## Private HTTPS requester amendment — offline PASS
+
+Authority: AUTHORIZE_L28_PRIVATE_HTTPS_REQUESTER_ENDPOINT_AMENDMENT_V0_1.
+ACTIVE for this isolated offline amendment only. The optional approved HTTPS
+origin must match the request origin and resolve exclusively to 100.66.229.15.
+The requester dials the validated numeric address and keeps the hostname for TLS.
+19 offline tests passed. No connection, payment, or deployment.
+Runtime digest: 91170a6b6cb8b997644a7097882a41bf48d4294e680ca86208e7969973a9cd48.
+MCP SHA-256: 153d96304e7523a5a5808602f255046d73a18d4a5dd6ac99a648ef9f6faaaaa0.
+
+## DigitalOcean client deployment v0.1
+
+PROJECT_STATE: ACTIVE for this isolated client-only deployment slice.
+Operator reopening: AUTHORIZE_L28_PROJECT_STATE_ACTIVE_CLIENT_DEPLOYMENT_V0_1.
+Deployment authority: AUTHORIZE_L28_DIGITALOCEAN_CLIENT_DEPLOYMENT_V0_1.
+Source: 8b066931264cb6e531c4edb23d411eccf1b6e601.
+Target: l28-ai-client-01 (134.199.231.226), runtime user l28client.
+One isolated requester install and offline verification. Preserve the
+existing venv. No provider, ingress change or payment. Stop at
+L28_CLIENT_DEPLOYMENT_PASS or the first blocker.
+
 ## Public Developer Testnet v0.1 rebuild — loopback accepted
 
 Accepted provider and MCP digests, payment and receipt IDs, and original

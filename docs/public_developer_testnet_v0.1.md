@@ -63,3 +63,14 @@ Replay was rejected by the canonical validator against read-only durable
 state; no network replay was sent. The full 120-second timeout was not
 exercised. External origin, ingress and cleanup ownership require separate
 approval. No canonical currency or production signing was used.
+
+
+### Private HTTPS requester opt-in
+
+After separate activation approval, pass the same explicitly approved
+certificate-valid HTTPS origin to both `--developer-endpoint` and
+`--developer-private-origin`. Include the exact port when non-default.
+The configured DNS hostname must resolve exclusively to Mac
+100.66.229.15 on every request. Keep certificate and provider-pin options.
+This mode cannot be combined with `--developer-loopback-test`. No private
+origin is assumed or enrolled by this amendment.

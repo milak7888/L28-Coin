@@ -1245,3 +1245,71 @@ def test_developer_mcp_signed_fixture_roundtrip_without_payment(monkeypatch):
     tampered["service_result"]["output"]["summary"] += " altered"
     with pytest.raises(service_core.DemoError):
         demo.verify_purchase_artifacts(tampered, input_text=SUMMARY_INPUT, service_id=SUMMARY_ID)
+
+
+@pytest.mark.parametrize("origin,answers,loopback,error", [
+    (None, {"100.66.229.15"}, False, "developer_route_invalid"),
+    (None, {"127.0.0.1"}, False, "developer_route_invalid"),
+    (None, {"169.254.10.1"}, False, "developer_route_invalid"),
+    (None, {"224.0.0.1", "100.66.229.15"}, False, "developer_route_invalid"),
+    ("https://different.invalid", set(), False, "developer_private_origin_invalid"),
+    ("https://edge.invalid:8443", set(), False, "developer_private_origin_invalid"),
+    ("https://edge.invalid", {"100.66.229.16"}, False, "developer_route_invalid"),
+    ("https://edge.invalid", {"100.66.229.15", "8.8.8.8"}, False, "developer_route_invalid"),
+    ("https://edge.invalid", set(), True, "developer_loopback_required"),
+])
+def test_developer_private_origin_rejects_before_connect(monkeypatch, origin, answers, loopback, error):
+    import ssl
+
+    monkeypatch.setattr(demo, "_developer_resolve", lambda *_: answers)
+    monkeypatch.setattr(demo.http.client, "HTTPSConnection",
+                        lambda *_a, **_kw: pytest.fail("unexpected connection"))
+    with pytest.raises(demo.PublicTestnetError, match=error):
+        demo.purchase_developer_summary("https://edge.invalid", "Offline fixture.",
+            expected_provider_key="a" * 64, tls_context=ssl.create_default_context(),
+            approved_private_origin=origin, loopback_test=loopback)
+
+
+@pytest.mark.parametrize("mode,error", [
+    ("rebind", "developer_route_invalid"),
+    ("certificate", "developer_transport_failed_stop"),
+    ("redirect", "request_rejected"),
+])
+def test_developer_private_origin_pins_socket_and_keeps_tls_name(monkeypatch, mode, error):
+    import ssl
+    from types import SimpleNamespace
+
+    ctx = ssl.create_default_context()
+    answers = iter([{"100.66.229.15"}, {"8.8.8.8"}])
+    calls = []
+    monkeypatch.setattr(demo, "_developer_resolve", lambda *_: next(answers))
+    transport = SimpleNamespace(settimeout=lambda _: None, connect=calls.append, close=lambda: None)
+    monkeypatch.setattr(demo.socket, "socket", lambda *_: transport)
+    monkeypatch.setattr(demo, "_DeveloperSocketDeadline",
+                        lambda *_: SimpleNamespace(check=lambda: None, close=lambda: None))
+    discovery = json.dumps(demo.build_service_discovery(
+        demo.public_testnet_binding(), service_id=SUMMARY_ID)).encode()
+
+    class FakeHTTPS:
+        def __init__(self, host, port, *, context):
+            assert (host, port, context) == ("edge.invalid", 443, ctx)
+            assert context.check_hostname and context.verify_mode == ssl.CERT_REQUIRED
+
+        def request(self, method, path, **kwargs):
+            assert (method, path) == ("GET", demo.DISCOVERY_PATH)
+            assert self._create_connection(None, None, None) is transport
+            if mode == "certificate":
+                raise ssl.SSLCertVerificationError("fixture certificate mismatch")
+
+        def getresponse(self):
+            return SimpleNamespace(status=302 if mode == "redirect" else 200, read=lambda _: discovery)
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(demo.http.client, "HTTPSConnection", FakeHTTPS)
+    with pytest.raises(demo.PublicTestnetError, match=error):
+        demo.purchase_developer_summary("https://edge.invalid", "Offline fixture.",
+            expected_provider_key="a" * 64, tls_context=ctx,
+            approved_private_origin="https://edge.invalid")
+    assert calls == [("100.66.229.15", 443)]
