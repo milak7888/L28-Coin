@@ -22,9 +22,13 @@ def mine_solana(addr, difficulty=8, max_attempts=10000):
             return {"coin": "SOL", "nonce": n, "hash": h}
     return None
 
+def l28_work_hash(work_input, nonce):
+    return hashlib.sha256(f"L28:{work_input}:{nonce}".encode()).hexdigest()
+
+
 def mine_l28(addr, difficulty=18, max_attempts=10000):
     for n in range(max_attempts):
-        h = hashlib.sha256(f"L28:{addr}:{n}".encode()).hexdigest()
+        h = l28_work_hash(addr, n)
         if h.startswith("0" * difficulty):
             return {"coin": "L28", "nonce": n, "hash": h}
     return None

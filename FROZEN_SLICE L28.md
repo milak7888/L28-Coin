@@ -1,5 +1,38 @@
 # L28 — FROZEN_SLICE.md
 
+## CURRENT — L28_OFFLINE_MINING_PREPARATION_V0_1 — 2026-11-17
+
+PROJECT_STATE: ACTIVE
+Authority: AUTHORIZE_FROZEN_SLICE_L28_OFFLINE_MINING_PREPARATION_V0_1.
+Base: 271df37c5a79df49c19c04824b9efcaa199dcca8.
+Branch: codex/offline-mining-prep-v0-1.
+Slice status: COMPLETE_PENDING_OPERATOR.
+Acceptance: OFFLINE_MINING_PREPARATION_PASS. Evidence is recorded in SYSTEM_STATE.
+
+Build and independently verify one disposable coinbase with deterministic
+SHA-256 work. The fixed fixture target is one leading hexadecimal zero
+and the search is limited to 512 nonces. Bind the work to a disposable
+network, ledger predecessor and coinbase template. Reuse the transaction
+validator, reward schedule and BlocklessLedger for issuance and replay.
+
+Exact scope: coin/multi_coin_miner.py; coin/offline_mining_demo.py;
+tests/test_offline_mining_demo.py; FROZEN_SLICE L28.md; SYSTEM_STATE L28.md.
+
+Acceptance: focused tests, affected offline regressions, and separate
+simulate and verify CLI processes in fresh scratch directories. Require
+identical work, transaction ID and ledger commitment, height 0 → 1,
+supply 0 → 28 disposable L28, validated reload and replay rejection
+without memory or disk mutation. Exercise rejection of invalid work,
+tampering and missing validation state. Record evidence and one security
+review. Stop at COMPLETE_PENDING_OPERATOR with PROJECT_STATE ACTIVE
+or at the first concrete blocker. One exact-path local commit is allowed.
+
+Production mining, public networking, node and wallet activation,
+production signing, broadcast, settlement and deployment are forbidden.
+PROVENANCE_NOT_ESTABLISHED and the canonical continuation blocker remain.
+Protocol v1.0.0, historical records and protected economics are preserved.
+No merge or push.
+
 ## COMPLETED — EXTERNAL_AI_PAYMENT_ACCESS_V0_1 — 2026-11-14
 
 ### ACCEPTED PUBLIC DISPOSABLE PURCHASE — 2026-11-16
