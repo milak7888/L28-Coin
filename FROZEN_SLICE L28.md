@@ -1,5 +1,74 @@
 # L28 — FROZEN_SLICE.md
 
+## COMPLETED — EXTERNAL_AI_PAYMENT_ACCESS_V0_1 — 2026-11-14
+
+### ACCEPTED PUBLIC DISPOSABLE PURCHASE — 2026-11-16
+Completion authority: AUTHORIZE L28 EXTERNAL_AI_PAYMENT_ACCESS_V0_1 PROJECT_COMPLETE
+
+Slice status: PROJECT_COMPLETE
+Endpoint: https://testnet.l28coin.com:8443
+Execution: Replacement 01, exactly one accepted purchase
+Payment: 28 disposable L28
+Actual-product verification: PASS
+Payment-before-work: PASS
+Signed result and receipt: PASS
+Replay rejection: HTTP 400
+Durable accounting and balances: PASS
+Process and listener cleanup: PASS
+Canonical settlement: NOT ACTIVATED
+Production activation: NOT AUTHORIZED
+Evidence: ~/.l28-one-shot-evidence/attempt-evidence-replacement01.json
+Evidence SHA-256: a04c2e005ccd0891f2c50208c0e8fe295236963f75ac9a8e82c6169d767de647
+Payment ID: 3d1e0cff5d56d31c849d76ef5e63569e13b62d538dab9dbb3f2305319c2f45c4
+Receipt ID: a078c48fcd677d2d8f2ef6381ffb977064482f95af39c9f3ae69d05da663459e
+Original and replacement attempt locks: PRESERVED
+Next action: STOP — operator accepted completion; no further execution.
+
+PROJECT_STATE: COMPLETE
+Authority: AUTHORIZE L28 ACTIVE — EXTERNAL_AI_PAYMENT_ACCESS_V0_1
+Base: 97155259842ee00cdfc33b77b66faf571bb35f3d
+Branch: codex/external-ai-payment-preflight-20261114
+Status: PROJECT_COMPLETE; further execution not authorized.
+
+OBJECTIVE:
+Execute one genuine public-network disposable L28 purchase
+between an independent MCP requester and the existing provider.
+
+DELIVERABLE:
+One externally routed HTTPS/mTLS purchase of useful AI work,
+with verified payment, signed result, receipt, and cleanup.
+
+PROPOSED ENDPOINT:
+Hostname: testnet.l28coin.com
+Provider: approved DigitalOcean host
+Edge: 8443/TCP
+Upstream: 127.0.0.1:28429
+Requester: Mac, source IPv4 to be reverified.
+
+ACCEPTANCE:
+Real public routing; exact authorized client identity and source;
+one 28-L28 payment committed before useful work;
+balances 100/0 to 72/28; signed result and receipt verified;
+replay rejected without mutation; zero issuance;
+all processes and listeners cleaned up.
+No canonical settlement or production claim.
+
+CURRENT AUTHORIZATION:
+Local control-file reconciliation and read-only preflight only.
+Existing payment engine, validator, and mTLS edge are reused.
+
+EXPLICITLY NOT AUTHORIZED:
+DNS/firewall changes, installations, certificates, deployment,
+public listener activation, external payment execution,
+production signing, broadcast, settlement, commit, merge, push,
+or changes to Protocol v1.0 or protected economics/history.
+
+STOP CONDITION:
+Stop at the exact external-execution authorization blocker,
+or after separately authorized acceptance PASS.
+Never retry an uncertain payment.
+
+
 ## CURRENT — PUBLIC-ORIGIN DEVELOPER TESTNET EDGE RC v0.1 — 2026-11-13
 
 PROJECT_STATE: COMPLETE
