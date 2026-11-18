@@ -3,11 +3,66 @@
 Last updated: 2026-11-17
 
 ## PROJECT STATE
-PROJECT_STATE: COMPLETE
+PROJECT_STATE: ACTIVE
 
 Only the operator may change PROJECT_STATE.
 
-## CURRENT — L28_OFFLINE_MINING_PREPARATION_V0_1
+## CURRENT — L28_OFFLINE_CONSENSUS_VECTORS_V0_1 — 2026-11-17
+
+Authority: AUTHORIZE L28 PROJECT_STATE ACTIVE — L28_OFFLINE_CONSENSUS_VECTORS_V0_1
+ACTIVE is limited to the approved offline fixture scope.
+Base: 67dc57e57e19aee723ca2c297964fce3c911bc22.
+Slice status: COMPLETE_PENDING_OPERATOR.
+Acceptance: OFFLINE_CONSENSUS_VECTORS_PASS.
+
+Focused tests: seven cases passed across the original run and targeted
+rerun. Both validators detected the initial high-clamp vector error:
+the integer result at height 3 is 2^254−4, three units below the
+maximum target. Corrected the three affected fixture headers and their
+descendant links, then reran the two failed cases. Affected offline
+regressions: 120 passed across protocol conformance, offline mining
+and Option A review and policy tests.
+
+Actual-product command from the feature checkout:
+
+```sh
+scratch="$(mktemp -d)"
+python -B -m coin.offline_consensus_vectors \
+  --acknowledge-test-only --work-dir "$scratch/run"
+```
+
+The actual runner exited 0 and both separate worker processes exited 0.
+Independent work, retarget and fork-choice implementations agreed on
+all 15 cases from the same pinned fixture in opposite branch order.
+The height-3 branch won by cumulative work 96 to 48 over the height-5
+branch. Retargets were validated at heights 3 and 5. Equal work left
+selection pending. Both ledgers independently restored the state after
+reload and rejected replay without changing state or persisted bytes.
+The explicit disagreement test exited 1 without publishing a result.
+Each fixture event contains one coinbase. Both implementations use
+the same canonical transaction rules and disposable ledger.
+
+- Tip: 01b0c170ebc9bd1556a62a75581eb8bfd184fd8a0e6ccd7f519137609ca3c631.
+- Height: 3.
+- Issued supply and fixture miner balance: 84 disposable L28.
+- State commitment: 7c9861f8c36aa9426f1d987e992973592071d136096f1ff2d5a01db080bd33d7.
+- Ledger SHA-256: 92b4f1f8f16c88c9cdf947d93367f77d9983a7c846d68e5119dc39d61a31231d.
+- Fixture SHA-256: fa61e7689be415ee68c47d1442c4db6c7d594b853340094be59f04feb1581239.
+- Result: /private/tmp/l28-offline-consensus-evidence.xqAEx9U5/run/result.json.
+- Result SHA-256: 7c8f40927148249569bfe07b7856a8db78e5ac45001ed7b6b3ccf685c0344a36.
+- Observed rejection codes: coinbase_bad_reward, insufficient_work, invalid_timestamp, malformed_header, missing_consensus_state, replay, state_commitment_mismatch, transaction_commitment_mismatch, wrong_context, wrong_height, wrong_parent, wrong_target.
+- Disagreement gate: validator_disagreement.
+
+Scoped security review PASS. Verified fixture pin and bounded input,
+strict header types and network/checkpoint/parent binding, independent
+work and fork checks, rejection before ledger append for invalid candidates,
+production authorization guard, fresh stores and fail-closed reconciliation.
+The approved seven paths leave Option A, Protocol v1.0.0, protected economics,
+historical evidence, and the canonical transaction validator unchanged.
+PROVENANCE_NOT_ESTABLISHED continues to block canonical continuation.
+Stop for operator review.
+
+## COMPLETED — L28_OFFLINE_MINING_PREPARATION_V0_1
 
 Authority: AUTHORIZE_FROZEN_SLICE_L28_OFFLINE_MINING_PREPARATION_V0_1.
 ACTIVE applies solely to this offline fixture slice.
