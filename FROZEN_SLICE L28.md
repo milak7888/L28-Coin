@@ -2,11 +2,12 @@
 
 ## CURRENT — L28_OFFLINE_CONSENSUS_VECTORS_V0_1 — 2026-11-17
 
-PROJECT_STATE: ACTIVE
+PROJECT_STATE: COMPLETE
 Authority: AUTHORIZE L28 PROJECT_STATE ACTIVE — L28_OFFLINE_CONSENSUS_VECTORS_V0_1
 Base: 67dc57e57e19aee723ca2c297964fce3c911bc22.
 Branch: codex/offline-consensus-vectors-v0-1.
-Slice status: COMPLETE_PENDING_OPERATOR.
+Slice status: PROJECT_COMPLETE.
+Completion authority: AUTHORIZE L28 OFFLINE_CONSENSUS_VECTORS_V0_1 PROJECT_COMPLETE
 Acceptance: OFFLINE_CONSENSUS_VECTORS_PASS. Evidence is recorded in SYSTEM_STATE.
 
 Verify a synthetic checkpoint and precomputed PoW vectors offline with
@@ -28,8 +29,12 @@ Reuse the transaction validator and disposable ledger. Keep Option A intact.
 
 Acceptance requires focused tests, offline regressions, independent CLI
 execution, deterministic evidence and one scoped security review.
-Stop at COMPLETE_PENDING_OPERATOR with PROJECT_STATE ACTIVE or at the
-first concrete blocker. One exact-path local commit is authorized.
+The operator accepted the completed slice.
+
+CANONICAL_MINING=BLOCKED
+PUBLIC_NETWORK=NOT_ACTIVATED
+PRODUCTION_SIGNING=NOT_AUTHORIZED
+PROTOCOL_V1_0_0=UNCHANGED
 
 Protocol v1.0.0, MAIN, protected economics, historical records, custody
 and completed evidence remain preserved. PROVENANCE_NOT_ESTABLISHED
