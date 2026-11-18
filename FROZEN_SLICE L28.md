@@ -2,11 +2,12 @@
 
 ## CURRENT — L28_OFFLINE_MINING_PREPARATION_V0_1 — 2026-11-17
 
-PROJECT_STATE: ACTIVE
+PROJECT_STATE: COMPLETE
 Authority: AUTHORIZE_FROZEN_SLICE_L28_OFFLINE_MINING_PREPARATION_V0_1.
 Base: 271df37c5a79df49c19c04824b9efcaa199dcca8.
 Branch: codex/offline-mining-prep-v0-1.
-Slice status: COMPLETE_PENDING_OPERATOR.
+Slice status: PROJECT_COMPLETE.
+Completion authority: AUTHORIZE L28 OFFLINE_MINING_PREPARATION_V0_1 PROJECT_COMPLETE
 Acceptance: OFFLINE_MINING_PREPARATION_PASS. Evidence is recorded in SYSTEM_STATE.
 
 Build and independently verify one disposable coinbase with deterministic

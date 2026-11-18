@@ -3,7 +3,7 @@
 Last updated: 2026-11-17
 
 ## PROJECT STATE
-PROJECT_STATE: ACTIVE
+PROJECT_STATE: COMPLETE
 
 Only the operator may change PROJECT_STATE.
 
@@ -11,7 +11,8 @@ Only the operator may change PROJECT_STATE.
 
 Authority: AUTHORIZE_FROZEN_SLICE_L28_OFFLINE_MINING_PREPARATION_V0_1.
 ACTIVE applies solely to this offline fixture slice.
-Slice status: COMPLETE_PENDING_OPERATOR.
+Slice status: PROJECT_COMPLETE.
+Completion authority: AUTHORIZE L28 OFFLINE_MINING_PREPARATION_V0_1 PROJECT_COMPLETE
 Acceptance: OFFLINE_MINING_PREPARATION_PASS.
 Base: 271df37c5a79df49c19c04824b9efcaa199dcca8.
 
