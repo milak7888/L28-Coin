@@ -1,11 +1,60 @@
 # L28 — SYSTEM_STATE.md
 
-Last updated: 2026-11-14
+Last updated: 2026-11-17
 
 ## PROJECT STATE
 PROJECT_STATE: COMPLETE
 
 Only the operator may change PROJECT_STATE.
+
+## CURRENT — L28_OFFLINE_MINING_PREPARATION_V0_1
+
+Authority: AUTHORIZE_FROZEN_SLICE_L28_OFFLINE_MINING_PREPARATION_V0_1.
+ACTIVE applies solely to this offline fixture slice.
+Slice status: PROJECT_COMPLETE.
+Completion authority: AUTHORIZE L28 OFFLINE_MINING_PREPARATION_V0_1 PROJECT_COMPLETE
+Acceptance: OFFLINE_MINING_PREPARATION_PASS.
+Base: 271df37c5a79df49c19c04824b9efcaa199dcca8.
+
+Focused tests: 19 passed in tests/test_offline_mining_demo.py.
+Affected offline regressions: 81 passed across protocol conformance,
+disposable network identity and disposable offline transfer tests.
+
+Actual-product verification used separate Python processes and fresh stores:
+
+```sh
+scratch="$(mktemp -d)"
+python -B -m coin.offline_mining_demo simulate \
+  --acknowledge-test-only --work-dir "$scratch/sim" &&
+python -B -m coin.offline_mining_demo verify \
+  --acknowledge-test-only --work-dir "$scratch/verify" \
+  --candidate "$scratch/sim/candidate.json"
+```
+
+Both exited 0. The simulator found nonce 1 on its second attempt.
+The verifier performed zero nonce-search attempts. Independent SHA-256
+recomputation matched the proof and state commitment. Each store contained
+one accepted coinbase and identical ledger bytes. Validated reload
+restored height 1 and supply 28. Replay changed neither state nor bytes.
+
+- Network: L28-DISPOSABLE-OFFLINE-MINING-V01.
+- Work hash: 0eee05509828d2adc86a30148c31c73f1310b536f0619588f59bbf4f419ba313.
+- Coinbase ID: 7cf8275a81de92b4ee9b9de1979f0b9ae787a55e376ffaddbb5e08edd69629ab.
+- State commitment: 0c54fca90fd09fb58d1d8e04270104e0e352a7fbfec223d93f5a4c7299621046.
+- Ledger bytes SHA-256: 5930d3780b1f830daac1b03af155e0a82de2e9f964751d5cb196248bdaf74c5d.
+- Candidate SHA-256: 5eb8cbf22ff9210db82cc9d40028814b9cfe8bfcb81ed329208902cd74494bb3.
+- Evidence: /private/tmp/l28-offline-mining-evidence.KcZscWuR/result.json.
+- Evidence SHA-256: e2db6cb0673396228aa6213f4d71a136ad1cf02e46a48e6540dbfe0ea1f02a00.
+
+Scoped security review: PASS. Verified bounded work and input size,
+disposable identity and predecessor binding, strict coinbase template,
+fresh-directory and acknowledgement gates, canonical validator and ledger
+reuse, reload and replay behavior, and the absence of public network,
+wallet or production signer paths. Unrelated mining helpers, Protocol
+v1.0.0, protected economics, verified public payment evidence and
+historical records were preserved. The fixture target defines no MAIN
+difficulty. PROVENANCE_NOT_ESTABLISHED and canonical continuation remain
+blocked. Stop at operator review.
 
 ## COMPLETED — EXTERNAL_AI_PAYMENT_ACCESS_V0_1
 
