@@ -653,19 +653,30 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--developer-client-cert")
     parser.add_argument("--developer-client-key")
     parser.add_argument("--developer-ca")
+    parser.add_argument("--developer-beta-payer-key", type=Path)
     parser.add_argument("--developer-loopback-test", action="store_true")
     parser.add_argument("--developer-private-origin", help="Explicitly approved private HTTPS origin")
     args = parser.parse_args(sys.argv[1:] if argv is None else argv)
 
     developer_fields = (args.developer_endpoint, args.expected_provider_key,
                         args.developer_client_cert, args.developer_client_key)
-    if any(developer_fields) or args.developer_loopback_test or args.developer_ca or args.developer_private_origin is not None:
+    if (any(developer_fields) or args.developer_loopback_test or args.developer_ca
+            or args.developer_private_origin is not None or args.developer_beta_payer_key is not None):
         if args.runtime != "mcp" or not all(developer_fields):
             parser.error("developer mode requires MCP, endpoint, provider pin and client certificate/key")
         if args.developer_loopback_test and args.developer_private_origin is not None:
             parser.error("private origin and loopback test are mutually exclusive")
-        from coin.public_testnet_service_demo import PublicTestnetError, purchase_developer_summary
+        from coin.public_testnet_service_demo import PublicTestnetError, purchase_developer_summary, load_beta_disposable_key
         from coin.limited_testnet_service_demo import LimitedTestnetError
+
+        beta_payer = None
+        if args.developer_beta_payer_key is not None:
+            if args.developer_private_origin is not None:
+                parser.error("beta and private-origin modes are mutually exclusive")
+            try:
+                beta_payer = load_beta_disposable_key(args.developer_beta_payer_key)
+            except (PublicTestnetError, OSError, ValueError):
+                parser.error("invalid disposable beta payer credential")
 
         ctx = ssl.create_default_context(cafile=args.developer_ca)
         ctx.load_cert_chain(args.developer_client_cert, args.developer_client_key)
@@ -680,9 +691,13 @@ def main(argv: list[str] | None = None) -> int:
                 return purchase_developer_summary(args.developer_endpoint, text,
                     expected_provider_key=args.expected_provider_key, tls_context=ctx,
                     loopback_test=args.developer_loopback_test,
-                    approved_private_origin=args.developer_private_origin)
+                    approved_private_origin=args.developer_private_origin,
+                    **({"beta_payer": beta_payer} if beta_payer is not None else {}))
             except (PublicTestnetError, LimitedTestnetError, DemoError, ValueError, OSError) as exc:
-                raise ExternalAccessError("developer_purchase_failed_stop") from exc
+                code = "developer_purchase_failed_stop"
+                if beta_payer is not None and getattr(exc, "code", None) == "beta_balance_exhausted":
+                    code = "beta_balance_exhausted"
+                raise ExternalAccessError(code) from exc
 
         return run_mcp_stdio_runtime(developer_purchase=purchase)
 

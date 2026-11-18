@@ -300,3 +300,80 @@ def test_legacy_mode_rejects_public_origin_options(monkeypatch):
                           "--server-cert", "fixture.pem", "--server-key", "fixture.key",
                           "--client-ca", "ca.pem", "--client-sha256", "a" * 64])
     assert error.value.code == 2
+
+
+def test_beta_rate_and_session_admission_budget():
+    clients = {"a": ("192.0.2.1", "payer-a"), "b": ("192.0.2.2", "payer-b")}
+    beta = edge_module._BetaSessions(clients, "unused")
+    now = time.monotonic()
+    assert not beta.admit_connection("192.0.2.3", now)
+    for _ in range(4):
+        assert beta.admit_connection("192.0.2.1", now)
+    assert not beta.admit_connection("192.0.2.1", now)
+    beta.owner, beta.cutoff, beta.admitted = "a", now + 105, 11
+    assert beta.admit_connection("192.0.2.2", now)
+    assert beta.admitted == 11
+    assert beta.admit_connection("192.0.2.1", now + 5)
+    assert not beta.admit_connection("192.0.2.1", now + 10)
+    assert beta.admit_connection("192.0.2.1", now + 105)
+    assert beta.owner is None
+
+
+def test_beta_cross_peer_and_uncertain_payment(monkeypatch):
+    import io
+    from contextlib import nullcontext
+    from types import SimpleNamespace
+    from coin import public_testnet_service_demo as demo
+
+    class Guard:
+        def __init__(self, _sock, deadline):
+            self.deadline = deadline
+
+        def check(self):
+            pass
+
+        def close(self):
+            pass
+
+    a, b, wrong = b"enrolled-a", b"enrolled-b", b"not enrolled"
+    first, second = [hashlib.sha256(leaf).hexdigest() for leaf in (a, b)]
+    clients = {first: ("192.0.2.1", "payer-a"), second: ("192.0.2.2", "payer-b")}
+    beta = edge_module._BetaSessions(clients, "fixture-origin")
+    forwarded, replies = [], []
+
+    def proxy(method, target, body, _port, _deadline, *, origin_headers):
+        forwarded.append((method, target, body, origin_headers))
+        if len(forwarded) == 3:
+            assert beta.payment_pending
+            raise TimeoutError("unknown")
+        return 200, b'{"result":{"z":1,"a":2}}'
+
+    monkeypatch.setattr(edge_module, "_DeveloperSocketDeadline", Guard)
+    monkeypatch.setattr(edge_module, "_proxy", proxy)
+    monkeypatch.setattr(edge_module, "_reply", lambda _, status, body=b"": replies.append((status, body)))
+
+    def handle(leaf, source, wire):
+        tls = SimpleNamespace(getpeercert=lambda **_: leaf, makefile=lambda _: io.BytesIO(wire))
+        raw = io.BytesIO()
+        raw.settimeout = lambda _: None
+        ctx = SimpleNamespace(wrap_socket=lambda *_a, **_k: nullcontext(tls))
+        edge_module._handle(raw, ctx, None, "edge:8443", 28429, time.monotonic() + 10,
+                            report_source=source, beta=beta)
+
+    hello = (f"GET {demo.HELLO_PATH} HTTP/1.1\r\nHost: edge:8443\r\n"
+             "X-L28-Origin-Token: should-not-forward\r\n\r\n").encode()
+    handle(wrong, "192.0.2.1", hello)
+    handle(a, "192.0.2.2", hello)
+    assert not forwarded
+    handle(a, "192.0.2.1", hello)
+    handle(b, "192.0.2.2", hello)
+    assert replies[-1][0] == "400 Bad Request"
+    assert forwarded[0][3][demo.BETA_ORIGIN_TOKEN] == "fixture-origin"
+    binding = demo.public_testnet_binding()
+    quote = demo.frame_bytes("service_request", 2, {"sample": 1}, binding)
+    payment = demo.frame_bytes("payment_package", 4, {"sample": 2}, binding)
+    handle(b, "192.0.2.2", _post(quote))
+    handle(a, "192.0.2.1", _post(quote))
+    assert replies[-1] == ("200 OK", b'{"result":{"z":1,"a":2}}')
+    handle(a, "192.0.2.1", _post(payment))
+    assert beta.uncertain and [item[2] for item in forwarded[1:]] == [quote, payment]

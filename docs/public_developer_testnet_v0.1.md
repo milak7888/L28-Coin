@@ -111,3 +111,107 @@ forwarding one payment package. Ingress closes by T+105; edge worker
 cleanup is budgeted through T+115. The launch owner must complete
 remaining process cleanup by T+120 and preserve evidence if delivery
 is uncertain. No automatic payment retry or restart.
+
+### Continuous disposable beta v0.1
+
+The beta is an explicitly selected service lifecycle for two enrolled test
+payers. It reuses the summary tool, HTTP/JSON routes, validator, mTLS and signed
+result and receipt. The two 100-L28 opening balances exist only in the beta
+database. Neither balance can be refilled through the service. Each payer can
+make at most three 28-L28 purchases. Future allocation requires a separate
+operator decision.
+
+The same public JSON enrollment goes to the provider and edge. Its exact
+fields are `profile` (`l28-public-disposable-beta/v0.1`),
+`provider_public_key` (64 lowercase hexadecimal characters), and `clients`
+(exactly two objects with `source_ipv4`, `client_sha256` and
+`payer_public_key`). Leaf fingerprints are SHA-256 over DER. Public payer
+keys, client leaf fingerprints and the provider key must be distinct within
+their respective enrollment fields. Both clients can share an approved
+egress IPv4, in which case they share its connection-rate budget. The pinned
+provider and payer private keys are disposable unencrypted Ed25519 PKCS #8 PEM files. The
+loopback origin credential is 32 random bytes shared only by the edge and
+provider. Keep those files owner-only (0600), with the owning runtime's
+state/marker directories at 0700. Use separate paths from any one-shot
+evidence or canonical files. Pass file paths only and keep contents out of
+the release and logs.
+
+#### Approved-host procedure
+
+These are the commands for a separately authorized activation. Verify the
+Droplet ID, public IPv4 assignment, hostname, certificate SAN and lifetime,
+source address of each independently operated requester, enrolled leaves,
+independent provider pin, capacity, ownership, ingress and empty ports before
+installation. Preserve the prior release, and keep the provider reachable
+only on loopback. Allow TCP 8443 only from the enrolled requester IPv4s.
+The edge binds an exact global IPv4, verifies the direct peer IPv4, mTLS
+chain, exact leaf, SNI and Host, and rate limits by source before TLS.
+A proxy must not replace the direct peer address. Use the existing host
+supervisor and a dedicated unprivileged service account. Set `Restart=no`;
+make the edge depend on the provider, and stop the edge before the provider.
+Set a 15-second stop budget per process and bound or rotate logs.
+
+Initialize the dedicated beta store once while ingress is closed. The parent
+directory must exist with private permissions and the store path must be
+absent. Then start the provider with the same invocation minus `--beta-init`
+and require the readiness record to match the independently enrolled pin.
+
+```sh
+python -B -m coin.public_testnet_service_demo --role beta-provider \
+  --port 28429 --state-dir "$BETA_STATE" --beta-config "$ENROLLMENT" \
+  --beta-provider-key "$DISPOSABLE_PROVIDER_KEY" --beta-origin-token "$ORIGIN_CREDENTIAL" \
+  --beta-init
+```
+
+```sh
+python -B -m coin.developer_mtls_edge --public-beta \
+  --bind-ip "$VERIFIED_PUBLIC_IPV4" --bind-port 8443 --hostname testnet.l28coin.com \
+  --server-cert "$EDGE_CERT" --server-key "$EDGE_KEY" --client-ca "$CLIENT_CA" \
+  --beta-config "$ENROLLMENT" --beta-origin-token "$ORIGIN_CREDENTIAL" \
+  --beta-run-marker "$EDGE_RUN_MARKER"
+```
+
+Verify the intended IPv4 listeners and that the provider denies a direct
+unauthenticated local request before opening ingress. On each independent
+requester, use the existing MCP purchase-tool call with these launch options.
+Use one MCP process per attempt. Use the issued client certificate and the
+corresponding enrolled disposable payer key.
+
+```sh
+python -B -m coin.two_agent_service_external_access_demo --runtime mcp \
+  --developer-endpoint https://testnet.l28coin.com:8443 \
+  --expected-provider-key "$INDEPENDENT_PROVIDER_PIN" \
+  --developer-client-cert "$CLIENT_CERT" --developer-client-key "$CLIENT_KEY" \
+  --developer-beta-payer-key "$DISPOSABLE_PAYER_KEY"
+```
+
+The edge holds one session and one request at a time. The session starts
+with provider hello, admits up to 12 connections from its source, and stops
+admission by T+105 seconds. Each request is capped at 10 seconds, with an
+8 KiB header bound and 64 KiB body bound. The requester retains a 120-second
+total budget; the edge's active request and shutdown JOIN are bounded by the
+session cutoff and a 15-second cleanup allowance. The connection bucket is
+12 per minute per source with an initial burst of four. A session bound to
+one enrolled leaf cannot be continued under the other. The provider rejects
+a payer substitution and binds the signed quote to the current attempt.
+
+With host-specific approval, make one purchase, close ingress, restart the
+owned services against the same state, and make the second purchase. Capture
+signed artifacts on the independent requester. Check the payment/audit and
+artifact records, unchanged pin, balances 100/100/0 to 72/100/28 to 72/72/56,
+zero issuance, and replay denial with the same database contents. Confirm
+both listeners and every owned process stop. For rollback close ingress,
+stop both processes and restore the prior release and rule configuration.
+Preserve the latest beta state and evidence. A rollback never restores an
+older version of that state. A later restart of the accepted beta is an
+explicit operator action.
+
+If forwarding fails after a payment may have reached the provider, the edge
+closes ingress and leaves its durable run marker. A provider or edge crash
+also leaves a run marker, and an incomplete committed payment prevents the
+provider from reopening. Keep ingress closed and reconcile using the
+requester's artifact and the committed ledger and audit rows. A complete
+result can exist in the store even when the requester did not receive it.
+A socket write does not prove requester receipt. Never retry the payment or
+re-execute work. Preserve markers until the operator resolves the outcome.
+There is no unattended recovery or automatic reversal.

@@ -3,11 +3,60 @@
 Last updated: 2026-11-17
 
 ## PROJECT STATE
-PROJECT_STATE: COMPLETE
+PROJECT_STATE: ACTIVE
 
 Only the operator may change PROJECT_STATE.
 
-## CURRENT — L28_OFFLINE_CONSENSUS_VECTORS_V0_1 — 2026-11-17
+## CURRENT — L28_PUBLIC_DISPOSABLE_BETA_V0_1
+
+Authority: AUTHORIZE_L28_PUBLIC_DISPOSABLE_BETA_V0_1
+Base: 055b9bd7da07095232a4fc040c49f72d2f52734b.
+Slice status: ISOLATED_BETA_PASS / DEPLOYMENT_APPROVAL_REQUIRED.
+Scope: isolated beta implementation and disposable loopback verification.
+Public listener and deployment authority remain pending.
+
+Isolated acceptance passed using two real provider and edge process pairs
+and two independent MCP stdio requester processes on IPv4 loopback. The
+operator-approved public origin was outside this local verification.
+
+- Focused checks: 4 passed.
+- Affected regressions: 159 passed in one run. Two existing source checks
+  identified raw key loading calls. Scoped PEM credential loading replaced
+  those calls and both unchanged checks passed on the targeted rerun.
+- Actual-product CLI acceptance: 1 passed after correcting a missing import
+  found at initialization. That initialization failure launched no listeners.
+- Balances across a fresh start and a clean restart:
+  100/100/0 to 72/100/28 to 72/72/56.
+- Each durable debit precedes the linked signed result and receipt. The
+  interrupted-debit test confirmed work did not run and restart held.
+  Both MCP carriers matched the stored signed artifact bytes.
+- Replay returned an explicit rejection after restart and left the database
+  SHA-256 unchanged. Two debits and exactly two linked receipts. Zero issuance.
+- The same provider pin held across restart. Both listener pairs closed and
+  all owned processes exited. The approved requester funding cap is six
+  purchases in total across the two disposable payers, with no refill.
+- Evidence: `/private/tmp/l28-beta-evidence.TPtLcxLQ/acceptance/test_beta_real_process_restart0/beta-acceptance.json`.
+- Evidence SHA-256: `e5c4d900464afc1d443abee5d0de0f8432ebd50a5c202165a2fe86ffec8f0e4d`.
+- Final disposable database SHA-256: `68bb8db94c0f86b86f4d5f053f3d8351012fe380448d508aeb13f4dbfc4a55a7`.
+
+- Payment `71dc82162dec660a0cb7300f728615d7ffa55244651eb399f7f57d9ae843a677` and receipt `177ec97da20b01eb98789a7d1e358c9b66c45e4777c17312f6228d60872d4e99`.
+- Payment `cf0a920bdf7f18c8a0253f3f4e9ebbaf0db26c6f83074fce73be0e561092c449` and receipt `c38d390bf46b874b157935600d4b4e06901b6af1a313694ef145b921dbf9c5a9`.
+
+- `coin/developer_mtls_edge.py` SHA-256 `28de7c1d5893c0c9010b17b9046dca565b6f19720d97314034c8d9eb08b80d62`.
+- `coin/public_testnet_service_demo.py` SHA-256 `0bf2f8362dfa3bc860d78c500802883c4c4b519f23e9a72568489ea8782ad33c`.
+- `coin/durable_restart_safe_service_demo.py` SHA-256 `df3a5ee6628d4cf2403983c1ac59fa981de9f07b20290c7dfd0517adb3d3c4a6`.
+- `coin/two_agent_service_external_access_demo.py` SHA-256 `56f0c00c5c4ef6eb68d568cf7702240339b168f0399c471ebed7dd66519847a5`.
+
+Scoped review covered source/leaf/payer/session binding, authenticated
+loopback forwarding, bounded ingress and I/O, audit-backed artifact
+retention, crash/replay behavior, and exact changed paths. A successful
+TLS write alone cannot attest remote receipt. Preserve both sides on any
+uncertain outcome. Public host preflight, ingress, real external purchase
+acceptance and rollback require separate host-specific approval. Canonical
+MAIN, mining, production signing, settlement and historical changes are
+outside this slice.
+
+## COMPLETED — L28_OFFLINE_CONSENSUS_VECTORS_V0_1 — 2026-11-17
 
 Authority: AUTHORIZE L28 PROJECT_STATE ACTIVE — L28_OFFLINE_CONSENSUS_VECTORS_V0_1
 The implementation authority covered only the approved offline fixture scope.

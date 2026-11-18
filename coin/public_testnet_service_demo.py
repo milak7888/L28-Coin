@@ -13,24 +13,31 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import hmac
 import http.client
 import ipaddress
 import json
 import os
+import re
+import secrets
 import selectors
+import signal
 import socket
 import ssl
+import stat
 import subprocess
 import sys
 import threading
 import time
 import urllib.parse
 from collections.abc import Mapping
+from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler, HTTPServer, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from cryptography.hazmat.primitives.serialization import load_pem_private_key
 
 from coin.disposable_offline_transfer_demo import (
     DEMO_TIMESTAMP,
@@ -64,6 +71,8 @@ from coin.two_agent_service_transaction_demo import (
     ASSET_ID,
     MAX_INPUT_CHARS,
     PRICE_L28,
+    QUOTE_SIGN_DOMAIN,
+    _digest,
     SERVICE_ID,
     SERVICE_IDS,
     SUMMARY_SERVICE_ID,
@@ -105,6 +114,10 @@ MAX_BODY_BYTES = 65536
 MAX_REPLAY_BUNDLE_BYTES = 3 * MAX_BODY_BYTES
 REQUEST_TIMEOUT_SECONDS = 10.0
 SESSION_DEADLINE_SECONDS = 120.0
+BETA_PROFILE = "l28-public-disposable-beta/v0.1"
+BETA_ORIGIN_TOKEN = "X-L28-Origin-Token"
+BETA_SESSION = "X-L28-Beta-Session"
+BETA_PAYER = "X-L28-Beta-Payer"
 FRAME_FIELDS = (
     "config_hash",
     "genesis_hash",
@@ -199,7 +212,7 @@ def public_testnet_binding() -> dict[str, Any]:
 
 
 def build_service_discovery(binding: Mapping[str, Any], *, service_id: str = SERVICE_ID,
-                            private_pilot: bool = False) -> dict[str, Any]:
+                            private_pilot: bool = False, beta: bool = False) -> dict[str, Any]:
     """Return the exact public catalog without advancing the one-shot session."""
     assert_identity_flags_unchanged()
     if service_id not in SERVICE_IDS:
@@ -235,7 +248,7 @@ def build_service_discovery(binding: Mapping[str, Any], *, service_id: str = SER
                 "asset_id": ASSET_ID,
                 "price": PRICE_L28,
                 "max_input_chars": MAX_INPUT_CHARS,
-                "one_shot": True,
+                "one_shot": not beta,
             }
         ],
         "production_authority": False,
@@ -243,7 +256,7 @@ def build_service_discovery(binding: Mapping[str, Any], *, service_id: str = SER
 
 
 def validate_service_discovery(body: bytes, binding: Mapping[str, Any], *, service_id: str = SERVICE_ID,
-                               private_pilot: bool = False) -> dict[str, Any]:
+                               private_pilot: bool = False, beta: bool = False) -> dict[str, Any]:
     """Fail closed unless discovery is the exact catalog for this binding."""
     enforce_body_bound(len(body))
     try:
@@ -259,7 +272,7 @@ def validate_service_discovery(body: bytes, binding: Mapping[str, Any], *, servi
         raise
     except (TypeError, UnicodeError, ValueError, json.JSONDecodeError) as exc:
         raise PublicTestnetError("discovery_invalid") from exc
-    expected = build_service_discovery(binding, service_id=service_id, private_pilot=private_pilot)
+    expected = build_service_discovery(binding, service_id=service_id, private_pilot=private_pilot, beta=beta)
     canonical_expected = json.dumps(
         expected,
         sort_keys=True,
@@ -510,9 +523,10 @@ def verify_purchase_artifacts(
 
 def run_requester(exchange: Any, input_text: str, binding: Mapping[str, Any], *, service_id: str = SERVICE_ID,
                   payer_key: Ed25519PrivateKey | None = None, private_pilot: bool = False,
-                  payment_nonce: int = 100, expected_provider_key: str | None = None) -> dict[str, Any]:
+                  payment_nonce: int = 100, expected_provider_key: str | None = None,
+                  beta: bool = False) -> dict[str, Any]:
     discovery_body = exchange("GET", DISCOVERY_PATH, None)
-    discovery = validate_service_discovery(discovery_body, binding, service_id=service_id, private_pilot=private_pilot)
+    discovery = validate_service_discovery(discovery_body, binding, service_id=service_id, private_pilot=private_pilot, beta=beta)
     service = discovery["services"][0]
     payer = payer_key if payer_key is not None else Ed25519PrivateKey.generate()
     hello_body = exchange("GET", HELLO_PATH, None)
@@ -1360,6 +1374,7 @@ class _DeveloperSocketDeadline:
 
 class _DeveloperServer(_Server):
     request_count = 0
+    deadline = float('inf')
 
     def process_request(self, request: Any, client_address: Any) -> None:
         self.request_count += 1
@@ -1409,6 +1424,225 @@ class DeveloperProvider(PublicProvider):
         return reply
 
 
+def load_beta_config(path: Path) -> tuple[str, dict[str, tuple[str, str]], str]:
+    with path.open("rb") as stream:
+        raw = stream.read(4097)
+    if len(raw) > 4096:
+        raise PublicTestnetError("beta_config_invalid")
+    value = json.loads(raw, object_pairs_hook=_reject_duplicate_keys)
+    if (not isinstance(value, dict) or set(value) != {"profile", "provider_public_key", "clients"}
+            or value["profile"] != BETA_PROFILE or not _lan_pin(value["provider_public_key"])
+            or not isinstance(value["clients"], list) or len(value["clients"]) != 2):
+        raise PublicTestnetError("beta_config_invalid")
+    clients = {}
+    payers = {value["provider_public_key"]}
+    for client in value["clients"]:
+        if (not isinstance(client, dict) or set(client) != {"source_ipv4", "client_sha256", "payer_public_key"}
+                or not _lan_pin(client["client_sha256"]) or not _lan_pin(client["payer_public_key"])
+                or not isinstance(client["source_ipv4"], str)):
+            raise PublicTestnetError("beta_config_invalid")
+        source = str(ipaddress.IPv4Address(client["source_ipv4"]))
+        fingerprint, payer = client["client_sha256"], client["payer_public_key"]
+        if fingerprint in clients or payer in payers:
+            raise PublicTestnetError("beta_config_invalid")
+        clients[fingerprint] = (source, payer)
+        payers.add(payer)
+    digest = hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    return value["provider_public_key"], clients, digest
+
+
+def _read_beta_credential(path: Path, limit: int) -> bytes:
+    with os.fdopen(os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK), "rb") as stream:
+        info = os.fstat(stream.fileno())
+        if not stat.S_ISREG(info.st_mode) or stat.S_IMODE(info.st_mode) != 0o600 or info.st_uid != os.getuid():
+            raise PublicTestnetError("beta_credential_not_private")
+        value = stream.read(limit + 1)
+        if len(value) > limit:
+            raise PublicTestnetError("beta_credential_invalid")
+        return value
+
+
+def read_beta_credential(path: Path) -> bytes:
+    value = _read_beta_credential(path, 32)
+    if len(value) != 32:
+        raise PublicTestnetError("beta_credential_invalid")
+    return value
+
+
+def load_beta_disposable_key(path: Path) -> Ed25519PrivateKey:
+    pem = _read_beta_credential(path, 256)
+    if not re.fullmatch(rb"-----BEGIN PRIVATE KEY-----\n[A-Za-z0-9+/=\n]+-----END PRIVATE KEY-----\n", pem):
+        raise PublicTestnetError("beta_credential_invalid")
+    key = load_pem_private_key(pem, password=None)
+    if not isinstance(key, Ed25519PrivateKey):
+        raise PublicTestnetError("beta_credential_invalid")
+    return key
+
+
+@contextmanager
+def _beta_clean_run(marker: Path):
+    parent = marker.parent
+    info = parent.stat()
+    if (not marker.is_absolute() or not stat.S_ISDIR(info.st_mode)
+            or stat.S_IMODE(info.st_mode) != 0o700 or info.st_uid != os.getuid()):
+        raise PublicTestnetError("beta_runtime_directory_not_private")
+    fd = os.open(marker, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+    os.close(fd)
+    parent_fd = os.open(parent, os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        os.fsync(parent_fd)
+        yield
+        marker.unlink()
+        os.fsync(parent_fd)
+    finally:
+        os.close(parent_fd)
+
+
+@contextmanager
+def _beta_stop_signal():
+    stop = threading.Event()
+
+    def request_stop(_signal, _frame):
+        stop.set()
+
+    previous = {sig: signal.signal(sig, request_stop) for sig in (signal.SIGTERM, signal.SIGINT)}
+    try:
+        yield stop
+    finally:
+        for sig, handler in previous.items():
+            signal.signal(sig, handler)
+
+
+class _BetaProvider(DeveloperProvider):
+    def __init__(self, state_dir, key, payer_keys, digest, *, initialize):
+        from coin.durable_restart_safe_service_demo import DurableProvider
+
+        PublicProvider.__init__(self, service_id=SUMMARY_SERVICE_ID)
+        self.payers = {public_identity(payer) for payer in payer_keys}
+        provider = public_identity(_public_key_hex(key))
+        balances = {payer: 100 for payer in self.payers}
+        balances[provider] = 0
+        self.backend = DurableProvider(state_dir, service_id=SUMMARY_SERVICE_ID,
+            context_digest=digest, beta_balances=balances, beta_key=key, beta_initialize=initialize)
+        self._key = key
+        self.public_key, self.identity = self.backend.public_key, self.backend.identity
+        self.token = None
+        self.payer = None
+        self.cutoff = 0.0
+
+    def open_session(self, token, payer):
+        if self.backend.fatal or payer not in self.payers or token == self.token:
+            raise PublicTestnetError("beta_session_rejected")
+        self.token, self.payer = token, payer
+        self.cutoff = time.monotonic() + 105
+        self.finished.clear()
+        self.expected = 1
+        self._request = self._quote = None
+        return self.hello_frame()
+
+    def _quote_for(self, request):
+        verified = verify_service_request(request, service_id=self.service_id)
+        if verified["payer_identity"] != self.payer or verified["provider_identity"] != self.identity:
+            raise PublicTestnetError("beta_payer_mismatch")
+        if self.backend.store.snapshot()["balances"][self.payer] < PRICE_L28:
+            raise PublicTestnetError("beta_balance_exhausted")
+        quote = build_service_quote(self._key, request=request)
+        # The signed quote binds the payment authorization to this attempt.
+        body = {k: v for k, v in quote.items() if k not in ("signature", "quote_id")}
+        body["nonce"] = self.token
+        quote = {**body, "quote_id": _digest(body),
+                 "signature": _sign_domain(self._key, QUOTE_SIGN_DOMAIN, body)}
+        self._request, self._quote = request, quote
+        self.expected = 4
+        return json.loads(frame_bytes("service_quote", 3, quote, self.binding))
+
+
+class _BetaProviderHandler(_Handler):
+    def _authorized(self):
+        token = self.headers.get_all(BETA_ORIGIN_TOKEN, [])
+        return (self.headers.get_all("Host", []) == ["localhost"] and len(token) == 1
+                and token[0].isascii() and hmac.compare_digest(token[0], self.server.origin_token))
+
+    def _dispatch(self, method):
+        try:
+            if not self._authorized():
+                raise PublicTestnetError("beta_origin_denied")
+            provider = self.server.provider
+            self.server.request_guard.check()
+            if method == "GET" and self.path == DISCOVERY_PATH:
+                self._ok(build_service_discovery(provider.binding, service_id=SUMMARY_SERVICE_ID, beta=True))
+                return
+            token = self.headers.get_all(BETA_SESSION, [])
+            payer = self.headers.get_all(BETA_PAYER, [])
+            if len(token) != 1 or not _lan_pin(token[0]) or len(payer) != 1 or not _lan_pin(payer[0]):
+                raise PublicTestnetError("beta_session_rejected")
+            payer_identity = public_identity(payer[0])
+            if method == "GET" and self.path == HELLO_PATH:
+                response = provider.open_session(token[0], payer_identity)
+            elif method == "POST" and self.path == SESSION_PATH:
+                if (token[0] != provider.token or payer_identity != provider.payer
+                        or time.monotonic() >= provider.cutoff):
+                    raise PublicTestnetError("beta_session_rejected")
+                if self.headers.get_all("Transfer-Encoding") or len(self.headers.get_all("Content-Length", [])) != 1:
+                    raise PublicTestnetError("malformed_http")
+                body = self._read_body()
+                self.server.request_guard.check()
+                response = provider.handle_frame(body)
+            else:
+                raise PublicTestnetError("path_not_found")
+            self._ok(response)
+        except (PublicTestnetError, ServiceDemoError, LimitedTestnetError) as exc:
+            self._error(exc.code)
+        except (TypeError, ValueError, KeyError, RecursionError):
+            self._error("malformed_json")
+
+    def do_GET(self):
+        self._dispatch("GET")
+
+    def do_POST(self):
+        self._dispatch("POST")
+
+
+class _BetaProviderServer(_DeveloperServer):
+    allow_reuse_address = True
+
+    def __init__(self, provider, port, origin_token):
+        self.provider, self.origin_token = provider, origin_token
+        HTTPServer.__init__(self, (LOOPBACK_HOST, port), _BetaProviderHandler)
+
+
+def _run_beta_provider(args):
+    if (args.state_dir is None or not args.state_dir.is_absolute() or
+            not all((args.beta_config, args.beta_provider_key, args.beta_origin_token))):
+        raise PublicTestnetError("beta_provider_configuration_required")
+    pin, clients, digest = load_beta_config(args.beta_config)
+    key = load_beta_disposable_key(args.beta_provider_key)
+    if not hmac.compare_digest(_public_key_hex(key), pin):
+        raise PublicTestnetError("beta_provider_pin_mismatch")
+    origin = read_beta_credential(args.beta_origin_token).hex()
+    marker = args.state_dir.with_name(args.state_dir.name + ".running")
+    with _beta_stop_signal() as stop, _beta_clean_run(marker):
+        if args.beta_init and args.state_dir.exists():
+            raise PublicTestnetError("beta_state_already_exists")
+        provider = _BetaProvider(args.state_dir, key, {payer for _, payer in clients.values()},
+                                 digest, initialize=args.beta_init)
+        try:
+            if args.beta_init:
+                print(json.dumps({"coordination": "beta_initialized", "provider_public_key": pin}), flush=True)
+                return
+            with _BetaProviderServer(provider, args.port, origin) as server:
+                server.timeout = 0.1
+                print(json.dumps({"coordination": "beta_provider_ready", "port": server.server_port,
+                                  "provider_public_key": pin}), flush=True)
+                while not stop.is_set() and not provider.backend.fatal:
+                    server.handle_request()
+                snapshot = provider.backend.store.snapshot()
+                if provider.backend.fatal or any(not item["service_executed"] for item in snapshot["accepted"].values()):
+                    raise PublicTestnetError("beta_reconciliation_required")
+        finally:
+            provider.close()
+
+
 _DEVELOPER_RESOLVER = (
     "import json,socket,sys; "
     "print(json.dumps(sorted({r[4][0] for r in socket.getaddrinfo("
@@ -1440,7 +1674,8 @@ def _developer_resolve(host: str, port: int, deadline: float) -> set[str]:
 
 def purchase_developer_summary(endpoint: str, input_text: str, *, expected_provider_key: str,
                                tls_context: ssl.SSLContext, loopback_test: bool = False,
-                               approved_private_origin: str | None = None) -> dict[str, Any]:
+                               approved_private_origin: str | None = None,
+                               beta_payer: Ed25519PrivateKey | None = None) -> dict[str, Any]:
     parsed = urllib.parse.urlsplit(endpoint)
     host = parsed.hostname
     if (parsed.scheme != "https" or not host or parsed.username or parsed.password
@@ -1448,7 +1683,9 @@ def purchase_developer_summary(endpoint: str, input_text: str, *, expected_provi
             or tls_context.verify_mode != ssl.CERT_REQUIRED or not tls_context.check_hostname
             or not _lan_pin(expected_provider_key)):
         raise PublicTestnetError("developer_endpoint_or_trust_invalid")
-    if loopback_test and host != LOOPBACK_HOST:
+    if beta_payer is not None and approved_private_origin is not None:
+        raise PublicTestnetError("beta_private_origin_unsupported")
+    if loopback_test and host != (LOOPBACK_HOST if beta_payer is None else "localhost"):
         raise PublicTestnetError("developer_loopback_required")
     private_ip = "100.66.229.15"
     if approved_private_origin is not None:
@@ -1504,6 +1741,9 @@ def purchase_developer_summary(endpoint: str, input_text: str, *, expected_provi
             guard.check()
             enforce_body_bound(len(payload))
             if reply.status != 200:
+                if (beta_payer is not None and reply.status == 400
+                        and payload == b'{"error":"beta_balance_exhausted","ok":false}'):
+                    raise PublicTestnetError("beta_balance_exhausted")
                 raise PublicTestnetError("request_rejected")
             return payload
         except (OSError, http.client.HTTPException) as exc:
@@ -1516,7 +1756,9 @@ def purchase_developer_summary(endpoint: str, input_text: str, *, expected_provi
                 guard.close()
 
     return run_requester(exchange, input_text, public_testnet_binding(), service_id=SUMMARY_SERVICE_ID,
-                         expected_provider_key=expected_provider_key)
+                         expected_provider_key=expected_provider_key, payer_key=beta_payer,
+                         payment_nonce=secrets.randbits(53) if beta_payer is not None else 100,
+                         beta=beta_payer is not None)
 
 
 def _lan_pin(pin: str) -> bool:
@@ -1719,7 +1961,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m coin.public_testnet_service_demo")
     parser.add_argument(
         "--role",
-        choices=("parent", "provider", "requester", "local-example", "pilot-config", "pilot-runtime-check", "developer-provider"),
+        choices=("parent", "provider", "requester", "local-example", "pilot-config", "pilot-runtime-check", "developer-provider", "beta-provider"),
         default="parent",
     )
     parser.add_argument("--public-endpoint")
@@ -1731,6 +1973,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--second-input", help="Second distinct input for the two-purchase requester")
     parser.add_argument("--pilot-config", type=Path)
     parser.add_argument("--state-dir", type=Path)
+    parser.add_argument("--beta-config", type=Path)
+    parser.add_argument("--beta-provider-key", type=Path)
+    parser.add_argument("--beta-origin-token", type=Path)
+    parser.add_argument("--beta-init", action="store_true")
     parser.add_argument("--replay-artifacts", type=Path)
     parser.add_argument("--pilot-session")
     parser.add_argument("--provider-host", default=LOOPBACK_HOST)
@@ -1745,6 +1991,14 @@ def main(argv: list[str] | None = None) -> int:
             args.second_input is not None and not (args.private_pilot and args.role == "requester")
         ):
             raise PublicTestnetError("pilot_cli_invalid")
+        if args.role == "beta-provider":
+            if any((args.private_pilot, args.pilot_config, args.pilot_session, args.replay_artifacts,
+                    args.public_endpoint, args.provider_node_key, args.requester_node_key)):
+                raise PublicTestnetError("beta_provider_configuration_invalid")
+            _run_beta_provider(args)
+            return 0
+        if any((args.beta_config, args.beta_provider_key, args.beta_origin_token, args.beta_init)):
+            raise PublicTestnetError("beta_options_require_beta_provider")
         if args.role == "pilot-runtime-check":
             result = {"status": "RUNTIME_CHECK_PASS", "source_digest": pilot_source_digest(), "network_started": False}
             print(json.dumps(result))

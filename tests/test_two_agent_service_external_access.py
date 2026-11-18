@@ -390,23 +390,14 @@ def test_developer_mcp_lists_and_dispatches_summary_tool():
     assert not result["isError"] and result["structuredContent"]["receipt_verified"]
 
 
-def test_developer_real_mtls_mcp_purchase(tmp_path):
+def _developer_test_certificates(tmp_path, names, *, beta=False):
     import datetime
-    import hashlib
     import ipaddress
-    import socket
-    import sqlite3
-    import ssl
-    import subprocess
-    import sys
-    from http.server import BaseHTTPRequestHandler, HTTPServer
 
     from cryptography import x509
     from cryptography.hazmat.primitives import hashes, serialization
     from cryptography.hazmat.primitives.asymmetric import ec
     from cryptography.x509.oid import NameOID
-    from coin import public_testnet_service_demo as demo
-    from coin.durable_restart_safe_service_demo import DB_NAME
 
     now = datetime.datetime.now(datetime.timezone.utc)
 
@@ -421,7 +412,7 @@ def test_developer_real_mtls_mcp_purchase(tmp_path):
                    .add_extension(x509.BasicConstraints(ca=issuer is None, path_length=None), critical=True))
         if name == "edge":
             builder = builder.add_extension(x509.SubjectAlternativeName([
-                x509.IPAddress(ipaddress.IPv4Address("127.0.0.1"))]), critical=False)
+                x509.DNSName("localhost") if beta else x509.IPAddress(ipaddress.IPv4Address("127.0.0.1"))]), critical=False)
         certificate = builder.sign(key if issuer is None else issuer[0], hashes.SHA256())
         cert_path, key_path = tmp_path / (name + ".pem"), tmp_path / (name + ".key")
         cert_path.write_bytes(certificate.public_bytes(serialization.Encoding.PEM))
@@ -430,7 +421,23 @@ def test_developer_real_mtls_mcp_purchase(tmp_path):
         return key, certificate, cert_path, key_path
 
     ca = cert("ca")
-    edge, client, wrong = [cert(name, ca) for name in ("edge", "client", "wrong")]
+    return ca, [cert(name, ca) for name in names]
+
+
+def test_developer_real_mtls_mcp_purchase(tmp_path):
+    import hashlib
+    import socket
+    import sqlite3
+    import ssl
+    import subprocess
+    import sys
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+
+    from cryptography.hazmat.primitives import serialization
+    from coin import public_testnet_service_demo as demo
+    from coin.durable_restart_safe_service_demo import DB_NAME
+
+    ca, (edge, client, wrong) = _developer_test_certificates(tmp_path, ("edge", "client", "wrong"))
     approved = client[1].public_bytes(serialization.Encoding.DER)
     state = tmp_path / "store"
     provider_capture = tmp_path / "provider-signed.json"
@@ -559,3 +566,162 @@ def test_developer_real_mtls_mcp_purchase(tmp_path):
     record["cleanup_verified"] = True
     record["provider_pid"] = provider.pid
     (tmp_path / "acceptance.json").write_text(json.dumps(record))
+
+
+def test_beta_real_process_restart_and_two_mcp_purchases(tmp_path):
+    import hashlib
+    import secrets
+    import socket
+    import sqlite3
+    import ssl
+    import subprocess
+    import sys
+
+    from cryptography.hazmat.primitives.serialization import Encoding, PrivateFormat, NoEncryption
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+    from coin import public_testnet_service_demo as demo
+    from coin.durable_restart_safe_service_demo import DB_NAME
+
+    tmp_path.chmod(0o700)
+    ca, (server_cert, first, second, wrong) = _developer_test_certificates(
+        tmp_path, ("edge", "first", "second", "wrong"), beta=True)
+    keys = [Ed25519PrivateKey.generate() for _ in range(3)]
+    pin, *payer_pins = [demo._public_key_hex(key) for key in keys]
+    identities = [demo.public_identity(key) for key in (*payer_pins, pin)]
+    config = tmp_path / "enrollment.json"
+    config.write_text(json.dumps({"profile": demo.BETA_PROFILE, "provider_public_key": pin, "clients": [
+        {"source_ipv4": demo.LOOPBACK_HOST, "client_sha256": hashlib.sha256(
+            cert[1].public_bytes(Encoding.DER)).hexdigest(), "payer_public_key": payer_pin}
+        for cert, payer_pin in zip((first, second), payer_pins)
+    ]}))
+
+    def credential(name, value):
+        path = tmp_path / name
+        path.touch(mode=0o600, exist_ok=False)
+        path.write_bytes(value)
+        return str(path)
+
+    provider_key, *payer_keys = [
+        credential(f"test-key-{index}", key.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption()))
+        for index, key in enumerate(keys)
+    ]
+    origin = secrets.token_bytes(32)
+    origin_path = credential("test-origin", origin)
+    marker = tmp_path / "edge.running"
+    state = tmp_path / "state"
+    database = state / DB_NAME
+    command = [sys.executable, "-B", "-m"]
+    provider_command = command + ["coin.public_testnet_service_demo", "--role", "beta-provider",
+        "--state-dir", str(state), "--beta-config", str(config), "--beta-provider-key", provider_key,
+        "--beta-origin-token", origin_path]
+    init = subprocess.run(provider_command + ["--beta-init"], capture_output=True, text=True, timeout=5, check=True)
+    assert json.loads(init.stdout)["coordination"] == "beta_initialized"
+    records = []
+
+    def db_rows(query):
+        with sqlite3.connect(database.as_uri() + "?mode=ro", uri=True) as db:
+            return db.execute(query).fetchall()
+
+    def balances():
+        mapping = dict(db_rows("SELECT identity,amount FROM balances"))
+        return [mapping[identity] for identity in identities]
+
+    def origin_request(port, path, *, headers=None, body=None):
+        conn = http.client.HTTPConnection(demo.LOOPBACK_HOST, port, timeout=2)
+        try:
+            conn.request("GET" if body is None else "POST", path, body=body, headers={"Host": "localhost", **(headers or {})})
+            response = conn.getresponse()
+            return response.status, response.read()
+        finally:
+            conn.close()
+
+    def stop(proc):
+        proc.terminate()
+        _out, error = proc.communicate(timeout=12)
+        assert proc.returncode == 0, error
+
+    def assert_closed(ports):
+        for port in ports:
+            with socket.socket() as probe:
+                probe.settimeout(0.5)
+                assert probe.connect_ex((demo.LOOPBACK_HOST, port)) != 0
+
+    assert balances() == [100, 100, 0]
+    for index, cert in enumerate((first, second)):
+        provider = subprocess.Popen(provider_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        edge = None
+        try:
+            ready = ext._read_json_line(provider.stdout, timeout=5)
+            assert ready["coordination"] == "beta_provider_ready" and ready["provider_public_key"] == pin
+            provider_port = ready["port"]
+            assert origin_request(provider_port, demo.DISCOVERY_PATH)[0] == 400
+            if index == 1:
+                # Use the disposable loopback origin credential to verify the
+                # durable replay gate beyond the edge's stale-session gate.
+                before = hashlib.sha256(database.read_bytes()).hexdigest()
+                old = records[0]["public_artifacts"]
+                headers = {demo.BETA_ORIGIN_TOKEN: origin.hex(), demo.BETA_PAYER: payer_pins[0],
+                           demo.BETA_SESSION: secrets.token_hex(32)}
+                assert origin_request(provider_port, demo.HELLO_PATH, headers=headers)[0] == 200
+                quote = demo.frame_bytes("service_request", 2, old["request"], demo.public_testnet_binding())
+                assert origin_request(provider_port, demo.SESSION_PATH, headers=headers, body=quote)[0] == 200
+                payment = demo.frame_bytes("payment_package", 4, {
+                    "payment_tx": old["payment_tx"], "payment_authorization": old["payment_authorization"]},
+                    demo.public_testnet_binding())
+                status, body = origin_request(provider_port, demo.SESSION_PATH, headers=headers, body=payment)
+                assert status == 400 and json.loads(body)["error"] == "replay"
+                assert hashlib.sha256(database.read_bytes()).hexdigest() == before
+            edge = subprocess.Popen(command + ["coin.developer_mtls_edge", "--beta-loopback-test",
+                "--upstream-port", str(provider_port), "--server-cert", str(server_cert[2]), "--server-key", str(server_cert[3]),
+                "--client-ca", str(ca[2]), "--beta-config", str(config), "--beta-origin-token", origin_path,
+                "--beta-run-marker", str(marker)], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            edge_port = ext._read_json_line(edge.stdout, timeout=5)["port"]
+
+            text = f"Session {index + 1} requests a useful summary. Disposable L28 pays before work."
+            call = {"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {
+                "name": "l28_purchase_developer_summary", "arguments": {
+                    "service_id": ext.SUMMARY_SERVICE_ID, "input": text}}}
+            proc = subprocess.run(command + ["coin.two_agent_service_external_access_demo",
+                "--runtime", "mcp", "--developer-endpoint", f"https://localhost:{edge_port}", "--developer-loopback-test",
+                "--developer-ca", str(ca[2]), "--developer-client-cert", str(cert[2]), "--developer-client-key", str(cert[3]),
+                "--expected-provider-key", pin, "--developer-beta-payer-key", payer_keys[index]],
+                input=json.dumps(call) + "\n" + json.dumps({**call, "id": 2}) + "\n",
+                capture_output=True, text=True, timeout=12, check=True)
+            first_reply, blocked = [json.loads(line)["result"] for line in proc.stdout.splitlines()]
+            assert not first_reply["isError"], first_reply
+            assert blocked["structuredContent"] == {"ok": False, "error": "developer_attempt_consumed"}
+            record = first_reply["structuredContent"]
+            stored, = [body for tx, body in db_rows("SELECT payment_tx_id,body FROM beta_artifacts")
+                       if tx == record["payment_tx_id"]]
+            for carrier in (record, json.loads(first_reply["content"][0]["text"])):
+                artifacts = carrier["public_artifacts"]
+                demo.verify_purchase_artifacts(artifacts, input_text=text, service_id=ext.SUMMARY_SERVICE_ID)
+                assert stored == json.dumps({name: artifacts[name] for name in ("service_result", "receipt")},
+                    ensure_ascii=False, allow_nan=False, separators=(",", ":")).encode()
+            records.append(record)
+            assert balances() == ([72, 100, 28] if index == 0 else [72, 72, 56])
+            assert edge.poll() is None and provider.poll() is None
+            stop(edge)
+            stop(provider)
+            assert_closed((edge_port, provider_port))
+            assert not marker.exists() and not state.with_name("state.running").exists()
+        finally:
+            for process in (edge, provider):
+                if process is not None and process.poll() is None:
+                    process.kill()
+                    process.communicate(timeout=5)
+
+    assert len({record["payment_tx_id"] for record in records}) == 2
+    assert len({record["public_artifacts"]["receipt"]["receipt_id"] for record in records}) == 2
+    assert [event.split(":")[0] for event, in db_rows("SELECT event FROM audit ORDER BY id")] == [
+        "payment_committed", "receipt_linked", "payment_committed", "receipt_linked"]
+    assert db_rows("SELECT restart_generation,state_version FROM meta") == [(3, 2)]
+    (tmp_path / "beta-acceptance.json").write_text(json.dumps({
+        "result": "ISOLATED_BETA_PASS", "provider_public_key": pin,
+        "payments": [{"payment_id": record["payment_tx_id"],
+                      "receipt_id": record["public_artifacts"]["receipt"]["receipt_id"]} for record in records],
+        "balances": [[100, 100, 0], [72, 100, 28], [72, 72, 56]], "replay": "rejected_without_mutation",
+        "owned_processes_reaped": True, "listeners_closed": True,
+        "database_sha256": hashlib.sha256(database.read_bytes()).hexdigest(),
+    }, indent=2) + "\n")
