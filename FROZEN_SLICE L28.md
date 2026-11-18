@@ -1,6 +1,47 @@
 # L28 — FROZEN_SLICE.md
 
-## CURRENT — L28_OFFLINE_MINING_PREPARATION_V0_1 — 2026-11-17
+## CURRENT — L28_OFFLINE_CONSENSUS_VECTORS_V0_1 — 2026-11-17
+
+PROJECT_STATE: COMPLETE
+Authority: AUTHORIZE L28 PROJECT_STATE ACTIVE — L28_OFFLINE_CONSENSUS_VECTORS_V0_1
+Base: 67dc57e57e19aee723ca2c297964fce3c911bc22.
+Branch: codex/offline-consensus-vectors-v0-1.
+Slice status: PROJECT_COMPLETE.
+Completion authority: AUTHORIZE L28 OFFLINE_CONSENSUS_VECTORS_V0_1 PROJECT_COMPLETE
+Acceptance: OFFLINE_CONSENSUS_VECTORS_PASS. Evidence is recorded in SYSTEM_STATE.
+
+Verify a synthetic checkpoint and precomputed PoW vectors offline with
+two independent validators in fresh stores and in opposite branch order.
+Require agreement on work, retargets, fork selection, issuance and replay.
+Cover equal work, invalid input, missing state and fail-closed disagreement.
+
+Exact scope: coin/offline_consensus_vectors.py;
+coin/offline_consensus_validator_a.py; coin/offline_consensus_validator_b.py;
+tests/fixtures/l28_offline_consensus_vectors_v0_1.json;
+tests/test_offline_consensus_vectors.py; FROZEN_SLICE L28.md; SYSTEM_STATE L28.md.
+
+Fixture profile l28-offline-consensus-vectors/v0.1 on
+L28-DISPOSABLE-CONSENSUS-VECTORS-V01 only. Initial/minimum/maximum targets
+are 2^252−1, 2^250−1 and 2^254−1. Window 2, interval 12, retarget at odd
+heights from 3, integer clamp and floor. Single SHA-256 over the canonical
+header. Select greatest cumulative validated work, with equal work pending.
+Reuse the transaction validator and disposable ledger. Keep Option A intact.
+
+Acceptance requires focused tests, offline regressions, independent CLI
+execution, deterministic evidence and one scoped security review.
+The operator accepted the completed slice.
+
+CANONICAL_MINING=BLOCKED
+PUBLIC_NETWORK=NOT_ACTIVATED
+PRODUCTION_SIGNING=NOT_AUTHORIZED
+PROTOCOL_V1_0_0=UNCHANGED
+
+Protocol v1.0.0, MAIN, protected economics, historical records, custody
+and completed evidence remain preserved. PROVENANCE_NOT_ESTABLISHED
+continues to block canonical continuation. No runtime network, mining,
+signing, deployment, merge or push.
+
+## COMPLETED — L28_OFFLINE_MINING_PREPARATION_V0_1 — 2026-11-17
 
 PROJECT_STATE: COMPLETE
 Authority: AUTHORIZE_FROZEN_SLICE_L28_OFFLINE_MINING_PREPARATION_V0_1.
