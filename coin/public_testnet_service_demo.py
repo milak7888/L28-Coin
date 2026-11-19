@@ -33,7 +33,7 @@ import urllib.parse
 from collections.abc import Mapping
 from contextlib import contextmanager
 from http.server import BaseHTTPRequestHandler, HTTPServer, ThreadingHTTPServer
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from typing import Any
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -1451,7 +1451,188 @@ def load_beta_config(path: Path) -> tuple[str, dict[str, tuple[str, str]], str]:
     return value["provider_public_key"], clients, digest
 
 
+def _windows_beta_credential_location(path: PureWindowsPath) -> tuple[str, str]:
+    if (not path.is_absolute() or not re.fullmatch(r"[A-Za-z]:", path.drive)
+            or len(path.parts) < 2):
+        raise PublicTestnetError("beta_credential_not_private")
+    parts = path.parts[1:]
+    if any(PureWindowsPath(part).is_reserved() or part.endswith((" ", "."))
+           or any(character in part for character in (":", "\0")) for part in parts):
+        raise PublicTestnetError("beta_credential_not_private")
+    return path.anchor, "\\".join(parts)
+
+
+def _windows_api(dll, name, result, *args):
+    function = getattr(dll, name)
+    function.argtypes = args
+    function.restype = result
+    return function
+
+
+def _require_windows_beta_owner(file_handle, kernel, security):
+    import ctypes as c
+    from ctypes import wintypes as w
+
+    class Acl(c.Structure):
+        _fields_ = [("revision", w.BYTE), ("reserved", w.BYTE), ("size", w.WORD),
+                    ("ace_count", w.WORD), ("reserved2", w.WORD)]
+
+    class AceHeader(c.Structure):
+        _fields_ = [("type", w.BYTE), ("flags", w.BYTE), ("size", w.WORD)]
+
+    close = _windows_api(kernel, "CloseHandle", w.BOOL, w.HANDLE)
+    current_process = _windows_api(kernel, "GetCurrentProcess", w.HANDLE)
+    open_token = _windows_api(security, "OpenProcessToken", w.BOOL, w.HANDLE, w.DWORD, c.POINTER(w.HANDLE))
+    get_token = _windows_api(security, "GetTokenInformation", w.BOOL, w.HANDLE, c.c_int,
+                             w.LPVOID, w.DWORD, c.POINTER(w.DWORD))
+    get_security = _windows_api(security, "GetSecurityInfo", w.DWORD, w.HANDLE, c.c_int, w.DWORD,
+                                c.POINTER(w.LPVOID), w.LPVOID, c.POINTER(w.LPVOID),
+                                w.LPVOID, c.POINTER(w.LPVOID))
+    valid_acl = _windows_api(security, "IsValidAcl", w.BOOL, w.LPVOID)
+    equal_sid = _windows_api(security, "EqualSid", w.BOOL, w.LPVOID, w.LPVOID)
+    sid_length = _windows_api(security, "GetLengthSid", w.DWORD, w.LPVOID)
+    get_ace = _windows_api(security, "GetAce", w.BOOL, w.LPVOID, w.DWORD, c.POINTER(w.LPVOID))
+    free = _windows_api(kernel, "LocalFree", w.LPVOID, w.LPVOID)
+
+    token = w.HANDLE()
+    if not open_token(current_process(), 0x0008, c.byref(token)):  # TOKEN_QUERY
+        raise c.WinError(c.get_last_error())
+    owner, dacl, descriptor = w.LPVOID(), w.LPVOID(), w.LPVOID()
+    try:
+        size = w.DWORD()
+        get_token(token, 1, None, 0, c.byref(size))  # TokenUser
+        if not size.value:
+            raise c.WinError(c.get_last_error())
+        token_user = c.create_string_buffer(size.value)
+        if not get_token(token, 1, token_user, size, c.byref(size)):
+            raise c.WinError(c.get_last_error())
+        # TOKEN_USER starts with SID_AND_ATTRIBUTES, whose first member is PSID.
+        user_sid = c.cast(token_user, c.POINTER(w.LPVOID)).contents
+        error = get_security(file_handle, 1, 0x0005, c.byref(owner), None, c.byref(dacl),
+                             None, c.byref(descriptor))  # SE_FILE_OBJECT, OWNER | DACL
+        if error:
+            raise c.WinError(error)
+        if not owner or not equal_sid(owner, user_sid) or not dacl or not valid_acl(dacl):
+            raise PublicTestnetError("beta_credential_not_private")
+        acl = c.cast(dacl, c.POINTER(Acl)).contents
+        if not acl.ace_count:
+            raise PublicTestnetError("beta_credential_not_private")
+        user_sid_size = sid_length(user_sid)
+        for index in range(acl.ace_count):
+            ace = w.LPVOID()
+            if not get_ace(dacl, index, c.byref(ace)):
+                raise c.WinError(c.get_last_error())
+            header = c.cast(ace, c.POINTER(AceHeader)).contents
+            # Reject conditional/object ACEs. A plain allow ACE has a fixed
+            # header and access mask followed by its trustee SID.
+            if header.type == 1:  # ACCESS_DENIED_ACE_TYPE
+                continue
+            sid_offset = c.sizeof(AceHeader) + c.sizeof(w.DWORD)
+            if (header.type != 0 or header.size != sid_offset + user_sid_size
+                    or c.string_at(ace.value + sid_offset, user_sid_size) != c.string_at(user_sid, user_sid_size)):
+                raise PublicTestnetError("beta_credential_not_private")
+    finally:
+        if descriptor:
+            free(descriptor)
+        close(token)
+
+
+def _read_windows_beta_credential(path: Path, limit: int) -> bytes:
+    import ctypes as c
+    from ctypes import wintypes as w
+
+    class UnicodeString(c.Structure):
+        _fields_ = [("length", w.USHORT), ("maximum_length", w.USHORT), ("buffer", w.LPWSTR)]
+
+    class ObjectAttributes(c.Structure):
+        _fields_ = [("length", w.ULONG), ("root_directory", w.HANDLE),
+                    ("object_name", c.POINTER(UnicodeString)), ("attributes", w.ULONG),
+                    ("security_descriptor", w.LPVOID), ("security_qos", w.LPVOID)]
+
+    class IoStatusBlock(c.Structure):
+        # The first field is a union of NTSTATUS and a pointer.
+        _fields_ = [("status_or_pointer", w.LPVOID), ("information", c.c_size_t)]
+
+    root, relative = _windows_beta_credential_location(path.absolute())
+    path_bytes = relative.encode("utf-16-le")
+    if len(path_bytes) > 65532:
+        raise PublicTestnetError("beta_credential_not_private")
+    kernel = c.WinDLL("kernel32", use_last_error=True)
+    security = c.WinDLL("advapi32", use_last_error=True)
+    ntdll = c.WinDLL("ntdll", use_last_error=True)
+    close = _windows_api(kernel, "CloseHandle", w.BOOL, w.HANDLE)
+    drive_type = _windows_api(kernel, "GetDriveTypeW", w.UINT, w.LPCWSTR)
+    create = _windows_api(kernel, "CreateFileW", w.HANDLE, w.LPCWSTR, w.DWORD, w.DWORD,
+                          w.LPVOID, w.DWORD, w.DWORD, w.HANDLE)
+    final_path = _windows_api(kernel, "GetFinalPathNameByHandleW", w.DWORD, w.HANDLE,
+                              w.LPWSTR, w.DWORD, w.DWORD)
+    volume_info = _windows_api(kernel, "GetVolumeInformationByHandleW", w.BOOL, w.HANDLE,
+                               w.LPWSTR, w.DWORD, w.LPVOID, w.LPVOID, c.POINTER(w.DWORD),
+                               w.LPWSTR, w.DWORD)
+    attribute_info = _windows_api(kernel, "GetFileInformationByHandleEx", w.BOOL, w.HANDLE,
+                                  c.c_int, w.LPVOID, w.DWORD)
+    kind = _windows_api(kernel, "GetFileType", w.DWORD, w.HANDLE)
+    read = _windows_api(kernel, "ReadFile", w.BOOL, w.HANDLE, w.LPVOID, w.DWORD,
+                        c.POINTER(w.DWORD), w.LPVOID)
+    open_relative = _windows_api(ntdll, "NtOpenFile", c.c_long, c.POINTER(w.HANDLE), w.ULONG,
+                                 c.POINTER(ObjectAttributes), c.POINTER(IoStatusBlock), w.ULONG, w.ULONG)
+    dos_error = _windows_api(ntdll, "RtlNtStatusToDosError", w.ULONG, c.c_long)
+
+    # Anchor the native relative open at a real local volume root, not a DOS
+    # device alias or a substituted directory. Require persistent ACL support.
+    if drive_type(root) != 3:  # DRIVE_FIXED
+        raise PublicTestnetError("beta_credential_not_private")
+    extended_root = "\\\\?\\" + root
+    root_handle = create(extended_root, 0x00A0, 7, None, 3, 0x02200000, None)
+    if root_handle == c.c_void_p(-1).value:
+        raise c.WinError(c.get_last_error())
+    try:
+        resolved = c.create_unicode_buffer(128)
+        volume_flags = w.DWORD()
+        length = final_path(root_handle, resolved, len(resolved), 2)  # VOLUME_NAME_NT
+        if (not 0 < length < len(resolved)
+                or not re.fullmatch(r"\\Device\\HarddiskVolume[0-9]+\\?", resolved.value, re.IGNORECASE)
+                or not volume_info(root_handle, None, 0, None, None, c.byref(volume_flags), None, 0)
+                or not volume_flags.value & 0x0008):  # FILE_PERSISTENT_ACLS
+            raise PublicTestnetError("beta_credential_not_private")
+        file_path = c.create_unicode_buffer(relative)
+        name = UnicodeString(len(path_bytes), c.sizeof(file_path), c.cast(file_path, w.LPWSTR))
+        # OBJ_CASE_INSENSITIVE | OBJ_DONT_REPARSE rejects reparses in the whole
+        # relative path. There is no path-based check followed by a second open.
+        attributes = ObjectAttributes(c.sizeof(ObjectAttributes), root_handle, c.pointer(name), 0x1040, None, None)
+        handle, status_block = w.HANDLE(), IoStatusBlock()
+        # SYNCHRONIZE | READ_CONTROL | FILE_READ_ATTRIBUTES | FILE_READ_DATA.
+        # FILE_SHARE_READ, FILE_NON_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT.
+        status = open_relative(c.byref(handle), 0x00120081, c.byref(attributes), c.byref(status_block), 1, 0x60)
+        if status:
+            if (status & 0xffffffff) == 0xc000050b:  # STATUS_REPARSE_POINT_ENCOUNTERED
+                raise PublicTestnetError("beta_credential_not_private")
+            raise c.WinError(dos_error(status))
+        try:
+            tag_info = (w.DWORD * 2)()
+            if (kind(handle) != 1 or not attribute_info(handle, 9, tag_info, c.sizeof(tag_info))
+                    or tag_info[0] & 0x410):  # FILE_TYPE_DISK, FileAttributeTagInfo, REPARSE_POINT | DIRECTORY
+                raise PublicTestnetError("beta_credential_not_private")
+            _require_windows_beta_owner(handle, kernel, security)
+            buffer = c.create_string_buffer(limit + 1)
+            count = w.DWORD()
+            if not read(handle, buffer, len(buffer), c.byref(count), None):
+                error = c.get_last_error()
+                if error == 38:  # ERROR_HANDLE_EOF
+                    return b""
+                raise c.WinError(error)
+            if count.value > limit:
+                raise PublicTestnetError("beta_credential_invalid")
+            return buffer.raw[:count.value]
+        finally:
+            close(handle)
+    finally:
+        close(root_handle)
+
+
 def _read_beta_credential(path: Path, limit: int) -> bytes:
+    if os.name == "nt":
+        return _read_windows_beta_credential(path, limit)
     with os.fdopen(os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK), "rb") as stream:
         info = os.fstat(stream.fileno())
         if not stat.S_ISREG(info.st_mode) or stat.S_IMODE(info.st_mode) != 0o600 or info.st_uid != os.getuid():
