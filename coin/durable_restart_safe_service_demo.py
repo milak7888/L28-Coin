@@ -203,10 +203,14 @@ def _connect(path: Path) -> sqlite3.Connection:
 
 
 class DurableStore:
-    def __init__(self, state_dir: str | Path, *, context_digest: str | None = None) -> None:
+    def __init__(self, state_dir: str | Path, *, context_digest: str | None = None,
+                 beta_balances: Mapping[str, int] | None = None) -> None:
         if context_digest is not None and (len(context_digest) != 64 or any(c not in "0123456789abcdef" for c in context_digest)):
             raise DurableRuntimeError("context_invalid")
         self.context_digest = context_digest
+        self.beta_balances = dict(beta_balances) if beta_balances is not None else None
+        if self.beta_balances is not None and context_digest is None:
+            raise DurableRuntimeError("context_invalid")
         self.state_dir = Path(state_dir)
         self.db_path = self.state_dir / DB_NAME
         self.marker_path = self.state_dir / MARKER_NAME
@@ -215,10 +219,12 @@ class DurableStore:
         self.restart_generation = 0
         self.reopened = False
 
-    def open(self) -> None:
+    def open(self, *, beta_initialize: bool = False) -> None:
         if self.state_dir.exists() and not self.state_dir.is_dir():
             raise DurableRuntimeError("missing_state")
         fresh = not self.db_path.exists() and not self.marker_path.exists() and not self.lineage_path.exists()
+        if self.beta_balances is not None and fresh != beta_initialize:
+            raise DurableRuntimeError("beta_state_missing_or_initialized")
         self.state_dir.mkdir(parents=True, exist_ok=True)
         if fresh:
             os.chmod(self.state_dir, PRIVATE_DIRECTORY_MODE)
@@ -256,6 +262,8 @@ class DurableStore:
                 self._require_schema()
                 audit_head = self._verify_audit_chain()
                 self._require_lineage(audit_head)
+                if self.beta_balances is not None:
+                    self._require_beta_state()
                 self.restart_generation = self._bump_generation()
                 self.reopened = True
         except DurableRuntimeError:
@@ -333,10 +341,46 @@ class DurableStore:
         try:
             for statement in statements:
                 connection.execute(statement)
+            if self.beta_balances is not None:
+                connection.execute(
+                    """CREATE TABLE beta_artifacts (
+                    payment_tx_id TEXT PRIMARY KEY REFERENCES accepted_payments(payment_tx_id),
+                    body BLOB NOT NULL CHECK(length(body) BETWEEN 1 AND 65536))"""
+                )
+                connection.executemany("INSERT INTO balances VALUES(?, ?)", self.beta_balances.items())
+                connection.execute("UPDATE meta SET opening_seeded=1 WHERE id=1")
             connection.execute("COMMIT")
         except sqlite3.Error:
             connection.execute("ROLLBACK")
             raise
+
+    def _require_beta_state(self) -> None:
+        snapshot = self.snapshot()
+        accepted = snapshot["accepted"]
+        balance = dict(self.beta_balances)
+        connection = self._require()
+        artifacts = dict(connection.execute("SELECT payment_tx_id, body FROM beta_artifacts"))
+        events = connection.execute("SELECT payment_tx_id, event FROM audit ORDER BY id").fetchall()
+        expected_events = []
+        if (not snapshot["opening_seeded"] or snapshot["state_version"] != len(accepted)
+                or set(artifacts) != set(accepted)):
+            raise DurableRuntimeError("beta_reconciliation_required")
+        for version, (tx_id, payment) in enumerate(sorted(accepted.items(), key=lambda item: item[1]["state_version"]), 1):
+            expected_events.extend(((tx_id, "payment_committed"),
+                                    (tx_id, "receipt_linked:" + hashlib.sha256(artifacts[tx_id]).hexdigest())))
+            sender, receiver = payment["sender"], payment["receiver"]
+            payload = _read_json(artifacts[tx_id])
+            result, receipt = payload.get("service_result"), payload.get("receipt")
+            if (payment["state_version"] != version or not payment["service_executed"] or payment["amount"] != PRICE_L28
+                    or sender == receiver or sender not in balance or receiver not in balance
+                    or not isinstance(receipt, dict) or not isinstance(result, dict)
+                    or receipt.get("receipt_id") != payment["receipt_id"]
+                    or receipt.get("payment_tx_id") != tx_id or result.get("payment_tx_id") != tx_id):
+                raise DurableRuntimeError("beta_reconciliation_required")
+            balance[sender] -= PRICE_L28
+            balance[receiver] += PRICE_L28
+        if events != expected_events or snapshot["balances"] != balance or any(value < 0 for value in balance.values()):
+            raise DurableRuntimeError("beta_reconciliation_required")
 
     def _require_schema(self) -> None:
         connection = self._require()
@@ -490,7 +534,7 @@ class DurableStore:
         self._sync_lineage()
         return next_version
 
-    def mark_executed(self, payment_tx_id: str, receipt_id: str) -> None:
+    def mark_executed(self, payment_tx_id: str, receipt_id: str, *, artifact: bytes | None = None) -> None:
         connection = self._require()
         connection.execute("BEGIN IMMEDIATE")
         try:
@@ -507,7 +551,13 @@ class DurableStore:
             version = connection.execute("SELECT state_version FROM meta WHERE id=1").fetchone()
             if version is None:
                 raise DurableRuntimeError("missing_state")
-            self._append_audit(int(version[0]), payment_tx_id, "receipt_linked")
+            event = "receipt_linked"
+            if self.beta_balances is not None:
+                if not isinstance(artifact, bytes):
+                    raise DurableRuntimeError("beta_artifact_missing")
+                connection.execute("INSERT INTO beta_artifacts VALUES(?, ?)", (payment_tx_id, artifact))
+                event += ":" + hashlib.sha256(artifact).hexdigest()
+            self._append_audit(int(version[0]), payment_tx_id, event)
             connection.execute("COMMIT")
         except DurableRuntimeError:
             connection.execute("ROLLBACK")
@@ -658,16 +708,20 @@ def _evidence(
 
 class DurableProvider:
     def __init__(self, state_dir: str | Path, external_signer: Any | None = None, *,
-                 service_id: str = SERVICE_ID, context_digest: str | None = None) -> None:
+                 service_id: str = SERVICE_ID, context_digest: str | None = None,
+                 beta_key: Ed25519PrivateKey | None = None,
+                 beta_balances: Mapping[str, int] | None = None, beta_initialize: bool = False) -> None:
         if service_id not in SERVICE_IDS or (external_signer is not None and service_id != SERVICE_ID):
             raise DurableRuntimeError("service_invalid")
         self.service_id = service_id
         production_entry_binding()
-        self.store = DurableStore(state_dir, context_digest=context_digest)
-        self.store.open()
+        if (beta_key is None) != (beta_balances is None) or (beta_key is not None and external_signer is not None):
+            raise DurableRuntimeError("context_invalid")
+        self.store = DurableStore(state_dir, context_digest=context_digest, beta_balances=beta_balances)
+        self.store.open(beta_initialize=beta_initialize)
         self._external = external_signer
         if external_signer is None:
-            self._key = Ed25519PrivateKey.generate()
+            self._key = beta_key if beta_key is not None else Ed25519PrivateKey.generate()
             self.public_key = _public_key_hex(self._key)
             self.identity = public_identity(self.public_key)
         else:
@@ -845,7 +899,12 @@ class DurableProvider:
                 service_result=service_result,
                 payment_tx_id=payment_tx_id,
             )
-            self.store.mark_executed(payment_tx_id, str(receipt["receipt_id"]))
+            if self.store.beta_balances is None:
+                self.store.mark_executed(payment_tx_id, str(receipt["receipt_id"]))
+            else:
+                artifact = json.dumps({"service_result": service_result, "receipt": receipt},
+                                      ensure_ascii=False, allow_nan=False, separators=(",", ":")).encode()
+                self.store.mark_executed(payment_tx_id, str(receipt["receipt_id"]), artifact=artifact)
         finally:
             directory = getattr(ledger, "_production_entry_directory", None)
             if directory is not None:

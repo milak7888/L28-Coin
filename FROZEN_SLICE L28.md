@@ -1,6 +1,48 @@
 # L28 — FROZEN_SLICE.md
 
-## CURRENT — L28_OFFLINE_CONSENSUS_VECTORS_V0_1 — 2026-11-17
+## CURRENT — L28_PUBLIC_DISPOSABLE_BETA_V0_1
+
+PROJECT_STATE: ACTIVE
+Authority: AUTHORIZE_L28_PUBLIC_DISPOSABLE_BETA_V0_1
+Base: 055b9bd7da07095232a4fc040c49f72d2f52734b.
+Branch: codex/public-disposable-beta-v0-1.
+Slice status: ISOLATED_BETA_PASS / DEPLOYMENT_APPROVAL_REQUIRED.
+
+Implement and verify repeatable disposable summary purchases through the
+existing HTTPS/mTLS edge, HTTP/JSON provider and MCP requester. Reopen one
+beta-only store with the same test provider pin. Enroll two source, client
+leaf and payer bindings with 100 disposable L28 each and no refill. Reuse
+the existing validator, debit, work and receipt path. Persist original
+signed results and receipts. Reject replay and hold on uncertain delivery.
+Keep admission, rate, request, session and shutdown bounds.
+
+Exact scope:
+- coin/developer_mtls_edge.py
+- coin/public_testnet_service_demo.py
+- coin/durable_restart_safe_service_demo.py
+- coin/two_agent_service_external_access_demo.py
+- tests/test_developer_mtls_edge.py
+- tests/test_public_testnet_service_demo.py
+- tests/test_durable_restart_safe_service_demo.py
+- tests/test_two_agent_service_external_access.py
+- docs/public_developer_testnet_v0.1.md
+- FROZEN_SLICE L28.md
+- SYSTEM_STATE L28.md
+
+Local acceptance: focused and affected regressions plus actual IPv4 loopback
+provider, edge and independent MCP processes. Require two 28-L28 purchases
+with a clean restart between them, a stable pin, independently verified
+artifacts, balances 100/100/0 to 72/100/28 to 72/72/56, zero issuance,
+replay denial without mutation and cleanup. Test wrong identities and
+interrupted delivery. Public activation and external purchases require
+separate host-specific approval. Stop after isolated acceptance or a
+concrete blocker. Canonical MAIN, Protocol v1.0.0, protected economics and
+history are outside scope.
+
+Isolated acceptance is recorded in SYSTEM_STATE. Stop at the public
+deployment authorization boundary.
+
+## COMPLETED — L28_OFFLINE_CONSENSUS_VECTORS_V0_1 — 2026-11-17
 
 PROJECT_STATE: COMPLETE
 Authority: AUTHORIZE L28 PROJECT_STATE ACTIVE — L28_OFFLINE_CONSENSUS_VECTORS_V0_1

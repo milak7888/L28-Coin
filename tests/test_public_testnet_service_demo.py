@@ -1313,3 +1313,26 @@ def test_developer_private_origin_pins_socket_and_keeps_tls_name(monkeypatch, mo
             expected_provider_key="a" * 64, tls_context=ctx,
             approved_private_origin="https://edge.invalid")
     assert calls == [("100.66.229.15", 443)]
+
+
+def test_beta_store_markers_and_exact_enrollment(tmp_path):
+    from coin import public_testnet_service_demo as public
+
+    tmp_path.chmod(0o700)
+    marker = tmp_path / "provider.running"
+    with public._beta_clean_run(marker):
+        assert marker.exists()
+        with pytest.raises(FileExistsError):
+            with public._beta_clean_run(marker):
+                pytest.fail("duplicate owner entered")
+    assert not marker.exists()
+    with pytest.raises(RuntimeError, match="uncertain"):
+        with public._beta_clean_run(marker):
+            raise RuntimeError("uncertain")
+    assert marker.exists()
+    config = tmp_path / "public-enrollment.json"
+    entry = {"source_ipv4": "127.0.0.1", "client_sha256": "b" * 64, "payer_public_key": "c" * 64}
+    config.write_text(json.dumps({"profile": public.BETA_PROFILE, "provider_public_key": "a" * 64,
+                                  "clients": [entry, {**entry, "client_sha256": "d" * 64}]}))
+    with pytest.raises(public.PublicTestnetError, match="beta_config_invalid"):
+        public.load_beta_config(config)

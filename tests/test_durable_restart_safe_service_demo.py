@@ -530,3 +530,34 @@ def test_concurrent_payments_apply_exactly_once_each(tmp_path: Path) -> None:
     balances = {item["evidence"]["requester_balance_after"] for item in results}
     assert 44 in balances
     assert 72 in balances
+
+
+def test_beta_committed_without_work_blocks_restart(tmp_path, monkeypatch):
+    from coin.two_agent_service_transaction_demo import SUMMARY_SERVICE_ID
+
+    key, payer, other = [Ed25519PrivateKey.generate() for _ in range(3)]
+    identities = [public_identity(demo._public_key_hex(k)) for k in (key, payer, other)]
+    settings = {"service_id": SUMMARY_SERVICE_ID, "context_digest": "e" * 64,
+                "beta_key": key, "beta_balances": dict(zip(identities, (0, 100, 100)))}
+    path = tmp_path / "state"
+    with pytest.raises(demo.DurableRuntimeError, match="beta_state_missing_or_initialized"):
+        demo.DurableProvider(path, **settings)
+    provider = demo.DurableProvider(path, **settings, beta_initialize=True)
+
+    def work(*_a, **_k):
+        pytest.fail("interrupted payment invoked work")
+
+    monkeypatch.setattr(demo, "_perform_paid_service", work)
+    try:
+        package = _summary_package(provider, payer)
+        with pytest.raises(demo.DurableRuntimeError, match="interrupted_after_commit"):
+            provider.handle_payment(package, fault="after_commit")
+        state = provider.store.snapshot()
+        assert state["balances"][identities[1]] == 72
+        assert not state["accepted"][package["payment_tx"]["id"]]["service_executed"]
+    finally:
+        provider.close()
+    before = (path / demo.DB_NAME).read_bytes()
+    with pytest.raises(demo.DurableRuntimeError, match="beta_reconciliation_required"):
+        demo.DurableProvider(path, **settings)
+    assert (path / demo.DB_NAME).read_bytes() == before
