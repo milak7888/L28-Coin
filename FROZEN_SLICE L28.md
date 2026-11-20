@@ -1,12 +1,14 @@
 # L28 — FROZEN_SLICE.md
 
-## CURRENT — L28_PUBLIC_DISPOSABLE_BETA_V0_1
+## COMPLETED — L28_PUBLIC_DISPOSABLE_BETA_V0_1
 
-PROJECT_STATE: ACTIVE
+PROJECT_STATE: COMPLETE
 Authority: AUTHORIZE_L28_PUBLIC_DISPOSABLE_BETA_V0_1
 Base: 055b9bd7da07095232a4fc040c49f72d2f52734b.
 Branch: codex/public-disposable-beta-v0-1.
-Slice status: PUBLIC_DISPOSABLE_BETA_PASS / COMPLETE_PENDING_OPERATOR.
+Slice status: PROJECT_COMPLETE
+Acceptance: PUBLIC_DISPOSABLE_BETA_PASS
+Completion authority: AUTHORIZE L28 PUBLIC_DISPOSABLE_BETA_V0_1 PROJECT_COMPLETE
 
 Implement and verify repeatable disposable summary purchases through the
 existing HTTPS/mTLS edge, HTTP/JSON provider and MCP requester. Reopen one
@@ -43,8 +45,7 @@ Final evidence reconciliation, 2026-11-20. The retained isolated run
 satisfies the restart, stable-pin and replay-without-mutation criteria.
 The operator verified two independent public MCP purchases, both signed
 receipts, the expected final balances and shutdown of both beta services.
-SYSTEM_STATE records the evidence and its scope. PROJECT_STATE remains
-ACTIVE pending operator closure. Stop here.
+SYSTEM_STATE records the evidence and its scope.
 
 ## COMPLETED — L28_OFFLINE_CONSENSUS_VECTORS_V0_1 — 2026-11-17
 
