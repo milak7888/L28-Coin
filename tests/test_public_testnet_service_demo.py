@@ -1336,3 +1336,71 @@ def test_beta_store_markers_and_exact_enrollment(tmp_path):
                                   "clients": [entry, {**entry, "client_sha256": "d" * 64}]}))
     with pytest.raises(public.PublicTestnetError, match="beta_config_invalid"):
         public.load_beta_config(config)
+
+
+@pytest.mark.parametrize("unsafe", [
+    r"\\server\share\credential.pem", r"\\?\C:\credential.pem", r"C:\dir\..\credential.pem",
+    r"C:\dir\credential.pem:stream", r"C:\dir.\credential.pem", r"C:\dir\NUL.pem", r"C:\\",
+])
+def test_beta_windows_path_rejects_nonlocal_or_ambiguous_names(unsafe):
+    from pathlib import PureWindowsPath
+
+    with pytest.raises(demo.PublicTestnetError, match="beta_credential_not_private"):
+        demo._windows_beta_credential_location(PureWindowsPath(unsafe))
+
+
+def test_beta_windows_path_retains_absolute_drive_and_unicode_name():
+    from pathlib import PureWindowsPath
+
+    assert demo._windows_beta_credential_location(PureWindowsPath(r"C:\L28 Beta\clé.pem")) == (
+        "C:\\", r"L28 Beta\clé.pem")
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX descriptor and mode checks")
+def test_beta_posix_credential_permissions_link_and_bound(tmp_path):
+    credential = tmp_path / "marker"
+    credential.write_bytes(b"synthetic")
+    credential.chmod(0o600)
+    assert demo._read_beta_credential(credential, 9) == b"synthetic"
+    with pytest.raises(demo.PublicTestnetError, match="beta_credential_invalid"):
+        demo._read_beta_credential(credential, 8)
+    symlink = tmp_path / "link"
+    symlink.symlink_to(credential)
+    with pytest.raises(OSError):
+        demo._read_beta_credential(symlink, 9)
+    credential.chmod(0o644)
+    with pytest.raises(demo.PublicTestnetError, match="beta_credential_not_private"):
+        demo._read_beta_credential(credential, 9)
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="native Windows ACL and junction checks")
+def test_beta_native_windows_credential_permissions_and_junction(tmp_path):
+    import re
+
+    sid, = re.findall(rb"S-1-\d+(?:-\d+)+", subprocess.check_output(
+        ["whoami", "/user", "/fo", "csv", "/nh"]))
+    owner = "*" + sid.decode("ascii")
+    real_dir = tmp_path / "real"
+    real_dir.mkdir()
+    credential = real_dir / "marker"
+    credential.write_bytes(b"synthetic")
+    subprocess.run(["icacls", str(credential), "/inheritance:r", "/grant:r", f"{owner}:F"],
+                   check=True, capture_output=True)
+    assert demo._read_beta_credential(credential, 9) == b"synthetic"
+    with pytest.raises(demo.PublicTestnetError, match="beta_credential_invalid"):
+        demo._read_beta_credential(credential, 8)
+
+    junction = tmp_path / "junction"
+    subprocess.run(["cmd.exe", "/d", "/c", "mklink", "/J", str(junction), str(real_dir)],
+                   check=True, capture_output=True)
+    try:
+        with pytest.raises(demo.PublicTestnetError, match="beta_credential_not_private"):
+            demo._read_beta_credential(junction / credential.name, 9)
+    finally:
+        junction.rmdir()
+
+    for access in ("R", "W"):
+        subprocess.run(["icacls", str(credential), "/grant:r", f"*S-1-1-0:{access}"],
+                       check=True, capture_output=True)
+        with pytest.raises(demo.PublicTestnetError, match="beta_credential_not_private"):
+            demo._read_beta_credential(credential, 9)

@@ -1,6 +1,6 @@
 # L28 — SYSTEM_STATE.md
 
-Last updated: 2026-11-17
+Last updated: 2026-11-20
 
 ## PROJECT STATE
 PROJECT_STATE: ACTIVE
@@ -11,9 +11,32 @@ Only the operator may change PROJECT_STATE.
 
 Authority: AUTHORIZE_L28_PUBLIC_DISPOSABLE_BETA_V0_1
 Base: 055b9bd7da07095232a4fc040c49f72d2f52734b.
-Slice status: ISOLATED_BETA_PASS / DEPLOYMENT_APPROVAL_REQUIRED.
-Scope: isolated beta implementation and disposable loopback verification.
-Public listener and deployment authority remain pending.
+Slice status: PUBLIC_DISPOSABLE_BETA_PASS / COMPLETE_PENDING_OPERATOR.
+
+On 2026-11-20 the operator confirmed that Mac and Surface independently
+completed public HTTPS/mTLS MCP summary purchases and verified both signed
+receipts. Each paid 28 disposable L28. Final balances were Mac 72,
+Surface 72 and provider 56. The operator verified two stored artifacts,
+four audit records, SQLite integrity and shutdown of both beta services.
+
+Offline verification of the retained Mac MCP response confirmed the payment
+signature, signed result and receipt for the same 28-L28 transaction.
+Mac evidence file `mac-purchase-01.json` SHA-256:
+`04982a8cbc0801da85395ea7388f336454400b2067d2ad06768cb7ef533d2dbd`.
+The Surface receipt and public-host totals above rely on the operator's
+verification.
+
+The frozen local replay criterion is satisfied by the isolated acceptance
+record below. After restart, the provider received the original payment
+and authorization, returned HTTP 400 with error `replay`, and left the
+SQLite file byte-for-byte identical across that request. The evidence
+and final database still match their recorded hashes. This conclusion
+applies to the isolated run. Public-host replay was not observed here.
+
+Project closure remains an operator decision. This acceptance grants no
+authority to reopen ingress or restart services.
+
+### Retained isolated implementation and acceptance evidence
 
 Isolated acceptance passed using two real provider and edge process pairs
 and two independent MCP stdio requester processes on IPv4 loopback. The
