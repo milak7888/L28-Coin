@@ -3,15 +3,17 @@
 Last updated: 2026-11-20
 
 ## PROJECT STATE
-PROJECT_STATE: ACTIVE
+PROJECT_STATE: COMPLETE
 
 Only the operator may change PROJECT_STATE.
 
-## CURRENT — L28_PUBLIC_DISPOSABLE_BETA_V0_1
+## COMPLETED — L28_PUBLIC_DISPOSABLE_BETA_V0_1
 
 Authority: AUTHORIZE_L28_PUBLIC_DISPOSABLE_BETA_V0_1
 Base: 055b9bd7da07095232a4fc040c49f72d2f52734b.
-Slice status: PUBLIC_DISPOSABLE_BETA_PASS / COMPLETE_PENDING_OPERATOR.
+Slice status: PROJECT_COMPLETE
+Acceptance: PUBLIC_DISPOSABLE_BETA_PASS
+Completion authority: AUTHORIZE L28 PUBLIC_DISPOSABLE_BETA_V0_1 PROJECT_COMPLETE
 
 On 2026-11-20 the operator confirmed that Mac and Surface independently
 completed public HTTPS/mTLS MCP summary purchases and verified both signed
@@ -33,8 +35,8 @@ SQLite file byte-for-byte identical across that request. The evidence
 and final database still match their recorded hashes. This conclusion
 applies to the isolated run. Public-host replay was not observed here.
 
-Project closure remains an operator decision. This acceptance grants no
-authority to reopen ingress or restart services.
+The operator closed the beta. This acceptance grants no authority to
+reopen ingress or restart services.
 
 ### Retained isolated implementation and acceptance evidence
 
